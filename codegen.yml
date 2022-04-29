@@ -1,0 +1,5 @@
+schema: schema.js
+generates:
+  .types.ts:
+    plugins:
+      - typescript

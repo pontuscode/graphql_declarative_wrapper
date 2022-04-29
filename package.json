@@ -1,0 +1,27 @@
+{
+  "name": "first_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js",
+    "generate": "graphql-codegen"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@graphql-codegen/cli": "^2.6.2",
+    "@graphql-codegen/schema-ast": "^2.4.1",
+    "@graphql-codegen/typescript": "^2.4.8",
+    "@graphql-tools/schema": "^8.3.10",
+    "@graphql-tools/utils": "^8.6.9",
+    "@graphql-tools/wrap": "^8.4.16",
+    "apollo-link-http": "^1.5.17",
+    "apollo-server": "^3.6.7",
+    "graphql": "^16.0.0",
+    "graphql-tools": "^8.2.8",
+    "lodash": "^4.17.21",
+    "nodemon": "2.0.15"
+  }
+}
