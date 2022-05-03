@@ -1,0 +1,33 @@
+directive @wrap(path: [String]) on FIELD_DEFINITION
+directive @concatenate(values: [String]) on FIELD_DEFINITION
+
+type Student {
+    id: ID!
+    firstName: String
+    lastName: String
+    fullName: String @concatenate(values: ["firstName", " ", "lastName"])
+    professors: [Professor]
+    classes: [Class]
+}
+
+type Professor {
+    id: ID!
+    firstName: String
+    lastName: String
+    students: [Student]
+    teaches: [Class]
+    examinerOf: Student @wrap(path: [students, firstName])
+}
+
+type Class {
+    id: ID
+    name: String
+    students: [Student]
+    teacher: Professor 
+}
+
+type Query {
+    getStudents: [Student!]
+    getProfessors: [Professor!]
+    getClasses: [Class!]
+}

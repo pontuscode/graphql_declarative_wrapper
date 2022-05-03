@@ -1,0 +1,246 @@
+type Query 
+{
+	faculty(nr: ID!): Faculty
+	university(nr: ID!): University
+	researchGroup(nr: ID!): ResearchGroup
+	lecturer(nr: ID!): Lecturer
+	department(nr:ID!): Department
+	graduateStudents(where: GraduateStudentWhereInput, limit: Int, order:[GraduateStudentField]): [GraduateStudent]
+	publicationSearch(field: PublicationField!, criterion: StringCriterion!, pattern: String!): [Publication]
+}
+
+type University  
+{ 
+	id: ID! 
+	undergraduateDegreeObtainedByFaculty: [Faculty] 
+	mastergraduateDegreeObtainers: [Faculty]
+	doctoralDegreeObtainers(where: FacultyWhereInput): [Faculty]
+	undergraduateDegreeObtainedBystudent(where: GraduateStudentWhereInput, limit: Int, offset: Int): [GraduateStudent]
+	departments: [Department] 
+	graduateStudentConnection: CollectionOfEdgesToUgStudents
+} 
+
+interface Faculty  
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String 
+	undergraduateDegreeFrom: University 
+	masterDegreeFrom: University 
+	doctoralDegreeFrom: University 
+	worksFor: Department 
+	teacherOfGraduateCourses: [GraduateCourse] 
+	teacherOfUndergraduateCourses: [UndergraduateCourse] 
+	publications: [Publication] 
+} 
+
+type Department  
+{ 
+	id: ID! 
+	subOrganizationOf: University 
+	head: Professor 
+	researchGroups: [ResearchGroup] 
+	faculties: [Faculty] 
+	professors: [Professor]
+	lecturers: [Lecturer]
+	graduateStudents: [GraduateStudent] 
+	undergraduateStudents: [UndergraduateStudent] 
+} 
+
+type ResearchGroup  
+{ 
+	id: ID! 
+	subOrganizationOf: Department 
+} 
+
+interface Author  
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String
+} 
+
+type Professor implements Faculty & Author
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String 
+	researchInterest: String 
+	profType: String
+	undergraduateDegreeFrom: University 
+	masterDegreeFrom: University 
+	doctoralDegreeFrom: University 
+	worksFor: Department 
+	teacherOfGraduateCourses: [GraduateCourse] 
+	teacherOfUndergraduateCourses: [UndergraduateCourse]
+	publications(order: PublicationSortCriterion): [Publication]
+	supervisedUndergraduateStudents: [UndergraduateStudent] 
+	supervisedGraduateStudents: [GraduateStudent]
+} 
+
+ 
+type Lecturer implements Faculty & Author 
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String 
+	position: String
+	undergraduateDegreeFrom: University 
+	masterDegreeFrom: University 
+	doctoralDegreeFrom: University 
+	worksFor: Department 
+	teacherOfGraduateCourses: [GraduateCourse] 
+	teacherOfUndergraduateCourses: [UndergraduateCourse] 
+	publications: [Publication] 
+} 
+ 
+type Publication  
+{ 
+	id: ID! 
+	title: String 
+	abstract: String 
+	authors: [Author] 
+}  
+
+type GraduateStudent implements Author 
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String 
+	age: Int
+	memberOf: Department 
+	undergraduateDegreeFrom: University 
+	advisor: Professor 
+	takeGraduateCourses: [GraduateCourse] 
+	assistCourses: [UndergraduateCourse] 
+} 
+ 
+type UndergraduateStudent  
+{ 
+	id: ID! 
+	telephone: String 
+	emailAddress: String 
+	age: Int
+	memberOf: Department 
+	advisor: Professor 
+	takeCourses: [UndergraduateCourse] 
+} 
+
+type GraduateCourse  
+{ 
+	id: ID! 
+	teachedby: Faculty 
+	graduateStudents: [GraduateStudent] 
+} 
+
+type UndergraduateCourse  
+{ 
+	id: ID! 
+	teachedby: Faculty 
+	undergraduateStudents: [UndergraduateStudent] 
+	teachingAssistants: GraduateStudent 
+} 
+
+
+input FacultyWhereInput
+{
+	worksFor: DepartmentWhereInput
+}
+
+input DepartmentWhereInput
+{
+	nr: ID
+}
+
+input GraduateStudentWhereInput
+{
+	AND: [GraduateStudentWhereInput!]
+	advisor: ProfessorWhereInput
+	university: UniversityWhereInput
+	age: NumberMatching
+}
+
+input UniversityWhereInput
+{
+	nr: ID
+}
+
+input ProfessorWhereInput
+{
+	nr: ID
+	researchInterest: StringMatching
+}
+
+input StringMatching
+{
+  criterion: StringCriterion
+  pattern: String
+}
+
+input NumberMatching
+{
+  criterion: NumberCriterion
+  pattern: Int
+}
+
+enum NumberCriterion 
+{
+  MORETHAN
+  LESSTHAN
+  EQUALS
+}
+
+enum StringCriterion 
+{
+  CONTAINS
+  START_WITH
+  END_WITH
+  EQUALS  
+}
+
+input PublicationSortCriterion
+{
+  field: PublicationField
+  direction: SortDirection
+}
+
+enum PublicationField
+{
+	title
+	abstract
+}
+
+enum SortDirection 
+{
+  ASC
+  DESC
+}
+
+enum GraduateStudentField
+{
+	id
+	telephone
+	emailAddress
+	memberOf
+	undergraduateDegreeFrom
+	advisor
+}
+
+type CollectionOfEdgesToUgStudents
+{
+	aggregate: AggregateUgStudents!
+}
+
+type AggregateUgStudents
+{
+	count:Int!
+	age: AgeAggregationOfUgStudents!
+}
+
+type AgeAggregationOfUgStudents
+{
+	sum: Float!
+	avg: Float!
+	max: Float!
+	min: Float!
+}
