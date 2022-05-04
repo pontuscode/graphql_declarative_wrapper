@@ -1,5 +1,6 @@
-directive @wrap(path: [String]) on FIELD_DEFINITION
+directive @wrap(path: [String!]!) on FIELD_DEFINITION
 directive @concatenate(values: [String]) on FIELD_DEFINITION
+directive @wrap(type: String!) on OBJECT
 
 type Student {
     id: ID!
@@ -10,13 +11,13 @@ type Student {
     classes: [Class]
 }
 
-type Professor {
+type Professor @wrap(type: "Professor") {
     id: ID!
     firstName: String
     lastName: String
     students: [Student]
-    teaches: [Class]
-    examinerOf: Student @wrap(path: [students, firstName])
+    teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])
+    examinerOf: Student @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
 }
 
 type Class {
