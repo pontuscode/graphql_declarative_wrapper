@@ -11,47 +11,101 @@ const parseObjectTypeFields = function(ast){
     return fields;
 }
 
+/**
+ * 
+ * @param {*} node: The node from which we want to extract the value
+ * @returns the value type of the node. Returns a list of the type if it is a list. 
+ */
+const parseValue = function(node) {
+    let returnValue;
+    visit(node, {
+        NamedType(named) {
+            returnValue = named.name.value;
+        }
+    });
+    visit(node, {
+        ListType(list) {
+            visit(list, {
+                NamedType(named) {
+                    returnValue = [named.name.value];
+                }
+            });
+        }
+    });
+    return returnValue;
+}
+
 const parseSchemaDirectives = function(schema) {
     directivesUsed = [];
+    let remoteObjectTypeName;
     schema.definitions.forEach(ast => {
-        //console.log("ASDASIJUSDIJIJASDIJNSIJADSIJDSIJDJIDSSDIJDSJISDAJI", ast);
-        if(ast.kind === "ObjectTypeDefinition") {
-            if(ast.directives.length) {
-                let temp = {
-                    "typeName": ast.name.value,
-                    "directive": ast.directives[0].name.value,
-                    "argumentName": ast.directives[0].arguments[0].name.value,
-                    "argumentValues": ast.directives[0].arguments[0].value.value
-                };
-                if(!directivesUsed.includes(temp)){
-                    directivesUsed.push(temp); 
+        visit(ast, {
+            ObjectTypeDefinition(node) {
+                // console.log(node);
+                if(node.directives.length) {
+                    let temp = {
+                        "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
+                        "objectTypeName": node.name.value,
+                        "directive": node.directives[0].name.value,
+                        "argumentName": node.directives[0].arguments[0].name.value,
+                        "argumentValues": node.directives[0].arguments[0].value.value
+                    };
+                    if(!directivesUsed.includes(temp)){
+                        directivesUsed.push(temp); 
+                        remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                    }
                 }
             }
-        }
+        });
         visit(ast, {
             FieldDefinition(node) {
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
+                        let fieldValue = parseValue(node);
                         let temp = {
-                            "typeName": ast.name.value,
+                            "remoteObjectTypeName": remoteObjectTypeName,
+                            "objectTypeName": ast.name.value,
                             "fieldName": node.name.value,
+                            "fieldValue": fieldValue,
                             "directive": node.directives[0].name.value,
                             "argumentName": node.directives[i].arguments[0].name.value,
                             "argumentValues": node.directives[i].arguments[0].value.values
                         };
-                        
                         directivesUsed.push(temp);
                     }
                 }
 
             }
-        })
-    })
+        });
+    });
     return directivesUsed;
 }
 
-const traversePath = function(curr, remoteSchema) {
-    //console.log(curr);
+const traversePath = function(item, currNode, remoteSchema) {
+    //console.log(item);
+    
+    item.argumentValues.forEach(argument => {
+        visit(currNode, {
+            ListType(list) {
+                visit(list, {
+                    NamedType(named) {
+                        console.log(argument);
+                        if(named.name.value === argument.value) {
+                            console.log(named);
+                        }
+                    }
+                });
+            }
+        });
+        visit(currNode, {
+            NamedType(named) {
+                if(named.name.value === argument.value) {
+                    console.log(named);
+                }
+            }
+        });
+        //console.log(argument.value);
+    });
 }
 
 /**
@@ -72,15 +126,15 @@ const validateWrap = function(item, remoteSchema) {
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
-                    if(item.typeName === node.name.value) {
+                    if(item.remoteObjectTypeName === node.name.value) {
                         found = true;
                     }
                 }
-            })
-        })
+            });
+        });
     } else {
         remoteSchema.definitions.forEach(ast => {
-            if(ast.name.value === item.typeName && !found){
+            if(ast.name.value === item.remoteObjectTypeName && !found) {
                 visit(ast, {
                     FieldDefinition(node) {
                         switch(item.argumentName) {
@@ -88,14 +142,14 @@ const validateWrap = function(item, remoteSchema) {
                                 found = true;
                                 break;
                             case "path":
-                                traversePath(item.argumentValues, remoteSchema);
+                                traversePath(item, node, remoteSchema);
                                 found = true;
                                 break;
                         }
                     }
-                })
+                });
             }
-        })
+        });
     }
     return found;
 }
@@ -135,10 +189,11 @@ const main = function() {
     let directivesAreValid = true;
     directivesUsed.forEach(item => {
         if(!validateDirective(item, remoteSchema[0].document)) {
-            console.log(item);
+            //console.log(item);
             directivesAreValid = false;
         }
-    })
+    });
+
     if(directivesAreValid){
         console.log("Valid!");
     } else {

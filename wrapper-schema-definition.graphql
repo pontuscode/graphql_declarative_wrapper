@@ -11,13 +11,13 @@ type Student {
     classes: [Class]
 }
 
-type Professor @wrap(type: "Professor") {
+type MyProfessor @wrap(type: "Professor") {
     id: ID!
     firstName: String
     lastName: String
     students: [Student]
     teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])
-    examinerOf: Student @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
+    examinerOf: [GraduateStudent] @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
 }
 
 type Class {
