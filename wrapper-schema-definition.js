@@ -3,6 +3,7 @@ const typeDefs = `
         id: ID!
         firstName: String
         lastName: String
+        fullName: String @concatenate(values: ["firstName", " ", "lastName"])
         professors: [Professor]
         classes: [Class]
     }
