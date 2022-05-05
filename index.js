@@ -2,6 +2,7 @@ const { parse, visit, print } = require("graphql/language");
 // const wsDef = require("./wrapper-schema-definition");
 const { loadSchemaSync, loadTypedefsSync } = require("@graphql-tools/load");
 const { GraphQLFileLoader } = require("@graphql-tools/graphql-file-loader");
+const { correctASTNodes } = require("@graphql-tools/utils");
 
 const parseObjectTypeFields = function(ast){
     fields = {};
@@ -62,6 +63,12 @@ const parseSchemaDirectives = function(schema) {
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
                         let fieldValue = parseValue(node);
+                        // console.log(node.directives);
+                        // console.log(node.directives[i].name.value);
+                        
+                        if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
+                        
+
                         let temp = {
                             "remoteObjectTypeName": remoteObjectTypeName,
                             "objectTypeName": ast.name.value,
@@ -89,7 +96,7 @@ const traversePath = function(item, currNode, remoteSchema) {
             ListType(list) {
                 visit(list, {
                     NamedType(named) {
-                        console.log(argument);
+                        // console.log(argument);
                         if(named.name.value === argument.value) {
                             console.log(named);
                         }
@@ -155,7 +162,70 @@ const validateWrap = function(item, remoteSchema) {
 }
 
 const validateConcatenate = function(item, remoteSchema) {
-    return true;
+    console.log(item);
+    let valid = true;
+
+    if(item.argumentName == "values"){ // There is only 1 argument, called "values"
+      
+      // commonType = item.fieldValue
+
+      // if a field does not have a wrap directive, the default behavior is that it corresponds to a field
+      // directly copied from the remote schema. If the remote schema does not have the field, then the
+      // validation algorithm should hallt.
+      if(item.remoteObjectTypeName == undefined) 
+        item.remoteObjectTypeName = item.objectTypeName;
+      
+      // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
+      
+      
+      let found = false;
+      remoteSchema.definitions.forEach(ast => {
+        if(ast.name.value === item.remoteObjectTypeName && !found){
+          console.log(ast.name.value);
+          // console.log(ast.fields);
+          item.argumentValues.forEach(arg =>{
+            console.log(arg.value);
+
+            let CorrectargType = false;
+            let argFound = false;
+            ast.fields.forEach(field => {
+              // console.log(field.name.value);
+              if(field.name.value == arg.value){
+                // console.log(field);
+                argFound = false;
+                CorrectargType = false;
+                if(field.type.kind === "NamedType"){
+                  if(field.type.name.value.toLowerCase() === typeof(item.fieldValue)){
+                    console.log("Correct :)");
+                    argFound = true;
+                    CorrectargType = true;
+                  }
+                  else console.log("INCORRECT")//valid = false;
+                }
+                else if(field.type.kind === "ListType"){
+                  if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0])){
+                    console.log("correct?");
+                    argFound = true;
+                    CorrectargType = true;
+                  }
+                  else valid = false;
+                }
+              }
+            });
+            if(argFound){
+              if(!CorrectargType) valid = false;
+            }
+            else{
+              if(typeof(item.fieldValue) !== "string") valid = false;
+            }
+            
+          });
+          found = true;
+        }
+      });
+    }
+    else valid = false;
+    return valid;
 }
 
 const validateSubstring = function(item, remoteSchema) {
