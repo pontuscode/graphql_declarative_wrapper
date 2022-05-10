@@ -18,7 +18,7 @@ type MyProfessor @wrap(type: "Professor") {
     students: [Student]
    # teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])
     emailPhone: String @concatenate(values: ["emailAddress", " ", "telephone"])
-    examinerOf: [GraduateStudent] @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
+    examinerOf: [GraduateStudent] @wrap(path: ["supervisedGraduateStudents", "advisor", "emailAddress"])
 }
 
 type Class {
@@ -26,6 +26,10 @@ type Class {
     name: String
     students: [Student]
     teacher: Professor 
+}
+
+type BestClass @wrap(type: "Class", includeAllFields: true) {
+    id: ID!
 }
 
 type Query {

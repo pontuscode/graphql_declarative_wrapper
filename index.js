@@ -12,6 +12,7 @@ const parseObjectTypeFields = function(ast){
     return fields;
 }
 
+const BuiltInScalar = ["String", "Boolean", "Int", "Float", "ID"];
 /**
  * 
  * @param {*} node: The node from which we want to extract the value
@@ -42,7 +43,6 @@ const parseSchemaDirectives = function(schema) {
     schema.definitions.forEach(ast => {
         visit(ast, {
             ObjectTypeDefinition(node) {
-                // console.log(node);
                 if(node.directives.length) {
                     let temp = {
                         "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
@@ -63,9 +63,6 @@ const parseSchemaDirectives = function(schema) {
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
                         let fieldValue = parseValue(node);
-                        // console.log(node.directives);
-                        // console.log(node.directives[i].name.value);
-                        
                         if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
                         
 
@@ -88,31 +85,42 @@ const parseSchemaDirectives = function(schema) {
     return directivesUsed;
 }
 
-const traversePath = function(item, currNode, remoteSchema) {
-    //console.log(item);
-    
-    item.argumentValues.forEach(argument => {
-        visit(currNode, {
-            ListType(list) {
-                visit(list, {
-                    NamedType(named) {
-                        // console.log(argument);
-                        if(named.name.value === argument.value) {
-                            console.log(named);
+const traversePath = function(item, /*currNode,*/ remoteSchema) {
+    // The first iteration we will look for fields in the wrapped parent type. 
+    let lookingForType = item.remoteObjectTypeName;
+    let types = {
+        "containsList": false,
+        "finalFieldType": null
+    };
+    for(let i = 0; i < item.argumentValues.length; i++){
+        // Which field are we looking for? 
+        let lookingForField = item.argumentValues[i].value;
+        remoteSchema.definitions.forEach(ast => { // Visit each definition in the remote schema.
+            visit(ast, {
+                ObjectTypeDefinition(node) { 
+                    if(lookingForType === node.name.value) { // If we found the correct type, then visit each field in this type.
+                        for(let i = 0; i < node.fields.length; i++){
+                            if(node.fields[i].name.value === lookingForField) { // If the field name is the one we're wrapping, then look into it.
+                                if(node.fields[i].type.kind === "ListType") { // If it's a list type, we need to set the containsList to true and extract the value type
+                                    types.containsList = true;
+                                    // Extract the next type that we need to check by using parseValue. Since we know this will return a list, we index the first element.
+                                    lookingForType = parseValue(node.fields[i])[0];
+                                } else if(node.fields[i].type.kind === "NamedType") { // If it's a named type, we need to extract the value type
+                                    if(i === item.argumentValues.length - 1) { // If we are at the last element in the arguments list, we parse the value and save it in the 'types' object
+                                        types.finalFieldType = parseValue(node.fields[i]);
+                                        // console.log("Found ", types.finalFieldType, " in type ", lookingForType, " when looking for field ", lookingForField);
+                                    } else { // If we are not at the last element, keep traversing by saving the field's value type. 
+                                        lookingForType = parseValue(node.fields[i]);
+                                    }
+                                }
+                            }
                         }
                     }
-                });
-            }
-        });
-        visit(currNode, {
-            NamedType(named) {
-                if(named.name.value === argument.value) {
-                    console.log(named);
                 }
-            }
+            });
         });
-        //console.log(argument.value);
-    });
+    }
+    return types;
 }
 
 /**
@@ -128,20 +136,43 @@ const traversePath = function(item, currNode, remoteSchema) {
  */
 
 const validateWrap = function(item, remoteSchema) {
-    let found = false;
+    let valid = false;
     if(item.argumentName === "type") { // Validation case 1
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
                     if(item.remoteObjectTypeName === node.name.value) {
-                        found = true;
+                        valid = true;
                     }
                 }
             });
         });
     } else {
-        remoteSchema.definitions.forEach(ast => {
+        switch(item.argumentName) {
+            case "field":
+                valid = true;
+                types = traversePath(item, remoteShcema);
+                console.log(types);
+                break;
+            case "path":
+                types = traversePath(item, remoteSchema);
+                if(types.containsList) { // If the return type contains a list, we must also have a list as fieldValue
+                    //console.log(Array.isArray(item.fieldValue));
+                    if(Array.isArray(item.fieldValue)) { // Is our field value a list?
+                        if(item.fieldValue[0] === types.finalFieldType) { // Is the field value type the same as the wrapped type?
+                            valid = true;
+                        }
+                    }                    
+                } else { // If it does not contain a list, then just check if the field value type is the same as the wrapped field type 
+                    if(item.fieldValue[0] === types.finalFieldType) {// Is the field value type the same as the wrapped type?
+                        valid = true;
+                    }
+                }
+                break;
+        }
+        /*remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
+                //console.log("Ast:", ast.name.value);
                 visit(ast, {
                     FieldDefinition(node) {
                         switch(item.argumentName) {
@@ -149,6 +180,7 @@ const validateWrap = function(item, remoteSchema) {
                                 found = true;
                                 break;
                             case "path":
+                                //console.log(node);
                                 traversePath(item, node, remoteSchema);
                                 found = true;
                                 break;
@@ -156,13 +188,14 @@ const validateWrap = function(item, remoteSchema) {
                     }
                 });
             }
-        });
+        });*/
     }
-    return found;
+
+    return valid;
 }
 
 const validateConcatenate = function(item, remoteSchema) {
-    console.log(item);
+    //console.log(item);
     let valid = true;
 
     if(item.argumentName == "values"){ // There is only 1 argument, called "values"
@@ -181,10 +214,10 @@ const validateConcatenate = function(item, remoteSchema) {
       let found = false;
       remoteSchema.definitions.forEach(ast => {
         if(ast.name.value === item.remoteObjectTypeName && !found){
-          console.log(ast.name.value);
+          //console.log(ast.name.value);
           // console.log(ast.fields);
           item.argumentValues.forEach(arg =>{
-            console.log(arg.value);
+            //console.log(arg.value);
 
             let CorrectargType = false;
             let argFound = false;
@@ -196,7 +229,7 @@ const validateConcatenate = function(item, remoteSchema) {
                 CorrectargType = false;
                 if(field.type.kind === "NamedType"){
                   if(field.type.name.value.toLowerCase() === typeof(item.fieldValue)){
-                    console.log("Correct :)");
+                    //console.log("Correct :)");
                     argFound = true;
                     CorrectargType = true;
                   }
@@ -204,7 +237,7 @@ const validateConcatenate = function(item, remoteSchema) {
                 }
                 else if(field.type.kind === "ListType"){
                   if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0])){
-                    console.log("correct?");
+                    //console.log("correct?");
                     argFound = true;
                     CorrectargType = true;
                   }
