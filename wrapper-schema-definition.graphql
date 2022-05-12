@@ -6,7 +6,7 @@ type Student {
     id: ID!
     firstName: String
     lastName: String
-    fullName: String @concatenate(values: ["firstName", " ", "lastName"], second: ["hej"])
+    #fullName: String @concatenate(values: ["firstName", " ", "lastName"], second: ["hej"]) ---SHOULD GIVE ERROR BECAUSE OF TOO MANY ARGS & NO WRAP---
     professors: [Professor]
     classes: [Class]
 }
@@ -16,7 +16,7 @@ type MyProfessor @wrap(type: "Professor") {
     firstName: String
     lastName: String
     students: [Student]
-   # teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])
+   # teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])  ---- SHOULD GIVE ERRORS BECAUSE TYPES ARE DIFFERING ----
     emailPhone: String @concatenate(values: ["emailAddress", " ", "telephone"])
     examinerOf: [GraduateStudent] @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
 }

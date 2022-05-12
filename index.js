@@ -4,6 +4,8 @@ const { loadSchemaSync, loadTypedefsSync } = require("@graphql-tools/load");
 const { GraphQLFileLoader } = require("@graphql-tools/graphql-file-loader");
 const { correctASTNodes } = require("@graphql-tools/utils");
 
+let WrappedTypes = [];
+
 const parseObjectTypeFields = function(ast){
     fields = {};
     for(let i = 0; i < ast.length; i++){
@@ -43,6 +45,7 @@ const parseSchemaDirectives = function(schema) {
         visit(ast, {
             ObjectTypeDefinition(node) {
                 // console.log(node);
+
                 if(node.directives.length) {
                     let temp = {
                         "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
@@ -60,13 +63,14 @@ const parseSchemaDirectives = function(schema) {
         });
         visit(ast, {
             FieldDefinition(node) {
+
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
                         let fieldValue = parseValue(node);
                         // console.log(node.directives);
                         // console.log(node.directives[i].name.value);
                         
-                        if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
+                        // if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
                         
 
                         let temp = {
@@ -75,9 +79,13 @@ const parseSchemaDirectives = function(schema) {
                             "fieldName": node.name.value,
                             "fieldValue": fieldValue,
                             "directive": node.directives[0].name.value,
-                            "argumentName": node.directives[i].arguments[0].name.value,
-                            "argumentValues": node.directives[i].arguments[0].value.values
+                            "argumentName": [node.directives[i].arguments[0].name.value],
+                            "argumentValues": [node.directives[i].arguments[0].value.values]
                         };
+                        for (var j = 1; j < node.directives[i].arguments.length; j++) {
+                            temp["argumentName"].push(node.directives[i].arguments[j].name.value);
+                            temp["argumentValues"].push(node.directives[i].arguments[j].value.values);        
+                        }
                         directivesUsed.push(temp);
                     }
                 }
@@ -129,22 +137,25 @@ const traversePath = function(item, currNode, remoteSchema) {
 
 const validateWrap = function(item, remoteSchema) {
     let found = false;
-    if(item.argumentName === "type") { // Validation case 1
+
+    if(item.argumentName === "type") { // Validation case 1 
+        
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
                     if(item.remoteObjectTypeName === node.name.value) {
                         found = true;
+                        WrappedTypes.push(item.objectTypeName);
                     }
                 }
             });
         });
-    } else {
+    } else if(item.argumentName == "field" || item.argumentName == "path"){
         remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
                 visit(ast, {
                     FieldDefinition(node) {
-                        switch(item.argumentName) {
+                        switch(item.argumentName[0]) {
                             case "field":
                                 found = true;
                                 break;
@@ -162,11 +173,18 @@ const validateWrap = function(item, remoteSchema) {
 }
 
 const validateConcatenate = function(item, remoteSchema) {
+    console.log("validConc");
     console.log(item);
     let valid = true;
-
-    if(item.argumentName == "values"){ // There is only 1 argument, called "values"
-      
+    if(item.argumentName.length > 1){
+        console.log("error here");
+        console.log(item.argumentName);
+        console.log(item.argumentName.length);
+        return false;
+    }
+    console.log(WrappedTypes);
+    if(item.argumentName == "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
+    //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
       // commonType = item.fieldValue
 
       // if a field does not have a wrap directive, the default behavior is that it corresponds to a field
