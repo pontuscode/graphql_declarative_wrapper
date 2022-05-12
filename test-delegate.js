@@ -18,7 +18,6 @@ const localSchema = gql`
     emailAddress: String
     hello: String
   }
-
 `;
 
 const remoteSchema = loadSchemaSync("remote-schema.graphql", {

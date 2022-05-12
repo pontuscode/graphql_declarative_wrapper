@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "generate": "node index.js",
     "delegate": "nodemon test-delegate.js",
-    "resolvers": "nodemon test-resolvers.ts"
+    "resolvers": "nodemon test-resolvers.js"
   },
   "author": "",
   "license": "ISC",
