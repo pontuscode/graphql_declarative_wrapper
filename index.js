@@ -173,8 +173,8 @@ const validateWrap = function(item, remoteSchema) {
 }
 
 const validateConcatenate = function(item, remoteSchema) {
-    console.log("validConc");
-    console.log(item);
+    // console.log("validConc");
+    // console.log(item);
     let valid = true;
     if(item.argumentName.length > 1){
         console.log("error here");
@@ -182,7 +182,7 @@ const validateConcatenate = function(item, remoteSchema) {
         console.log(item.argumentName.length);
         return false;
     }
-    console.log(WrappedTypes);
+    // console.log(WrappedTypes);
     if(item.argumentName == "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
     //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
       // commonType = item.fieldValue
@@ -190,6 +190,7 @@ const validateConcatenate = function(item, remoteSchema) {
       // if a field does not have a wrap directive, the default behavior is that it corresponds to a field
       // directly copied from the remote schema. If the remote schema does not have the field, then the
       // validation algorithm should hallt.
+
       if(item.remoteObjectTypeName == undefined) 
         item.remoteObjectTypeName = item.objectTypeName;
       
@@ -199,11 +200,12 @@ const validateConcatenate = function(item, remoteSchema) {
       let found = false;
       remoteSchema.definitions.forEach(ast => {
         if(ast.name.value === item.remoteObjectTypeName && !found){
-          console.log(ast.name.value);
+        //   console.log(ast.name.value);
+        //   console.log(item.argumentValues)
           // console.log(ast.fields);
-          item.argumentValues.forEach(arg =>{
-            console.log(arg.value);
-
+          item.argumentValues[0].forEach(arg =>{
+            // console.log(arg);
+            // console.log("oy!")
             let CorrectargType = false;
             let argFound = false;
             ast.fields.forEach(field => {
@@ -214,7 +216,7 @@ const validateConcatenate = function(item, remoteSchema) {
                 CorrectargType = false;
                 if(field.type.kind === "NamedType"){
                   if(field.type.name.value.toLowerCase() === typeof(item.fieldValue)){
-                    console.log("Correct :)");
+                    // console.log("Correct :)");
                     argFound = true;
                     CorrectargType = true;
                   }
@@ -222,7 +224,7 @@ const validateConcatenate = function(item, remoteSchema) {
                 }
                 else if(field.type.kind === "ListType"){
                   if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0])){
-                    console.log("correct?");
+                    // console.log("correct?");
                     argFound = true;
                     CorrectargType = true;
                   }
