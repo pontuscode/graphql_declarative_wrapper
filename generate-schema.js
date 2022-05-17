@@ -1,35 +1,41 @@
-const { graphql, OperationTypeNode, GraphQLSchema } = require('graphql');
 const { makeExecutableSchema } = require("@graphql-tools/schema");
 const { loadSchemaSync } = require('@graphql-tools/load');
 const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
 const { delegateToSchema } = require("@graphql-tools/delegate");
-const { ApolloServer } = require('apollo-server');
 
-const generateLocalSchema = function() {
-    const remoteSchema = loadSchemaSync("remote-schema.graphql", {
+const generateLocalSchema = function(remoteSchema) {
+    /*const remoteSchema = loadSchemaSync("remote-schema.graphql", {
         loaders: [new GraphQLFileLoader()],
-    });
+    });*/
 
     const localSchema = makeExecutableSchema({
         typeDefs: `
-            type MyFaculty {
+            type Track {
                 id: ID!
                 emailAddress: String
             },
 
             type Query {
-                myFaculty(id: ID!): MyFaculty
+                track(id: ID!): Track
+                tracksForHome: [Track]
             }
         `,
         resolvers: {
             Query: {
-                myFaculty: (_, args, context, info) => delegateToSchema({
+                track: (_, args, context, info) => delegateToSchema({
                     schema: remoteSchema,
                     operation: 'query',
-                    fieldName: 'faculty',
+                    fieldName: 'track',
                     args: {
-                        nr: args.id
+                        id: args.id
                     },
+                    context,
+                    info
+                }),
+                tracksForHome: (_, __, context, info) => delegateToSchema({
+                    schema: remoteSchema,
+                    operation: "query",
+                    fieldName: "tracksForHome",
                     context,
                     info
                 })
@@ -37,16 +43,6 @@ const generateLocalSchema = function() {
         }
     });
     return localSchema;
-    //let result = await testIt(localSchema, remoteSchema);
-    /*const server = new ApolloServer({
-        schema: localSchema,
-        csrfPrevention: true,
-    });
-      
-    server.listen().then(({ url }) => {
-        console.log(`🚀  Server ready at ${url}`);
-    });*/
-    
 }
 
 
