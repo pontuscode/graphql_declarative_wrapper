@@ -8,12 +8,8 @@ const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { ApolloServer, gql } = require('apollo-server');
 const { generateLocalSchema } = require("./generate-schema");
-const { wrapSchema, RenameTypes, introspectSchema } = require('@graphql-tools/wrap');
+const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
-
-const testIt = async(localSchema, remoteSchema) => {
-    return "hahahahahahahaha";
-}
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -33,6 +29,9 @@ const remoteSchema = async () => {
     return wrapSchema({
       schema,
       executor,
+      transforms: [
+        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
+      ]
     });
 };
 
@@ -48,14 +47,19 @@ const main = function() {
     });
     */
    const typeDefs = gql`
-        type Track {
+        type MyTrack {
             id: ID!
             emailAddress: String
+            author: MyAuthor
         }
 
+        type MyAuthor {
+            id: ID!
+            name: String
+        }
         type Query {
-            track(id: ID!): Track
-            myTracksForHome: [Track]
+            track(id: ID!): MyTrack
+            myTracksForHome: [MyTrack]
         }
    `;
     //const localSchema = generateLocalSchema(schemaWithResolvers);
@@ -68,16 +72,14 @@ const main = function() {
     const resolvers = {
         Query: {
           myTracksForHome: async (parent, args, context, info) => {
-              
             const schema = await remoteSchema();
             const data = await delegateToSchema({
               schema: schema,
               operation: "query",
               fieldName: "tracksForHome",
               context,
-              info,
+              info
             });
-            console.log({ data });
             return data;
           },
         },
