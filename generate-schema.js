@@ -2,13 +2,13 @@ const { makeExecutableSchema } = require("@graphql-tools/schema");
 const { loadSchemaSync } = require('@graphql-tools/load');
 const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
 const { delegateToSchema } = require("@graphql-tools/delegate");
+const { fs } = require("fs").promises;
 
-const generateLocalSchema = function(remoteSchema) {
+const generateSchema = function(wsDef, remoteSchema, directivesUsed) {
     /*const remoteSchema = loadSchemaSync("remote-schema.graphql", {
         loaders: [new GraphQLFileLoader()],
     });*/
-
-    const localSchema = makeExecutableSchema({
+    const wrapperSchema = makeExecutableSchema({
         typeDefs: `
             type Track {
                 id: ID!
@@ -42,8 +42,9 @@ const generateLocalSchema = function(remoteSchema) {
             }
         }
     });
-    return localSchema;
+    //return wrapperSchema;
+    return true;
 }
 
 
-exports.generateLocalSchema = generateLocalSchema;
+exports.generateSchema = generateSchema;

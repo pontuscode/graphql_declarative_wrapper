@@ -1,4 +1,3 @@
-emailAddress: String
 const { graphql, OperationTypeNode, GraphQLSchema, print } = require('graphql');
 const { makeExecutableSchema } = require("@graphql-tools/schema");
 const { loadSchemaSync, loadTypedefsSync } = require('@graphql-tools/load');
@@ -10,6 +9,7 @@ const { ApolloServer, gql } = require('apollo-server');
 const { generateLocalSchema } = require("./generate-schema");
 const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
+
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -62,12 +62,6 @@ const main = function() {
             myTracksForHome: [MyTrack]
         }
    `;
-    //const localSchema = generateLocalSchema(schemaWithResolvers);
-
-    /*const server = new ApolloServer({
-        schema: localSchema,
-        csrfPrevention: true,
-    });*/
 
     const resolvers = {
         Query: {

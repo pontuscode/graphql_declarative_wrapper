@@ -1,6 +1,8 @@
-directive @wrap(path: [String!]!) on FIELD_DEFINITION
-directive @concatenate(values: [String]) on FIELD_DEFINITION
 directive @wrap(type: String!) on OBJECT
+directive @wrap(path: [String!]!) on FIELD_DEFINITION
+directive @wrap(field: String!) on FIELD_DEFINITION
+directive @concatenate(values: [String]) on FIELD_DEFINITION
+
 
 type Student {
     id: ID!

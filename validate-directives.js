@@ -3,6 +3,7 @@ const { parse, visit, print } = require("graphql/language");
 const { loadSchemaSync, loadTypedefsSync } = require("@graphql-tools/load");
 const { GraphQLFileLoader } = require("@graphql-tools/graphql-file-loader");
 const { correctASTNodes } = require("@graphql-tools/utils");
+const { generateWrapperSchema } = require("./generate-schema");
 
 let WrappedTypes = [];
 
@@ -44,8 +45,6 @@ const parseSchemaDirectives = function(schema) {
     schema.definitions.forEach(ast => {
         visit(ast, {
             ObjectTypeDefinition(node) {
-                // console.log(node);
-
                 if(node.directives.length) {
                     let temp = {
                         "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
@@ -265,34 +264,52 @@ const validateDirective = function(item, remoteSchema) {
     return false;
 }
 
-const main = function() {
-    const wsDef = loadTypedefsSync("wrapper-schema-definition.graphql", {
+const validateDirectives = function(wsDef, remoteSchema) {
+    /*const wsDef = loadTypedefsSync("wrapper-schema-definition.graphql", {
         loaders: [new GraphQLFileLoader()],
-    });
+    });*/
     
-    directivesUsed = parseSchemaDirectives(wsDef[0].document);
-
-    const remoteSchema = loadTypedefsSync("remote-schema.graphql", {
+    //console.log(wsDef.schema[0].document);
+    directivesUsed = parseSchemaDirectives(wsDef.schema[0].document);
+    /*const remoteSchema = loadTypedefsSync("remote-schema.graphql", {
         loaders: [new GraphQLFileLoader()],
-    });
-
+    });*/
     let directivesAreValid = true;
     directivesUsed.forEach(item => {
-        if(!validateDirective(item, remoteSchema[0].document)) {
-            //console.log(item);
-            directivesAreValid = false;
+        if(remoteSchema.fromUrl) { // Schemas from url have a different structure than local schemas. We cannot access the document directly, we need to access 
+
+        } else {
+            if(!validateDirective(item, remoteSchema[0].document)) {
+                //console.log(item);
+                directivesAreValid = false;
+            }
         }
     });
 
-    if(directivesAreValid){
-        console.log("Valid!");
-    } else {
-        console.log("Invalid!");
+    return {
+        "directivesAreValid": directivesAreValid,
+        "directivesUsed": directivesUsed
     }
+    /*
+    if(directivesAreValid){
+        /*console.log("Validation successful! Generating wrapper schema...");
+        let generationSuccess = generateWrapperSchema(wsDef, remoteSchema, directivesUsed);
+        let wrapperSchemaName = "wrapper-schema.graphql";
+        if(generationSuccess) {
+            console.log("Wrapper schema successfully generated!");
+            console.log(`The wrapper schema can be viewed in file ${wrapperSchemaName}`);
+        } else {
+            console.log(`Something went wrong when generating the wrapper schema :(`);
+        }
+    } else {
+        //console.log("Invalid!");
+    }
+    */
 }
 
+exports.validateDirectives = validateDirectives;
 
-main();
+//main();
 
 //console.log(schema._typeMap.Professor._fields.examinerOf.astNode.directives[0].arguments[0].value.values);
 /*for(let i = 0; i < Object.keys(schema._typeMap).length; i++) {

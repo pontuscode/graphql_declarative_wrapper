@@ -1,0 +1,22 @@
+directive @wrapType(type: String!) on OBJECT
+directive @wrapPath(path: [String!]!) on FIELD_DEFINITION
+directive @wrapField(field: String!) on FIELD_DEFINITION
+directive @concatenate(values: [String]) on FIELD_DEFINITION
+
+type MyTrack @wrapType(type: "Track") {
+    id: ID! @wrapField(field: "id")
+    myTitle: String @wrapField(field: "title")
+    author: MyAuthor @wrapField(field: "author")
+}
+
+type MyAuthor @wrapType(type: "Author") {
+    id: ID! @wrapField(field: "id")
+    name: String @wrapField(field: "name")
+}
+
+type Query {
+    myTrack(id: ID!): MyTrack!
+    myTracks: [MyTrack!]
+    myAuthor(id: ID!): MyAuthor!
+    myAuthors: [MyAuthor!]
+}
