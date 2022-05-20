@@ -265,22 +265,13 @@ const validateDirective = function(item, remoteSchema) {
 }
 
 const validateDirectives = function(wsDef, remoteSchema) {
-    /*const wsDef = loadTypedefsSync("wrapper-schema-definition.graphql", {
-        loaders: [new GraphQLFileLoader()],
-    });*/
-    
-    //console.log(wsDef.schema[0].document);
     directivesUsed = parseSchemaDirectives(wsDef.schema[0].document);
-    /*const remoteSchema = loadTypedefsSync("remote-schema.graphql", {
-        loaders: [new GraphQLFileLoader()],
-    });*/
     let directivesAreValid = true;
     directivesUsed.forEach(item => {
-        if(remoteSchema.fromUrl) { // Schemas from url have a different structure than local schemas. We cannot access the document directly, we need to access 
-
+        if(remoteSchema.fromUrl) { // Schemas from url currently have a different structure than local schemas.
+            console.log("Remote schemas from url's are not currently supported");
         } else {
-            if(!validateDirective(item, remoteSchema[0].document)) {
-                //console.log(item);
+            if(!validateDirective(item, remoteSchema.schema[0].document)) {
                 directivesAreValid = false;
             }
         }
@@ -290,29 +281,6 @@ const validateDirectives = function(wsDef, remoteSchema) {
         "directivesAreValid": directivesAreValid,
         "directivesUsed": directivesUsed
     }
-    /*
-    if(directivesAreValid){
-        /*console.log("Validation successful! Generating wrapper schema...");
-        let generationSuccess = generateWrapperSchema(wsDef, remoteSchema, directivesUsed);
-        let wrapperSchemaName = "wrapper-schema.graphql";
-        if(generationSuccess) {
-            console.log("Wrapper schema successfully generated!");
-            console.log(`The wrapper schema can be viewed in file ${wrapperSchemaName}`);
-        } else {
-            console.log(`Something went wrong when generating the wrapper schema :(`);
-        }
-    } else {
-        //console.log("Invalid!");
-    }
-    */
 }
 
 exports.validateDirectives = validateDirectives;
-
-//main();
-
-//console.log(schema._typeMap.Professor._fields.examinerOf.astNode.directives[0].arguments[0].value.values);
-/*for(let i = 0; i < Object.keys(schema._typeMap).length; i++) {
-    console.log(Object.keys(schema._typeMap)[i]);
-}*/
-
