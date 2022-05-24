@@ -1,0 +1,22 @@
+type MyTrack {
+	id: ID
+	myTitle: String
+	author: MyAuthor
+}
+
+ type MyAuthor {
+	id: ID
+	name: String
+}
+
+ type MyModule {
+	id: ID
+	content: String
+}
+
+ type Query {
+	myTrack(id: ID!): MyTrack
+	myTracks: MyTrack
+	myModule(id: ID!): MyModule
+	myModules: MyModule
+}

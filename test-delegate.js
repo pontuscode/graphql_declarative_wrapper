@@ -1,9 +1,12 @@
-const { loadSchemaSync } = require('@graphql-tools/load');
+const { loadSchemaSync, loadDocumentsSync } = require('@graphql-tools/load');
 const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
 const { wrapSchema, RenameTypes } = require('@graphql-tools/wrap');
 const { ApolloServer, gql } = require('apollo-server');
 const { WrapQuery, WrapType } = require('@graphql-tools/wrap');
 const { SelectionSetNode, Kind } = require('graphql');
+const { join } = require("path");
+const resolvers  = require("./wrapper-resolvers");
+const { addResolversToSchema } = require("@graphql-tools/schema");
 
 class RemoveNonExistentFieldsTransform {
   transformSchema(originalWrappingSchema) {
@@ -11,39 +14,19 @@ class RemoveNonExistentFieldsTransform {
   }
 }
 
-const localSchema = gql`
-  type MyFaculty {
-    id: ID!
-    telephone: String
-    emailAddress: String
-    hello: String
-  }
-`;
-
-const remoteSchema = loadSchemaSync("remote-schema.graphql", {
+const schemaWithResolvers = addResolversToSchema({
+  schema: loadSchemaSync(join(__dirname, "./wrapper-schema.graphql"), {
     loaders: [new GraphQLFileLoader()],
+  }),
+  resolvers: resolvers,
 });
-
-const typeNameMap = {
-  Professor: 'MyProfessor',
-  GraduateStudent: "HahahxD"
-}
-
-const schema = wrapSchema({
-  schema: remoteSchema,
-  transforms: [
-    new RenameTypes(name => typeNameMap[name] || name), 
-    //new WrapType("Faculty", "MyFaculty", "emailAddress")
-  ]
-});
-
 
 const server = new ApolloServer({
-  schema,
+  schema: schemaWithResolvers,
   csrfPrevention: true,
 });
 
 
-server.listen().then(({ url }) => {
-  console.log(`🚀  Server ready at ${url}`);
+server.listen({ port: process.env.PORT || 4001 }).then(({ url }) => {
+  console.log(`🐝 Local schema server ready at ${url}`);
 });

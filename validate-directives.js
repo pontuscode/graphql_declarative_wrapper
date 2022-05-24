@@ -16,7 +16,6 @@ const parseObjectTypeFields = function(ast){
 }
 
 /**
- * 
  * @param {*} node: The node from which we want to extract the value
  * @returns the value type of the node. Returns a list of the type if it is a list. 
  */
@@ -46,12 +45,17 @@ const parseSchemaDirectives = function(schema) {
         visit(ast, {
             ObjectTypeDefinition(node) {
                 if(node.directives.length) {
+                    let resolvers = node.directives[0].arguments[1];
+                    if(resolvers !== undefined){
+                        resolvers = resolvers.value.values;
+                    }
                     let temp = {
                         "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
                         "objectTypeName": node.name.value,
                         "directive": node.directives[0].name.value,
                         "argumentName": node.directives[0].arguments[0].name.value,
-                        "argumentValues": node.directives[0].arguments[0].value.value
+                        "argumentValues": node.directives[0].arguments[0].value.value,
+                        "resolvers": resolvers
                     };
                     if(!directivesUsed.includes(temp)){
                         directivesUsed.push(temp); 
@@ -62,16 +66,22 @@ const parseSchemaDirectives = function(schema) {
         });
         visit(ast, {
             FieldDefinition(node) {
-
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
                         let fieldValue = parseValue(node);
-                        // console.log(node.directives);
-                        // console.log(node.directives[i].name.value);
-                        
                         // if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
-                        
-
+                        let argumentType = node.directives[i].arguments[0].value.kind;
+                        let argumentValue;
+                        switch(argumentType) {
+                            case "StringValue":
+                                argumentValue = node.directives[i].arguments[0].value.value;
+                                break;
+                            case "ListValue":
+                                argumentValue = node.directives[i].arguments[0].value.values;
+                                break;
+                            default:
+                                console.log("invalid");
+                        }
                         let temp = {
                             "remoteObjectTypeName": remoteObjectTypeName,
                             "objectTypeName": ast.name.value,
@@ -79,7 +89,7 @@ const parseSchemaDirectives = function(schema) {
                             "fieldValue": fieldValue,
                             "directive": node.directives[0].name.value,
                             "argumentName": [node.directives[i].arguments[0].name.value],
-                            "argumentValues": [node.directives[i].arguments[0].value.values]
+                            "argumentValues": argumentValue
                         };
                         for (var j = 1; j < node.directives[i].arguments.length; j++) {
                             temp["argumentName"].push(node.directives[i].arguments[j].name.value);
@@ -96,14 +106,11 @@ const parseSchemaDirectives = function(schema) {
 }
 
 const traversePath = function(item, currNode, remoteSchema) {
-    //console.log(item);
-    
     item.argumentValues.forEach(argument => {
         visit(currNode, {
             ListType(list) {
                 visit(list, {
                     NamedType(named) {
-                        // console.log(argument);
                         if(named.name.value === argument.value) {
                             console.log(named);
                         }
@@ -118,19 +125,18 @@ const traversePath = function(item, currNode, remoteSchema) {
                 }
             }
         });
-        //console.log(argument.value);
     });
 }
 
 /**
  * 
- * @param {*} item: the directive definitions parsed from parseSchemaDirectives
- * @param {*} remoteSchema: the remote schema to validate against
+ * @param {*} item is the directive definitions parsed from parseSchemaDirectives
+ * @param {*} remoteSchema is the remote schema to validate against
  * 
  * The following cases will result in a failed validation: 
  *  1/ The wrapped type does not exist in the remote schema. 
- *  2/ The value type in the wrapper schema definition is not the same as the value type in the remote schema.
- *  3/ The value type in the wrapper schema definition is not defined as a list, but one or more of the types in the remote schema is a list.
+ *  2/ The field value type in the wrapper schema definition is not the same as the field value type in the remote schema.
+ *  3/ The field value type in the wrapper schema definition is not defined as a list, but one or more of the field value types in the remote schema is a list.
  *  4/ One or more of the fields in the 'field' or 'path' argument does not exist in the remote schema. 
  */
 
@@ -149,7 +155,7 @@ const validateWrap = function(item, remoteSchema) {
                 }
             });
         });
-    } else if(item.argumentName == "field" || item.argumentName == "path"){
+    } else if(item.argumentName == "field" || item.argumentName == "path"){ // Validation case 2, 3, 4
         remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
                 visit(ast, {
@@ -172,8 +178,6 @@ const validateWrap = function(item, remoteSchema) {
 }
 
 const validateConcatenate = function(item, remoteSchema) {
-    // console.log("validConc");
-    // console.log(item);
     let valid = true;
     if(item.argumentName.length > 1){
         console.log("error here");
@@ -199,23 +203,15 @@ const validateConcatenate = function(item, remoteSchema) {
       let found = false;
       remoteSchema.definitions.forEach(ast => {
         if(ast.name.value === item.remoteObjectTypeName && !found){
-        //   console.log(ast.name.value);
-        //   console.log(item.argumentValues)
-          // console.log(ast.fields);
           item.argumentValues[0].forEach(arg =>{
-            // console.log(arg);
-            // console.log("oy!")
             let CorrectargType = false;
             let argFound = false;
             ast.fields.forEach(field => {
-              // console.log(field.name.value);
               if(field.name.value == arg.value){
-                // console.log(field);
                 argFound = false;
                 CorrectargType = false;
                 if(field.type.kind === "NamedType"){
                   if(field.type.name.value.toLowerCase() === typeof(item.fieldValue)){
-                    // console.log("Correct :)");
                     argFound = true;
                     CorrectargType = true;
                   }
@@ -223,7 +219,6 @@ const validateConcatenate = function(item, remoteSchema) {
                 }
                 else if(field.type.kind === "ListType"){
                   if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0])){
-                    // console.log("correct?");
                     argFound = true;
                     CorrectargType = true;
                   }
@@ -260,7 +255,6 @@ const validateDirective = function(item, remoteSchema) {
         case "substring": 
             return validateSubstring(item, remoteSchema);
     }
-    
     return false;
 }
 
@@ -270,6 +264,7 @@ const validateDirectives = function(wsDef, remoteSchema) {
     directivesUsed.forEach(item => {
         if(remoteSchema.fromUrl) { // Schemas from url currently have a different structure than local schemas.
             console.log("Remote schemas from url's are not currently supported");
+            directivesAreValid = false;
         } else {
             if(!validateDirective(item, remoteSchema.schema[0].document)) {
                 directivesAreValid = false;
