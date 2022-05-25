@@ -17,6 +17,7 @@ type MyAuthor @wrap(type: "Author") {
 type MyModule @wrap(type: "Module", resolvers: ["module(id:id)"]) {
     id: ID! @wrap(field: "id")
     content: String @wrap(field: "content")
+    concatenateTest: String @concatenate(values: ["content", " ", "videoUrl"])
 }
 
 type Query {

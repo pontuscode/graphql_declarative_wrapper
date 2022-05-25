@@ -21,16 +21,35 @@ const parseObjectTypeFields = function(ast){
  */
 const parseValue = function(node) {
     let returnValue;
+    let set = false;
+    visit(node, {
+        NonNullType(nonNull) {
+            visit(nonNull, {
+                NamedType(named) {
+                    returnValue = named.name.value + "!";
+                    set = true;
+                }
+            });
+        }
+    });
     visit(node, {
         NamedType(named) {
-            returnValue = named.name.value;
+            if(!set){
+                returnValue = named.name.value;
+                set = true;
+            }
+                
+
         }
     });
     visit(node, {
         ListType(list) {
             visit(list, {
                 NamedType(named) {
-                    returnValue = [named.name.value];
+                    if(!set){
+                        returnValue = [named.name.value];
+                    }
+                    
                 }
             });
         }
@@ -179,13 +198,13 @@ const validateWrap = function(item, remoteSchema) {
 
 const validateConcatenate = function(item, remoteSchema) {
     let valid = true;
+    let nonNullable = false;
     if(item.argumentName.length > 1){
         console.log("error here");
         console.log(item.argumentName);
         console.log(item.argumentName.length);
         return false;
     }
-    // console.log(WrappedTypes);
     if(item.argumentName == "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
     //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
       // commonType = item.fieldValue
@@ -198,32 +217,43 @@ const validateConcatenate = function(item, remoteSchema) {
         item.remoteObjectTypeName = item.objectTypeName;
       
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
+
+      if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
+        nonNullable = true;
       
       
       let found = false;
       remoteSchema.definitions.forEach(ast => {
         if(ast.name.value === item.remoteObjectTypeName && !found){
-          item.argumentValues[0].forEach(arg =>{
+          item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
             let CorrectargType = false;
             let argFound = false;
             ast.fields.forEach(field => {
               if(field.name.value == arg.value){
                 argFound = false;
+                
                 CorrectargType = false;
                 if(field.type.kind === "NamedType"){
-                  if(field.type.name.value.toLowerCase() === typeof(item.fieldValue)){
+                  if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
                     argFound = true;
                     CorrectargType = true;
                   }
-                  else console.log("INCORRECT")//valid = false;
+                  else valid=false;//console.log("INCORRECT")//valid = false;
                 }
                 else if(field.type.kind === "ListType"){
-                  if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0])){
+                  if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
                     argFound = true;
                     CorrectargType = true;
                   }
                   else valid = false;
                 }
+                else if(field.type.kind === "NonNullType"){
+                    if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
+                      argFound = true;
+                      CorrectargType = true;
+                    }
+                    else valid = false;
+                  }
               }
             });
             if(argFound){
