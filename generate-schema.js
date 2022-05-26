@@ -183,7 +183,11 @@ const generateTypeDefinitions = async function(wsDef, fileName) {
                 if(node.arguments.length > 0) {
                     fileContent += ")";
                 }
-                fileContent += ": " + parseValue(node) + "\n";
+                let value = parseValue(node);
+                if(Array.isArray(value)) {
+                    value = `[${value}]`;
+                }
+                fileContent += ": " + value + "\n";
             }
         });
     });

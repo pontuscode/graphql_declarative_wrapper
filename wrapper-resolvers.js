@@ -1,7 +1,8 @@
-const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
+const { wrapSchema, introspectSchema, RenameTypes, WrapFields, WrapQuery, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
+const { execute, GraphQLSchema, Kind, OperationTypeNode, parse, SelectionSetNode } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -20,9 +21,9 @@ const remoteSchema = async () => {
     return wrapSchema({
     schema,
     executor,
-    transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^id/, "id"))
-    ]
+    /*transforms: [
+        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
+    ]*/
     });
 };
 
@@ -49,7 +50,38 @@ const resolvers = {
                 operation: 'query',
                 fieldName: 'tracksForHome',
                 context, 
-                info
+                info,
+                transforms: [
+                    new WrapQuery(
+                    // path at which to apply wrapping and extracting
+                        ['tracksForHome'], 
+                        (subtree) => {
+                        var newSelectionSet = {
+                            kind: Kind.SELECTION_SET,
+                            selections: subtree.selections.map(function (selection) {
+                                // just append fragments, not interesting for this test
+                                if (selection.kind === Kind.INLINE_FRAGMENT || selection.kind === Kind.FRAGMENT_SPREAD) {
+                                    return selection;
+                                }
+                                // prepend `address` to name and camelCase
+                                var oldFieldName = selection.name.value;
+                                return {
+                                    kind: Kind.FIELD,
+                                    name: {
+                                        kind: Kind.NAME,
+                                        value: oldFieldName,
+                                    },
+                                };
+                            }),
+                        };
+                        console.log(newSelectionSet.selections);
+                        return newSelectionSet;
+                    },
+                    result => { 
+                        console.log(result);
+                        return result; 
+                    }), 
+                ]
             })
             return data;
         },
