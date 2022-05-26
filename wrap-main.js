@@ -101,7 +101,7 @@ const printValidArguments = function() {
  * The main function takes 3 required command line arguments (--definitions, remoteSchema, and --remoteServer) and 1 optional command line argument (--wrapperName). 
  * --definitions is the file path or url to the wrapper schema definitions
  * --remoteSchema is the file path or url to the remote schema
- * --remoteServer is the url to the remote server that resolves queries to the remote schema
+ * --remoteServerUrl is the url to the remote server that resolves queries to the remote schema
  * --wrapperName is the desired name of the generated wrapper schema
  */
 const main = async function() {

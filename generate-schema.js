@@ -19,7 +19,7 @@ const prompt = require('prompt-sync')({sigint: true});
  */
 const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, wrapperName) {
     let errorMessage;
-    const typeDefinitions = await generateWrapperTypedefs(wsDef.schema[0].document, wrapperName);
+    const typeDefinitions = await generateTypeDefinitions(wsDef.schema[0].document, wrapperName);
     const delegatedResolvers = await generateResolvers(wsDef.schema[0].document, directivesUsed, remoteSchema.schema[0], remoteServerUrl, wrapperName);
     let success = (typeDefinitions !== "" && delegatedResolvers !== "");
     return {
@@ -63,13 +63,12 @@ const resolvers = {
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].argumentName === "type") {
             if(directivesUsed[i].resolvers !== undefined){
-                for(let resolver = 0; resolver < directivesUsed[i].resolvers.length; resolver++){
-                    let parsedArgument = parseArgument(directivesUsed[i].resolvers[resolver].value);
-                    if(parsedArgument.argument !== undefined) {
-                        fileContent += writeResolverWithArgs(directivesUsed[i], parsedArgument.remoteResolver, parsedArgument.argument);
-                    } else {
-                        fileContent += writeResolverWithoutArgs(directivesUsed[i], parsedArgument.remoteResolver);
-                    }
+                let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+                if(parsedArgument.singleQuery !== undefined) {
+                    fileContent += writeResolverWithArgs(directivesUsed[i], parsedArgument.singleQuery);
+                } 
+                if(parsedArgument.listQuery !== undefined) {
+                    fileContent += writeResolverWithoutArgs(directivesUsed[i], parsedArgument.listQuery);
                 }
             }
         }
@@ -89,8 +88,26 @@ const camelCase = function(input) {
 }
 
 const parseArgument = function(input) {
-    let regex = /[\W\!]/;
-    let splitString = input.split(regex);
+    let regex = /[\W]/;
+    let parsedValues = {};
+    if(input.singleQuery !== undefined){
+        let splitSingle = input.singleQuery.split(regex);
+        console.log(splitSingle);
+        parsedValues.singleQuery = {
+            "resolver": splitSingle[0],
+            "left": splitSingle[1],
+            "right": splitSingle[3]
+        };
+    }
+    if(input.listQuery !== undefined){
+        let splitList = input.listQuery.split(regex);
+        parsedValues.listQuery = {
+            "resolver": splitList[0]
+        };
+    }
+    console.log(parsedValues);
+    return parsedValues;
+    /*let splitSingle = input.split(regex);
     let parsedValues = {
         "remoteResolver": splitString[0]
     }
@@ -101,18 +118,18 @@ const parseArgument = function(input) {
         }
         parsedValues.argument = argument;
     }
-    return parsedValues;
+    return parsedValues;*/
 }
 
-const writeResolverWithArgs = function(directivesUsed, remoteResolver, argument) {
+const writeResolverWithArgs = function(directivesUsed, remoteResolver) {
     let text = `    ${camelCase(directivesUsed.objectTypeName)}: async(_, args, context, info) => {
             const schema = await remoteSchema();
             const data = await delegateToSchema({
                 schema: schema,
                 operation: 'query',
-                fieldName: '${remoteResolver}',
+                fieldName: '${remoteResolver.resolver}',
                 args: {
-                    ${argument.left}: args.${argument.right}
+                    ${remoteResolver.left}: args.${remoteResolver.left}
                 },
                 context, 
                 info
@@ -129,7 +146,7 @@ const writeResolverWithoutArgs = function(directivesUsed, remoteResolver){
             const data = await delegateToSchema({
                 schema: schema,
                 operation: 'query',
-                fieldName: '${remoteResolver}',
+                fieldName: '${remoteResolver.resolver}',
                 context, 
                 info
             })
@@ -139,7 +156,7 @@ const writeResolverWithoutArgs = function(directivesUsed, remoteResolver){
     return text;
 }
 
-const generateWrapperTypedefs = async function(wsDef, fileName) {
+const generateTypeDefinitions = async function(wsDef, fileName) {
     let fileContent = "";
     wsDef.definitions.forEach(ast => {
         visit(ast, {

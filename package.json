@@ -1,8 +1,8 @@
 {
-  "name": "first_test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "graphql-declarative-wrapper",
+  "version": "0.1.0",
+  "description": "Provides a way to declaratively wrap remote schemas using custom directives. The declarative approach enables people with no programming knowledge to wrap remote GraphQL schemas.",
+  "main": "wrap-main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
@@ -10,8 +10,8 @@
     "delegate": "nodemon test-delegate.js",
     "resolvers": "nodemon test-resolvers.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Pontus Jarnemyr & Markus Gustafsson",
+  "license": "MIT",
   "dependencies": {
     "@graphql-codegen/cli": "^2.6.2",
     "@graphql-codegen/schema-ast": "^2.4.1",

@@ -20,25 +20,14 @@ const remoteSchema = async () => {
     return wrapSchema({
     schema,
     executor,
-    /*transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
-    ]*/
+    transforms: [
+        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^id/, "id"))
+    ]
     });
 };
 
 const resolvers = {
     Query: {
-        myTracks: async(_, __, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: 'tracksForHome',
-                context, 
-                info
-            })
-            return data;
-        },
         myTrack: async(_, args, context, info) => {
             const schema = await remoteSchema();
             const data = await delegateToSchema({
@@ -48,6 +37,17 @@ const resolvers = {
                 args: {
                     id: args.id
                 },
+                context, 
+                info
+            })
+            return data;
+        },
+        myTracks: async(_, __, context, info) => {
+            const schema = await remoteSchema();
+            const data = await delegateToSchema({
+                schema: schema,
+                operation: 'query',
+                fieldName: 'tracksForHome',
                 context, 
                 info
             })
