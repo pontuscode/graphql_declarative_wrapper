@@ -20,6 +20,16 @@ const remoteSchema = async () => {
     return wrapSchema({
     schema,
     executor,
+    // transforms: [
+    //     new WrapQuery (
+    //     // path at which to apply wrapping and extracting
+    //     [ path ] ,
+    //     // modify the SelectionSetNode
+    //     ( subtree: SelectionSetNode ) => subtree ,
+    //     // how to process the data result at path
+    //     result => result ,
+    //     ) 
+    // ]
     /*transforms: [
         new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
     ]*/
@@ -35,23 +45,41 @@ const resolvers = {
                 operation: 'query',
                 fieldName: 'tracksForHome',
                 context, 
-                info
+                info,
+
+
             })
             return data;
         },
         myTrack: async(_, args, context, info) => {
             const schema = await remoteSchema();
-            const data = await delegateToSchema({
+            data = await delegateToSchema({
                 schema: schema,
+                
                 operation: 'query',
                 fieldName: 'track',
                 args: {
-                    id: args.id
+                    id: args.id,
+                    thumbnail: args.concatenateTest
                 },
-                context, 
+                context: {
+                    concatenatedTest: args.thumbnail //Det här verkar inte göra nånting :(
+                }, 
                 info
+                // transforms : [
+                //     WrapFields ( " g r a d u a t e s t u d e n t _ b y _ p k " , [ createField ( " nr " ) ,
+                //     ... fields ]) ,
+                // ] ,
+
+                // transforms: [
+                //     transformMyTrack()
+                // ]
             })
+            
+            console.log(context);
+            // data["concatenateTest"] = 
             return data;
+
         },
         myModule: async(_, args, context, info) => {
             const schema = await remoteSchema();

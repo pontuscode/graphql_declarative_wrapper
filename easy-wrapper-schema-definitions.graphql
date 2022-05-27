@@ -7,6 +7,9 @@ type MyTrack @wrap(type: "Track", resolvers: ["tracksForHome", "track(id:id)"]) 
     id: ID! @wrap(field: "id")
     myTitle: String @wrap(field: "title")
     author: MyAuthor @wrap(field: "author")
+    thumbnail: String @wrap(field: "thumbnail")
+    description: String @wrap(field: "description")
+    concatenateTest: String @concatenate(values: ["description", " ", "thumbnail"])
 }
 
 type MyAuthor @wrap(type: "Author") {
@@ -17,7 +20,7 @@ type MyAuthor @wrap(type: "Author") {
 type MyModule @wrap(type: "Module", resolvers: ["module(id:id)"]) {
     id: ID! @wrap(field: "id")
     content: String @wrap(field: "content")
-    concatenateTest: String @concatenate(values: ["content", " ", "videoUrl"])
+ 
 }
 
 type Query {
