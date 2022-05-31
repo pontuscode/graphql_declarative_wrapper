@@ -1,7 +1,9 @@
-const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
+const { wrapSchema, introspectSchema, RenameTypes, MapFields, MapLeafValues, RenameObjectFields, TransformObjectFields, WrapQuery, WrapFields, TransformQuery } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
+const { SingleFieldSubscriptionsRule, SelectionSetNode } = require('graphql');
+const { visit, Kind, visitWithTypeInfo, TypeInfo } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -14,6 +16,23 @@ const executor = async ({ document, variables }) => {
     });
     return fetchResult.json();
 };
+
+
+
+// const WrapFields = (path, fields) => {
+//     return new WrapQuery([path], (subtree) => {
+//         console.log("tja");
+//         if(!subtree)
+//             return {
+//                 kind:"SelectionSet",
+//                 selections: [...fields],
+//             };
+//         subtree.selections = [...subtree.selections, ...fields];
+//         return subtree;
+//     },
+//     (result) => {return result;}
+//     );
+// }
 
 const remoteSchema = async () => {
     const schema = await introspectSchema(executor);
@@ -30,9 +49,81 @@ const remoteSchema = async () => {
     //     result => result ,
     //     ) 
     // ]
-    /*transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
-    ]*/
+    transforms: [
+        new WrapQuery(
+            [ 'myTrack' ],
+            (subtree) => {
+              return {
+        
+                selectionSet: {
+                    thing: Kind.SELECTION_SET,
+                    selections: [
+                    {
+                        kind: Kind.FIELD,
+                        name: {
+                            kind: Kind.NAME,
+                            value: "thumbnail"
+                        },
+                        value: {
+                            kind: Kind.VARIABLE,
+                            name: {
+                            kind: Kind.NAME,
+                            value: "thumbnail"
+                            }
+                        }
+                        },
+                        {
+                        kind: Kind.FIELD,
+                        name: {
+                            kind: Kind.NAME,
+                            value: "description"
+                        },
+                        value: {
+                            kind: Kind.VARIABLE,
+                            name: {
+                            kind: Kind.NAME,
+                            value: "description"
+                            }
+                        }
+                        }
+                    ],
+                    selectionSet: subtree
+                }
+
+                
+              }
+            }
+          , 
+          result => result && result.myTrack)
+        ]
+
+
+        // new TransformObjectFields((typeName, fieldName, fieldConfig) => { 
+        //     let curr;
+        //     console.log(fieldConfig);
+        //     console.log("typeName: " + typeName + "-- fieldName: " +fieldName);
+        //     if(typeName === "Track")
+        //         console.log("yep");
+        //     // if(fieldName === "concatenateTest") console.log("hello"); 
+        //     return [`${fieldName}`, fieldConfig]}),
+        // new WrapFields = (path, fields) => {
+        //     new WrapQuery([path], (subtree) => {
+        //         console.log(subtree);
+        //         if(!subtree)
+        //             return {
+        //                 kind:"SelectionSet",
+        //                 selections: [...fields],
+        //             };
+        //         subtree.selections = [...subtree.selections, ...fields];
+        //         return subtree;
+        //     },
+        //     (result) => {return result;}
+        //     );
+        // }
+
+
+        // new WrapFields("MyTrack")
+    
     });
 };
 
@@ -53,7 +144,7 @@ const resolvers = {
         },
         myTrack: async(_, args, context, info) => {
             const schema = await remoteSchema();
-            data = await delegateToSchema({
+            const data = await delegateToSchema({
                 schema: schema,
                 
                 operation: 'query',
@@ -65,7 +156,56 @@ const resolvers = {
                 context: {
                     concatenatedTest: args.thumbnail //Det här verkar inte göra nånting :(
                 }, 
-                info
+                info,
+                transforms: [
+                    WrapQuery
+                ]
+                    
+                // transforms: [
+                //     // Wrap document takes a subtree as an AST node
+                //     new TransformQuery({
+                //       // path at which to apply wrapping and extracting
+                //       path: ['MyTrack'],
+                //       queryTransformer: (subtree) => ({
+                //         kind: Kind.SELECTION_SET,
+                //         selections: [
+                //           {
+                //             // we create a wrapping AST Field
+                //             kind: Kind.FIELD,
+                //             name: {
+                //               kind: Kind.NAME,
+                //               // that field is `address`
+                //               value: 'thumbnail',
+                //             },
+                //             // Inside the field selection
+                //             selectionSet: subtree,
+                //           },
+                //           {
+                //             // we create a wrapping AST Field
+                //             kind: Kind.FIELD,
+                //             name: {
+                //               kind: Kind.NAME,
+                //               // that field is `address`
+                //               value: 'description',
+                //             },
+                //             // Inside the field selection
+                //             selectionSet: subtree,
+                //           },
+                //         ],
+                //       }),
+                //       // how to process the data result at path
+                //       resultTransformer: (result) => {
+                //           console.log("yep " + result?.description);
+                //           return (result?.description)
+                //       },
+                //       errorPathTransformer: (path) => path.slice(1),
+                //     }),
+                //   ],
+//                 transforms: [
+// // https://github.com/ardatan/graphql-tools/blob/27d1b77b790e81225d8b767f2fa2fe259e8cb37d/src/test/transforms.test.ts#L1180
+// //  Check the above for examples of how to use transforms.
+//                     // WrapQuery
+//                 ]
                 // transforms : [
                 //     WrapFields ( " g r a d u a t e s t u d e n t _ b y _ p k " , [ createField ( " nr " ) ,
                 //     ... fields ]) ,
@@ -75,9 +215,9 @@ const resolvers = {
                 //     transformMyTrack()
                 // ]
             })
-            
-            console.log(context);
+            console.log(data);
             // data["concatenateTest"] = 
+
             return data;
 
         },
