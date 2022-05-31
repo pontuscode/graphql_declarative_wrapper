@@ -2,7 +2,7 @@ type MyTrack {
 	id: ID
 	myTitle: String
 	author: MyAuthor
-	authorPhoto: String
+	authorName: String
 }
 
  type MyAuthor {
@@ -14,7 +14,6 @@ type MyTrack {
 	id: ID
 	content: String
 	concatenateTest: String
-	myTitleHaha: String
 }
 
  type Query {

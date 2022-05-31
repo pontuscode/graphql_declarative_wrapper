@@ -38,11 +38,11 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
 const executor = async ({ document, variables }) => {
     const query = print(document);
     const fetchResult = await fetch("${remoteServerUrl}", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, variables }),
     });
     return fetchResult.json();
 };
@@ -50,26 +50,25 @@ const executor = async ({ document, variables }) => {
 const remoteSchema = async () => {
     const schema = await introspectSchema(executor);
     return wrapSchema({
-    schema,
-    executor,
-    /*transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
-    ]*/
+        schema,
+        executor
     });
 };
 
 const resolvers = {
     Query: {
     `;
+    console.log(directivesUsed);
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].argumentName === "type") {
             if(directivesUsed[i].resolvers !== undefined){
                 let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+                let objectTypeName = directivesUsed[i].objectTypeName;
                 if(parsedArgument.singleQuery !== undefined) {
-                    fileContent += writeResolverWithArgs(directivesUsed[i], parsedArgument.singleQuery);
+                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
-                    fileContent += writeResolverWithoutArgs(directivesUsed[i], parsedArgument.listQuery);
+                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
                 }
             }
         }
@@ -83,6 +82,7 @@ module.exports = resolvers;
 }
 
 const camelCase = function(input) {
+    console.log(input);
     let temp = input;
     let camelCased = temp[0].toLowerCase() + temp.slice(1);
     return camelCased;
@@ -93,7 +93,7 @@ const parseArgument = function(input) {
     let parsedValues = {};
     if(input.singleQuery !== undefined){
         let splitSingle = input.singleQuery.split(regex);
-        console.log(splitSingle);
+        //console.log(splitSingle);
         parsedValues.singleQuery = {
             "resolver": splitSingle[0],
             "left": splitSingle[1],
@@ -106,7 +106,7 @@ const parseArgument = function(input) {
             "resolver": splitList[0]
         };
     }
-    console.log(parsedValues);
+    //console.log(parsedValues);
     return parsedValues;
     /*let splitSingle = input.split(regex);
     let parsedValues = {
@@ -122,27 +122,121 @@ const parseArgument = function(input) {
     return parsedValues;*/
 }
 
-const writeResolverWithArgs = function(directivesUsed, remoteResolver) {
-    let text = `    ${camelCase(directivesUsed.objectTypeName)}: async(_, args, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: '${remoteResolver.resolver}',
-                args: {
-                    ${remoteResolver.left}: args.${remoteResolver.left}
-                },
-                context, 
-                info
-            })
-            return data;
-        },
+const generateIndentation = function(factor) {
+    let text = "";
+    for(let i = 0; i < factor; i++){
+        text += "\t";
+    }
+    return text;
+}
+
+const generateWrapQueryField = function(directivesUsed) {
+    let text = `
+        ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
+        ${generateIndentation(8)}return {
+        ${generateIndentation(9)}kind: Kind.FIELD,
+        ${generateIndentation(9)}name: {
+        ${generateIndentation(10)}kind: Kind.NAME,
+        ${generateIndentation(10)}value: "${directivesUsed.argumentValues}"
+        ${generateIndentation(9)}}
+        ${generateIndentation(8)}}
+        ${generateIndentation(7)}}
     `;
     return text;
 }
 
-const writeResolverWithoutArgs = function(directivesUsed, remoteResolver){
-    let text = `    ${camelCase(directivesUsed.objectTypeName)}s: async(_, __, context, info) => {
+const generateWrapQueryPath = function(directivesUsed) {
+    let text =`
+        ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
+        ${generateIndentation(8)}return {
+    `;
+    for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+        if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
+            text += `
+                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + 7)}name: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + 7)}}
+            `;
+            /* Loop to close out all brackets are square parenthesis */
+            for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
+                // Close selections object }, selections list ], selection set } 
+                text += `
+                    ${generateIndentation(i - (j*2) + 7)}}]
+                    ${generateIndentation(i - (j*2) + 6)}}
+                `;
+            }
+        } else {
+            text += `
+                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + 7)}name: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + 7)}}, 
+                ${generateIndentation((i*2) + 7)}selectionSet: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.SELECTION_SET,
+                ${generateIndentation((i*2) + 8)}selections: [{
+            `;
+        }
+    }
+    text += `
+        ${generateIndentation(8)}}
+        ${generateIndentation(7)}}
+    `;
+    return text;
+}
+
+const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver) {
+    console.log(objectTypeName);
+    let text = `    
+        ${camelCase(objectTypeName)}: async(_, args, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}args: {
+        ${generateIndentation(3)}${remoteResolver.left}: args.${remoteResolver.left}
+        ${generateIndentation(2)}},
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName){
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field")) {
+                    text += generateWrapQueryField(directivesUsed[i]);
+                } 
+                if(directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapQueryPath(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+    ${generateIndentation(6)}})
+    ${generateIndentation(5)}};
+    ${generateIndentation(4)}return newSelectionSet;
+    ${generateIndentation(3)}},
+    ${generateIndentation(3)}(result) => {
+    ${generateIndentation(4)}return result;  
+    ${generateIndentation(3)}}
+    ${generateIndentation(2)}),
+    ${generateIndentation(1)}]
+`;
+    return text;
+}
+
+const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver){
+    let text = `    ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
             const schema = await remoteSchema();
             const data = await delegateToSchema({
                 schema: schema,
