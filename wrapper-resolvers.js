@@ -49,53 +49,53 @@ const remoteSchema = async () => {
     //     result => result ,
     //     ) 
     // ]
-    transforms: [
-        new WrapQuery(
-            [ 'myTrack' ],
-            (subtree) => {
-              return {
+    // transforms: [
+    //     new WrapQuery(
+    //         [ 'track' ],
+    //         (subtree) => {
+    //           return {
         
-                selectionSet: {
-                    thing: Kind.SELECTION_SET,
-                    selections: [
-                    {
-                        kind: Kind.FIELD,
-                        name: {
-                            kind: Kind.NAME,
-                            value: "thumbnail"
-                        },
-                        value: {
-                            kind: Kind.VARIABLE,
-                            name: {
-                            kind: Kind.NAME,
-                            value: "thumbnail"
-                            }
-                        }
-                        },
-                        {
-                        kind: Kind.FIELD,
-                        name: {
-                            kind: Kind.NAME,
-                            value: "description"
-                        },
-                        value: {
-                            kind: Kind.VARIABLE,
-                            name: {
-                            kind: Kind.NAME,
-                            value: "description"
-                            }
-                        }
-                        }
-                    ],
-                    selectionSet: subtree
-                }
+    //             selectionSet: {
+    //                 thing: Kind.SELECTION_SET,
+    //                 selections: [
+    //                 {
+    //                     kind: Kind.FIELD,
+    //                     name: {
+    //                         kind: Kind.NAME,
+    //                         value: "thumbnail"
+    //                     },
+    //                     value: {
+    //                         kind: Kind.VARIABLE,
+    //                         name: {
+    //                         kind: Kind.NAME,
+    //                         value: "thumbnail"
+    //                         }
+    //                     }
+    //                     },
+    //                     {
+    //                     kind: Kind.FIELD,
+    //                     name: {
+    //                         kind: Kind.NAME,
+    //                         value: "description"
+    //                     },
+    //                     value: {
+    //                         kind: Kind.VARIABLE,
+    //                         name: {
+    //                         kind: Kind.NAME,
+    //                         value: "description"
+    //                         }
+    //                     }
+    //                     }
+    //                 ],
+    //                 selectionSet: subtree
+    //             }
 
                 
-              }
-            }
-          , 
-          result => result && result.myTrack)
-        ]
+    //           }
+    //         }
+    //       , 
+    //       result => result && result.myTrack)
+    //     ]
 
 
         // new TransformObjectFields((typeName, fieldName, fieldConfig) => { 
@@ -157,15 +157,105 @@ const resolvers = {
                     concatenatedTest: args.thumbnail //Det här verkar inte göra nånting :(
                 }, 
                 info,
-                transforms: [
-                    WrapQuery
-                ]
-                    
                 // transforms: [
-                //     // Wrap document takes a subtree as an AST node
+                //     WrapQuery
+                // ]
+                    
+                transforms: [
+                    new WrapQuery(
+                        ["track"],
+                        (subtree) => {
+                            // console.log(subtree.selections[0]);
+                            const newSelectionSet = {
+                                kind: Kind.SELECTION_SET,
+                                selections: []
+                            };
+
+                            subtree.selections.forEach(selection => {
+                                if(selection.name.value === "concatenateTest"){
+                                    ["thumbnail", "description"].forEach(function(currName) { //This should not be hardcoded!
+                                        console.log(currName);
+                                        temp = {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: currName
+                                            }
+                                            // value: {
+                                            //     kind: Kind.VARIABLE,
+                                            //     name: {
+                                            //         kind: Kind.NAME,
+                                            //         value: currName
+                                            //     }
+                                            // }
+                                        }
+                                        newSelectionSet.selections.push(temp);
+                                    })
+                                }
+                                else{
+                                    newSelectionSet.selections.push(selection);
+                                }
+                                // newSelectionSet.selections.push(selection);
+                                // console.log(selection);
+                            })
+                                // selections: subtree.selections.map(selection => {
+                                //     if(selection.name.value === "concatenateTest") {
+                                //         // console.log(selection.name.value);
+                                //         return {
+                                //             // kind: Kind.SELECTION_SET,
+                                            
+                                //             kind: Kind.FIELD,
+                                //             name: {
+                                //                 kind: Kind.NAME,
+                                //                 value: "thumbnail"
+                                //             },
+                                //             value: {
+                                //                 kind: Kind.VARIABLE,
+                                //                 name: {
+                                //                     kind: Kind.NAME,
+                                //                     value: "thumbnail"
+                                //                 }
+                                //             }
+                                //              &&
+                                //             {   
+                                //                 kind: Kind.FIELD,
+                                //                 name: {
+                                //                     kind: Kind.NAME,
+                                //                     value: "description"
+                                //                 },
+                                //                 value: {
+                                //                     kind: Kind.VARIABLE,
+                                //                     name: {
+                                //                         kind: Kind.NAME,
+                                //                         value: "description"
+                                //                     }
+                                //                 }
+                                //             }
+                                //         }   
+                                //     } else {
+                                //         return selection;
+                                //     }
+                                // }),
+                            //   };
+                              //console.log(newSelectionSet.selections[2]);
+                            console.log(newSelectionSet);
+                            console.log("return works");
+                            
+                            console.log(subtree);
+                            return newSelectionSet;
+                        },
+                        (result) => {
+                            console.log("in result: " + result);
+                            console.log(result[0].name);
+                            return result;
+                        }
+                    ),
+
+
+                    // Wrap document takes a subtree as an AST node
                 //     new TransformQuery({
                 //       // path at which to apply wrapping and extracting
-                //       path: ['MyTrack'],
+                //       path: ['track'],
                 //       queryTransformer: (subtree) => ({
                 //         kind: Kind.SELECTION_SET,
                 //         selections: [
@@ -200,7 +290,7 @@ const resolvers = {
                 //       },
                 //       errorPathTransformer: (path) => path.slice(1),
                 //     }),
-                //   ],
+                  ],
 //                 transforms: [
 // // https://github.com/ardatan/graphql-tools/blob/27d1b77b790e81225d8b767f2fa2fe259e8cb37d/src/test/transforms.test.ts#L1180
 // //  Check the above for examples of how to use transforms.
