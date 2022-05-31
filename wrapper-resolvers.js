@@ -1,4 +1,4 @@
-const { wrapSchema, introspectSchema, RenameTypes, MapFields, MapLeafValues, RenameObjectFields, TransformObjectFields, WrapQuery, WrapFields, TransformQuery } = require('@graphql-tools/wrap');
+const { wrapSchema, introspectSchema, RenameTypes, MapFields, MapLeafValues, RenameObjectFields, TransformObjectFields, WrapQuery, WrapFields, TransformQuery, defaultCreateProxyingResolver } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
@@ -173,7 +173,7 @@ const resolvers = {
 
                             subtree.selections.forEach(selection => {
                                 if(selection.name.value === "concatenateTest"){
-                                    ["thumbnail", "description"].forEach(function(currName) { //This should not be hardcoded!
+                                    ["thumbnail"].forEach(function(currName) { //This should not be hardcoded!
                                         console.log(currName);
                                         temp = {
                                             kind: Kind.FIELD,
@@ -238,15 +238,18 @@ const resolvers = {
                                 // }),
                             //   };
                               //console.log(newSelectionSet.selections[2]);
-                            console.log(newSelectionSet);
+                            // console.log(newSelectionSet);
                             console.log("return works");
-                            
-                            console.log(subtree);
+                            newSelectionSet.selections.forEach(function(element){
+                                console.log(element);
+                            })
+                            // console.log(subtree);
                             return newSelectionSet;
                         },
                         (result) => {
-                            console.log("in result: " + result);
-                            console.log(result[0].name);
+                            console.log("HEY");
+                            console.log(result);
+                            result.concatenateTest = result.thumbnail + " " + result.description;
                             return result;
                         }
                     ),
