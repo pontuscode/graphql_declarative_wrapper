@@ -29,10 +29,11 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
 }
 
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl) {
-    let fileContent = `const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
-const { fetch } = require("cross-fetch");
-const { delegateToSchema } = require("@graphql-tools/delegate");
-const { print } = require("graphql/language");
+    let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
+    const { fetch } = require("cross-fetch");
+    const { delegateToSchema } = require("@graphql-tools/delegate");
+    const { print } = require("graphql/language");
+    const { Kind } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);

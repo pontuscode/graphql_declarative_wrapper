@@ -1,8 +1,8 @@
-const { wrapSchema, WrapQuery, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
+const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
-const { execute, GraphQLSchema, Kind, OperationTypeNode, parse, SelectionSetNode } = require('graphql');
+const { Kind } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -20,32 +20,28 @@ const remoteSchema = async () => {
     const schema = await introspectSchema(executor);
     return wrapSchema({
     schema,
-    executor,
-    transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "myTitle"))
-    ]
+    executor
     });
 };
 
-const createField = (name) => {
+const createSelectionSet = function(name) {
     return {
         kind: Kind.FIELD,
         name: {
             kind: Kind.NAME,
-            value: name,
-        },
-        arguments: [],
-        directives: [],
+            value: name
+        }
     }
-};
+}
 
-const createTwoLayeredField = (name, fields) => {
-    const field = createField(name);
-    field.selectionSet = {
-        kind: Kind.SELECTION_SET,
-        selections: fields
-    }
-    return field;
+const addFieldToSelectionSet = function(field, selectionSet) {
+    selectionSet.selections.push({
+        kind: Kind.FIELD,
+        name: {
+            kind: Kind.FIELD,
+            value: field
+        }
+    })
 }
 
 const resolvers = {
@@ -76,7 +72,6 @@ const resolvers = {
                     new WrapQuery(
                         ["tracksForHome"],
                         (subtree) => {
-                            //console.log(subtree);
                             const newSelectionSet = {
                                 kind: Kind.SELECTION_SET,
                                 selections: subtree.selections.map(selection => {
@@ -98,20 +93,39 @@ const resolvers = {
                                                 }]
                                             }
                                         }
-                                    } else {
-                                        return selection;
+                                    }
+                                    if(selection.name.value === "id") {
+                                        return {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: "id"
+                                            }
+                                        }
+                                    }
+                                    if(selection.name.value === "myTitle") {
+                                        return {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: "title"
+                                            }
+                                        }
                                     }
                                 }),
                               };
-                              //console.log(newSelectionSet.selections[2]);
                               return newSelectionSet;
                         },
                         (result) => {
-                            //authorPhoto: result.author.photo
                             result.forEach(function(element) {
-                                element.authorPhoto = element.author.photo;
+                                if(element.author !== undefined)
+                                    if(element.author.photo !== undefined)
+                                        element.authorPhoto = element.author.photo;
+                                if(element.id !== undefined)
+                                    element.id = element.id
+                                if(element.title !== undefined)
+                                    element.myTitle = element.title
                             })
-                            console.log(result);
                             return result;
                         }
                     ),
@@ -135,32 +149,70 @@ const resolvers = {
                     id: args.id
                 },
                 context, 
-                info
+                info,
+                transforms: [
+                    new WrapQuery(
+                        ["module"],
+                        (subtree) => {
+                            const newSelectionSet = {
+                                kind: Kind.SELECTION_SET,
+                                selections: subtree.selections.map(selection => {
+                                    if(selection.name.value === "myTitleHaha") {
+                                        return {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: "title"
+                                            }
+                                        }
+                                    } 
+                                    if(selection.name.value === "id") {
+                                        return {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: "id"
+                                            }
+                                        }
+                                    }
+                                    if(selection.name.value === "content") {
+                                        return {
+                                            kind: Kind.FIELD,
+                                            name: {
+                                                kind: Kind.NAME,
+                                                value: "content"
+                                            }
+                                        }
+                                    }
+                                })
+                            }
+                            return newSelectionSet;
+                        },
+                        (result) => {
+                            result.id = result.id;
+                            result.myTitleHaha = result.title;
+                            result.content = result.content;
+                            return result;
+                        }
+                    )
+                ]
             })
             return data;
         },
-        /*myAuthor: async(_, args, context, info) => {
-            const schema = await remoteSchema();
-            const result = await execute({
-                schema,
-                document: parse(`
-                  query {
-                    Author(id: "cat-1") {
-                        id
-                        name
-                    }
-                  }
-                `),
-              });
-            
-            return result.data.tracksForHome.forEach(function(result) {
-                if(result.author.id === args.id){
-                    console.log(result.author);
-                    return result.author;
-                }
-            });
-        }*/
     }
 }
 module.exports = resolvers;    
-    
+
+/*
+(result) => {
+    result.forEach(function(element) {
+        if(element.author !== undefined)
+            if(element.author.photo !== undefined)
+                element.authorPhoto = element.author.photo;
+        if(element.id !== undefined)
+            element.id = element.id
+        if(element.title !== undefined)
+            element.myTitle = element.title
+    })
+    return result;
+*/
