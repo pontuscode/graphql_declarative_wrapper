@@ -2,6 +2,7 @@ type MyTrack {
 	id: ID
 	myTitle: String
 	author: MyAuthor
+	authorPhoto: String
 }
 
  type MyAuthor {

@@ -7,6 +7,7 @@ type MyTrack @wrap(type: "Track", listQuery: "tracksForHome", singleQuery: "trac
     id: ID! @wrap(field: "id")
     myTitle: String @wrap(field: "title")
     author: MyAuthor @wrap(field: "author")
+    authorName: String @wrap(path: ["author", "photo"])
 }
 
 type MyAuthor @wrap(type: "Author") {
