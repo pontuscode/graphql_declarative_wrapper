@@ -187,6 +187,40 @@ const generateWrapQueryPath = function(directivesUsed) {
     return text;
 }
 
+const generateWrapResult = function(directivesUsed) {
+    let text = "";
+    //console.log(directivesUsed);
+    if(directivesUsed.argumentName.includes("field")) {
+
+        text += `
+            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues} !== undefined) {
+            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
+            ${generateIndentation(3)}}
+        `;
+    } 
+    if(directivesUsed.argumentName.includes("path")) {
+        let tempText = "result";
+        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+            tempText += "." + directivesUsed.argumentValues[i].value;
+            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
+                text += `
+                    ${generateIndentation(i + 1)}result.${directivesUsed.fieldName} = ${tempText};
+                `;
+                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
+                    text += `
+                        ${generateIndentation(i + 1 - j)}}
+                    `;
+                }
+            } else { // Else, just keep building the if statement
+                text += `
+                    ${generateIndentation(i + 1)}if(${tempText} !== undefined) {
+                `;
+            }
+        }
+    }
+    return text;
+}
+
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver) {
     console.log(objectTypeName);
     let text = `    
@@ -209,29 +243,47 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
         ${generateIndentation(6)}selections: subtree.selections.map(selection => {
     `;
+    //let resultMap = new Map();
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
                 if(directivesUsed[i].argumentName.includes("field")) {
                     text += generateWrapQueryField(directivesUsed[i]);
+                    //console.log(directivesUsed[i].fieldName, " ", directivesUsed[i].argumentValues);
+                    //resultMap.set(directivesUsed[i].argumentValues, directivesUsed[i].fieldName);
                 } 
                 if(directivesUsed[i].argumentName.includes("path")) {
                     text += generateWrapQueryPath(directivesUsed[i]);
+                    //resultMap.set(directivesUsed[i].argumentValues[directivesUsed[i].argumentValues.length - 1].value, directivesUsed[i].fieldName);
                 }
             }
         }
     }
     text += `
-    ${generateIndentation(6)}})
-    ${generateIndentation(5)}};
-    ${generateIndentation(4)}return newSelectionSet;
-    ${generateIndentation(3)}},
-    ${generateIndentation(3)}(result) => {
-    ${generateIndentation(4)}return result;  
-    ${generateIndentation(3)}}
-    ${generateIndentation(2)}),
-    ${generateIndentation(1)}]
-`;
+        ${generateIndentation(6)}})
+        ${generateIndentation(5)}};
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName) {
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapResult(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
+        },
+    `;
     return text;
 }
 

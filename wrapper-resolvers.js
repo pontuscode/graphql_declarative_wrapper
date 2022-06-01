@@ -91,39 +91,119 @@ const resolvers = {
                 									kind: Kind.FIELD,
                 									name: {
                 										kind: Kind.NAME,
-                										value: "module"
-                									}, 
-                									selectionSet: {
-                										kind: Kind.SELECTION_SET,
-                										selections: [{
+                										value: "name"
+                									}
             
-                											kind: Kind.FIELD,
-                											name: {
-                												kind: Kind.NAME,
-                												value: "title"
-                											}
-            
-                    									}]
-                    								}
-                
-                    							}]
-                    						}
+                    								}]
+                    							}
                 
         								}
         							}
     
-    						})
-    					};
-    				return newSelectionSet;
-    			},
-    			(result) => {
-					result.myTitle = result.title;
-    				return result;  
-    			}
-    		),
-    	]})
-	return data;
-	}}
+        						})
+        					};
+        				return newSelectionSet;
+        			},
+        			(result) => {
+    
+            			if(result.id !== undefined) {
+            				result.id = result.id;
+            			}
+        
+            			if(result.title !== undefined) {
+            				result.myTitle = result.title;
+            			}
+        
+            			if(result.author !== undefined) {
+            				result.author = result.author;
+            			}
+        
+                    	if(result.author !== undefined) {
+                
+                    		result.authorName = result.author.name;
+                
+                        	}
+                    
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
+        myTracks: async(_, __, context, info) => {
+            const schema = await remoteSchema();
+            const data = await delegateToSchema({
+                schema: schema,
+                operation: 'query',
+                fieldName: 'tracksForHome',
+                context, 
+                info
+            })
+            return data;
+        },
+        
+        myModule: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'module',
+        		args: {
+        			id: args.id
+        		},
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["module"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: subtree.selections.map(selection => {
+    
+        							if(selection.name.value === "id") {
+        								return {
+        									kind: Kind.FIELD,
+        									name: {
+        										kind: Kind.NAME,
+        										value: "id"
+        									}
+        								}
+        							}
+    
+        							if(selection.name.value === "content") {
+        								return {
+        									kind: Kind.FIELD,
+        									name: {
+        										kind: Kind.NAME,
+        										value: "content"
+        									}
+        								}
+        							}
+    
+        						})
+        					};
+        				return newSelectionSet;
+        			},
+        			(result) => {
+    
+            			if(result.id !== undefined) {
+            				result.id = result.id;
+            			}
+        
+            			if(result.content !== undefined) {
+            				result.content = result.content;
+            			}
+        
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
+    }
 }
 module.exports = resolvers;    
     
