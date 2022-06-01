@@ -1,8 +1,8 @@
 const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
-    const { fetch } = require("cross-fetch");
-    const { delegateToSchema } = require("@graphql-tools/delegate");
-    const { print } = require("graphql/language");
-    const { Kind } = require('graphql');
+const { fetch } = require("cross-fetch");
+const { delegateToSchema } = require("@graphql-tools/delegate");
+const { print } = require("graphql/language");
+const { Kind } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -46,36 +46,70 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: subtree.selections.map(selection => {
     
-        							if(selection.name.value === "id") {
-        								return {
-        									kind: Kind.FIELD,
-        									name: {
-        										kind: Kind.NAME,
-        										value: "id"
-        									}
-        								}
-        							}
-    
-        							if(selection.name.value === "myTitle") {
-        								return {
-        									kind: Kind.FIELD,
-        									name: {
-        										kind: Kind.NAME,
-        										value: "title"
-        									}
-        								}
-        							}
-    
-        							if(selection.name.value === "author") {
-        								return {
-        									kind: Kind.FIELD,
-        									name: {
-        										kind: Kind.NAME,
-        										value: "author"
-        									}
-        								}
-        							}
-    
+            						if(selection.name.value === "id") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+            									]
+            								}
+            							}
+            						}
+        
+            						if(selection.name.value === "myTitle") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "title"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+            									]
+            								}
+            							}
+            						}
+        
+            						if(selection.name.value === "author") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "author"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "name"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							}
+            						}
+        
         							if(selection.name.value === "authorName") {
         								return {
     
@@ -162,26 +196,38 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: subtree.selections.map(selection => {
     
-        							if(selection.name.value === "id") {
-        								return {
-        									kind: Kind.FIELD,
-        									name: {
-        										kind: Kind.NAME,
-        										value: "id"
-        									}
-        								}
-        							}
-    
-        							if(selection.name.value === "content") {
-        								return {
-        									kind: Kind.FIELD,
-        									name: {
-        										kind: Kind.NAME,
-        										value: "content"
-        									}
-        								}
-        							}
-    
+            						if(selection.name.value === "id") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+            									]
+            								}
+            							}
+            						}
+        
+            						if(selection.name.value === "content") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "content"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+            									]
+            								}
+            							}
+            						}
+        
         						})
         					};
         				return newSelectionSet;

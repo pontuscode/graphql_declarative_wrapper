@@ -9,6 +9,7 @@ const { wrapSchema, introspectSchema } = require('@graphql-tools/wrap');
 const { split } = require("lodash");
 const prompt = require('prompt-sync')({sigint: true});
 
+const builtInScalars = ["Int", "Float", "String", "Boolean", "ID"]
 /**
  * @param {*} wsDef is the typedefs of the wrapper schema definitions
  * @param {*} directivesUsed is a list of directives parsed from the wrapper schema definitions
@@ -30,10 +31,10 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
 
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl) {
     let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
-    const { fetch } = require("cross-fetch");
-    const { delegateToSchema } = require("@graphql-tools/delegate");
-    const { print } = require("graphql/language");
-    const { Kind } = require('graphql');
+const { fetch } = require("cross-fetch");
+const { delegateToSchema } = require("@graphql-tools/delegate");
+const { print } = require("graphql/language");
+const { Kind } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -65,7 +66,7 @@ const resolvers = {
                 let parsedArgument = parseArgument(directivesUsed[i].resolvers);
                 let objectTypeName = directivesUsed[i].objectTypeName;
                 if(parsedArgument.singleQuery !== undefined) {
-                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery);
+                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
                     fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
@@ -82,7 +83,6 @@ module.exports = resolvers;
 }
 
 const camelCase = function(input) {
-    console.log(input);
     let temp = input;
     let camelCased = temp[0].toLowerCase() + temp.slice(1);
     return camelCased;
@@ -130,18 +130,55 @@ const generateIndentation = function(factor) {
     return text;
 }
 
-const generateWrapQueryField = function(directivesUsed) {
-    let text = `
-        ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
-        ${generateIndentation(8)}return {
-        ${generateIndentation(9)}kind: Kind.FIELD,
-        ${generateIndentation(9)}name: {
-        ${generateIndentation(10)}kind: Kind.NAME,
-        ${generateIndentation(10)}value: "${directivesUsed.argumentValues}"
-        ${generateIndentation(9)}}
-        ${generateIndentation(8)}}
-        ${generateIndentation(7)}}
-    `;
+const generateWrapQueryField = function(directivesUsed, wsDef) {
+    let text = "";
+    if(builtInScalars.includes(directivesUsed.argumentValues)) {
+        text += `
+            ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
+            ${generateIndentation(7)}return {
+            ${generateIndentation(8)}kind: Kind.FIELD,
+            ${generateIndentation(8)}name: {
+            ${generateIndentation(9)}kind: Kind.NAME,
+            ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
+            ${generateIndentation(8)}}
+            ${generateIndentation(7)}}
+            ${generateIndentation(6)}}
+        `;
+    } else {
+        text += `
+            ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
+            ${generateIndentation(7)}return {
+            ${generateIndentation(8)}kind: Kind.FIELD,
+            ${generateIndentation(8)}name: {
+            ${generateIndentation(9)}kind: Kind.NAME,
+            ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
+            ${generateIndentation(8)}},
+            ${generateIndentation(8)}selectionSet: {
+            ${generateIndentation(9)}kind: Kind.SELECTION_SET,
+            ${generateIndentation(9)}selections: [
+        `;
+        //console.log(wsDef);
+        for(let i = 0; i < wsDef.length; i++) {
+            if(wsDef[i].objectTypeName === directivesUsed.fieldValue && wsDef[i].argumentName !== "type") {
+                //console.log(wsDef[i]);
+                text += `
+                    ${generateIndentation(8)}{
+                    ${generateIndentation(9)}kind: Kind.FIELD,
+                    ${generateIndentation(9)}name: {
+                    ${generateIndentation(10)}kind: Kind.NAME,
+                    ${generateIndentation(10)}value: "${wsDef[i].fieldName}"
+                    ${generateIndentation(9)}}
+                    ${generateIndentation(8)}},
+                `;
+            }
+        }
+        text += `
+            ${generateIndentation(9)}]
+            ${generateIndentation(8)}}
+            ${generateIndentation(7)}}
+            ${generateIndentation(6)}}
+        `;
+    }
     return text;
 }
 
@@ -191,7 +228,6 @@ const generateWrapResult = function(directivesUsed) {
     let text = "";
     //console.log(directivesUsed);
     if(directivesUsed.argumentName.includes("field")) {
-
         text += `
             ${generateIndentation(3)}if(result.${directivesUsed.argumentValues} !== undefined) {
             ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
@@ -221,8 +257,7 @@ const generateWrapResult = function(directivesUsed) {
     return text;
 }
 
-const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver) {
-    console.log(objectTypeName);
+const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef) {
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -248,13 +283,10 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         if(directivesUsed[i].objectTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
                 if(directivesUsed[i].argumentName.includes("field")) {
-                    text += generateWrapQueryField(directivesUsed[i]);
-                    //console.log(directivesUsed[i].fieldName, " ", directivesUsed[i].argumentValues);
-                    //resultMap.set(directivesUsed[i].argumentValues, directivesUsed[i].fieldName);
+                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
                 } 
                 if(directivesUsed[i].argumentName.includes("path")) {
                     text += generateWrapQueryPath(directivesUsed[i]);
-                    //resultMap.set(directivesUsed[i].argumentValues[directivesUsed[i].argumentValues.length - 1].value, directivesUsed[i].fieldName);
                 }
             }
         }
