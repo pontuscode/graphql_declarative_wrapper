@@ -9,7 +9,13 @@ const { wrapSchema, introspectSchema } = require('@graphql-tools/wrap');
 const { split } = require("lodash");
 const prompt = require('prompt-sync')({sigint: true});
 
-const builtInScalars = ["Int", "Float", "String", "Boolean", "ID"]
+const builtInScalars = [
+    "Int", "Float", "String", "Boolean", "ID", 
+    "Int!", "Float!", "String!", "Boolean!", "ID!", 
+    "['Int']", "['Float']", "['String']", "['Boolean']", "['ID']",
+    "['Int!']", "['Float!']", "['String!']", "['Boolean!']", "['ID!']",
+    "['Int!']!", "['Float!']!", "['String!']!", "['Boolean!']!", "['ID!']!"
+]
 /**
  * @param {*} wsDef is the typedefs of the wrapper schema definitions
  * @param {*} directivesUsed is a list of directives parsed from the wrapper schema definitions
@@ -132,7 +138,7 @@ const generateIndentation = function(factor) {
 
 const generateWrapQueryField = function(directivesUsed, wsDef) {
     let text = "";
-    if(builtInScalars.includes(directivesUsed.argumentValues)) {
+    if(builtInScalars.includes(directivesUsed.fieldValue)) {
         text += `
             ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
             ${generateIndentation(7)}return {
@@ -159,6 +165,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
         `;
         //console.log(wsDef);
         for(let i = 0; i < wsDef.length; i++) {
+            console.log(directivesUsed.argumentValues);
             if(wsDef[i].objectTypeName === directivesUsed.fieldValue && wsDef[i].argumentName !== "type") {
                 //console.log(wsDef[i]);
                 text += `
@@ -257,6 +264,39 @@ const generateWrapResult = function(directivesUsed) {
     return text;
 }
 
+const generateWrapListResult = function(directivesUsed) {
+    let text = "";
+    //console.log(directivesUsed);
+    if(directivesUsed.argumentName.includes("field")) {
+        text += `
+            ${generateIndentation(4)}if(element.${directivesUsed.argumentValues} !== undefined) {
+            ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues};
+            ${generateIndentation(4)}}
+        `;
+    } 
+    if(directivesUsed.argumentName.includes("path")) {
+        let tempText = "element";
+        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+            tempText += "." + directivesUsed.argumentValues[i].value;
+            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
+                text += `
+                    ${generateIndentation(i + 2)}element.${directivesUsed.fieldName} = ${tempText};
+                `;
+                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
+                    text += `
+                        ${generateIndentation(i + 1 - j)}}
+                    `;
+                }
+            } else { // Else, just keep building the if statement
+                text += `
+                    ${generateIndentation(i + 2)}if(${tempText} !== undefined) {
+                `;
+            }
+        }
+    }
+    return text;
+}
+
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef) {
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
@@ -278,7 +318,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
         ${generateIndentation(6)}selections: subtree.selections.map(selection => {
     `;
-    //let resultMap = new Map();
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
@@ -320,16 +359,60 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
 }
 
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver){
-    let text = `    ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: '${remoteResolver.resolver}',
-                context, 
-                info
-            })
-            return data;
+    let text = `    
+        ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName){
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field")) {
+                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
+                } 
+                if(directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapQueryPath(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(6)}})
+        ${generateIndentation(5)}};
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+        ${generateIndentation(4)}result.forEach(function(element) {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName) {
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapListResult(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(4)}})
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
         },
     `;
     return text;

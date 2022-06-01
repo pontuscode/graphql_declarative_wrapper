@@ -52,12 +52,6 @@ const resolvers = {
             								name: {
             									kind: Kind.NAME,
             									value: "id"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-            									]
             								}
             							}
             						}
@@ -68,12 +62,6 @@ const resolvers = {
             								name: {
             									kind: Kind.NAME,
             									value: "title"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-            									]
             								}
             							}
             						}
@@ -165,16 +153,131 @@ const resolvers = {
         	})
         	return data;
         },
+        
         myTracks: async(_, __, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: 'tracksForHome',
-                context, 
-                info
-            })
-            return data;
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'tracksForHome',
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["tracksForHome"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: subtree.selections.map(selection => {
+    
+            						if(selection.name.value === "id") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								}
+            							}
+            						}
+        
+            						if(selection.name.value === "myTitle") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "title"
+            								}
+            							}
+            						}
+        
+            						if(selection.name.value === "author") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "author"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "name"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							}
+            						}
+        
+        							if(selection.name.value === "authorName") {
+        								return {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "author"
+                							}, 
+                							selectionSet: {
+                								kind: Kind.SELECTION_SET,
+                								selections: [{
+            
+                									kind: Kind.FIELD,
+                									name: {
+                										kind: Kind.NAME,
+                										value: "name"
+                									}
+            
+                    								}]
+                    							}
+                
+        								}
+        							}
+    
+        						})
+        					};
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				result.forEach(function(element) {
+    
+            				if(element.id !== undefined) {
+            					element.id = element.id;
+            				}
+        
+            				if(element.title !== undefined) {
+            					element.myTitle = element.title;
+            				}
+        
+            				if(element.author !== undefined) {
+            					element.author = element.author;
+            				}
+        
+                    		if(element.author !== undefined) {
+                
+                    			element.authorName = element.author.name;
+                
+                        	}
+                    
+        				})
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
         },
         
         myModule: async(_, args, context, info) => {
@@ -202,12 +305,6 @@ const resolvers = {
             								name: {
             									kind: Kind.NAME,
             									value: "id"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-            									]
             								}
             							}
             						}
@@ -218,12 +315,6 @@ const resolvers = {
             								name: {
             									kind: Kind.NAME,
             									value: "content"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-            									]
             								}
             							}
             						}
