@@ -29,7 +29,6 @@ const resolvers = {
         
         myTrack: async(_, args, context, info) => {
         	const schema = await remoteSchema();
-            const concValues = [["thumbnail", true],[" ", false], ["description", true]];
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -43,104 +42,110 @@ const resolvers = {
         			new WrapQuery(
         				["track"],
         				(subtree) => {
-                            newSelectionSet = {
-                                kind: Kind.SELECTION_SET,
-                                selections: []
-                            }
-
-
-                            subtree.selections.forEach(selection => {
-                                if(selection.name.value === "concatenateTest"){
-                                    concValues.forEach(function(currName) { //This forEach function will add a new selection the the selectionSet for the (to be) concatenated field.
-                                        if(currName[1] === true){
-                                            temp = {
-                                                kind: Kind.FIELD,
-                                                name: {
-                                                    kind: Kind.NAME,
-                                                    value: currName[0]
-                                                }
-                                            }
-                                            newSelectionSet.selections.push(temp);
-                                        }
-                                    })
-                                }
-
-                                if(selection.name.value === "id") {
-                                    newSelectionSet.selections.push( {
-                                        kind: Kind.FIELD,
-                                        name: {
-                                            kind: Kind.NAME,
-                                            value: "id"
-                                        }
-                                    });
-                                }
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: subtree.selections.map(selection => {
     
-                                if(selection.name.value === "myTitle") {
-                                    newSelectionSet.selections.push( {
-                                        kind: Kind.FIELD,
-                                        name: {
-                                            kind: Kind.NAME,
-                                            value: "title"
-                                        }
-                                    })
-                                }
-    
-                                if(selection.name.value === "author") {
-                                    newSelectionSet.selections.push( {
-                                        kind: Kind.FIELD,
-                                        name: {
-                                            kind: Kind.NAME,
-                                            value: "author"
-                                        },
-                                        selectionSet: {
-                                            kind: Kind.SELECTION_SET,
-                                            selections: [
-    
-                                                {
-                                                    kind: Kind.FIELD,
-                                                    name: {
-                                                        kind: Kind.NAME,
-                                                        value: "id"
-                                                    }
-                                                },
-            
-                                                {
-                                                    kind: Kind.FIELD,
-                                                    name: {
-                                                        kind: Kind.NAME,
-                                                        value: "name"
-                                                    }
-                                                },
-            
-                                            ]
-                                        }
-                                    })
-                                }
-    
-                                if(selection.name.value === "authorName") {
-                                    newSelectionSet.selections.push( {
-
-                                        kind: Kind.FIELD,
-                                        name: {
-                                            kind: Kind.NAME,
-                                            value: "author"
-                                        }, 
-                                        selectionSet: {
-                                            kind: Kind.SELECTION_SET,
-                                            selections: [{
+            						if(selection.name.value === "id") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								}
+            							}
+            						}
         
-                                                kind: Kind.FIELD,
-                                                name: {
-                                                    kind: Kind.NAME,
-                                                    value: "name"
-                                                }
+            						if(selection.name.value === "myTitle") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "title"
+            								}
+            							}
+            						}
         
-                                            }]
-                                        }
+            						if(selection.name.value === "author") {
+            							return {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "author"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "name"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							}
+            						}
+        
+        							if(selection.name.value === "authorName") {
+        								return {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "author"
+                							}, 
+                							selectionSet: {
+                								kind: Kind.SELECTION_SET,
+                								selections: [{
             
-                                    })
-                                }
-                            })
+                									kind: Kind.FIELD,
+                									name: {
+                										kind: Kind.NAME,
+                										value: "name"
+                									}
+            
+                    								}]
+                    							}
+                
+        								}
+        							}
+    
+        							if(selection.name.value === "concatenateTest") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "description"
+                    							}
+                    						}
+                    					)
+                
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "thumbnail"
+                    							}
+                    						}
+                    					)
+                
+        							}
+        
+        						})
+        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -162,21 +167,23 @@ const resolvers = {
                     		result.authorName = result.author.name;
                 
                         	}
-                        for(var pair in concValues){
-                            if(concValues[pair][1] === true)
-                            {
-                                if(result.concatenateTest === undefined)
-                                    result.concatenateTest = result[concValues[pair][0]];
-                                else
-                                    result.concatenateTest += result[concValues[pair][0]];            
-                            }
-                            else
-                                result.concatenateTest += concValues[pair][0];
-                        }
+                    
+                		if(element.concatenateTest === undefined) 
+                			result.concatenateTest = result.description
+                		else
+                			result.concatenateTest += result.description
+            
+                		result.concatenateTest += " "
+            
+                		if(element.concatenateTest === undefined) 
+                			result.concatenateTest = result.thumbnail
+                		else
+                			result.concatenateTest += result.thumbnail
+            
         				return result;
         			}
-        		    ),
-        	    ]
+        		),
+        	]
         	})
         	return data;
         },

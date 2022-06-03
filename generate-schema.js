@@ -69,10 +69,12 @@ const resolvers = {
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].argumentName === "type") {
             if(directivesUsed[i].resolvers !== undefined){
+                console.log(directivesUsed[i].resolvers);
                 let parsedArgument = parseArgument(directivesUsed[i].resolvers);
                 let objectTypeName = directivesUsed[i].objectTypeName;
+                // console.log(parsedArgument);
                 if(parsedArgument.singleQuery !== undefined) {
-                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef);
+                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef, remoteSchema);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
                     fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
@@ -297,7 +299,100 @@ const generateWrapListResult = function(directivesUsed) {
     return text;
 }
 
-const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef) {
+const parseConcArgs = function(directive, rsDef) {
+    let remoteName = directive.remoteObjectTypeName;
+    returnList = [];
+    let remoteFields;
+    rsDef.forEach(definition => {
+        if(definition.name.value === remoteName)
+            remoteFields = definition.fields;
+    })
+    let nameFound;
+    directive.argumentValues.forEach(value => {
+        nameFound = false;
+        remoteFields.forEach(field => {
+            if(value.value === field.name.value) {
+                nameFound = true;
+            }    
+        })
+        if(nameFound)
+            returnList.push([value.value, true]);    
+        else
+            returnList.push([value.value, false]);    
+    })
+    return returnList;
+}
+
+const generateConcatenateField = function(directive, rsDef) {
+    const concValues = parseConcArgs(directive,rsDef);
+    // console.log(concValues);
+    // console.log(directive);
+    let text = "";
+    if(builtInScalars.includes(directive.fieldValue)) {
+        text += `
+        ${generateIndentation(7)}if(selection.name.value === "${directive.fieldName}") {
+        `
+        concValues.forEach(field => {
+            if(field[1]){
+                text += `
+                    ${generateIndentation(5)}newSelectionSet.selections.push( {
+                    ${generateIndentation(6)}kind: Kind.FIELD,
+                    ${generateIndentation(7)}name: {
+                    ${generateIndentation(8)}kind: Kind.NAME,
+                    ${generateIndentation(8)}value: "${field[0]}"
+                    ${generateIndentation(7)}}
+                    ${generateIndentation(6)}}
+                    ${generateIndentation(5)})
+                `;
+            }
+        })
+        text += `
+        ${generateIndentation(7)}}
+        `;
+    }
+    return [text, concValues];    
+}
+
+const generateConcatenateResult = function(directive, concValues) {
+    let text = "";
+    console.log(directive);
+    // text += `
+    //     ${generateIndentation(4)}if(element.${directive.fieldName} !== undefined) {
+    // `;
+    concValues.forEach(value => {
+        if(value[1]){
+            text += `
+                ${generateIndentation(2)}if(element.${directive.fieldName} === undefined) 
+                ${generateIndentation(3)}result.${directive.fieldName} = result.${value[0]}
+                ${generateIndentation(2)}else
+                ${generateIndentation(3)}result.${directive.fieldName} += result.${value[0]}
+            `;
+        }
+        else{
+            text += `
+                ${generateIndentation(2)}result.${directive.fieldName} += "${value[0]}"
+            `;
+        }
+        
+    })
+    return text;
+    // for(var pair in concValues){
+    //     if(concValues[pair][1] === true)
+    //     {
+    //         if(result.concatenateTest === undefined)
+    //             result.concatenateTest = result[concValues[pair][0]];
+    //         else
+    //             result.concatenateTest += result[concValues[pair][0]];            
+    //     }
+    //     else
+    //         result.concatenateTest += concValues[pair][0];
+    // }
+}
+
+
+
+const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema) {
+    let concValues;
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -328,6 +423,22 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                     text += generateWrapQueryPath(directivesUsed[i]);
                 }
             }
+            if(directivesUsed[i].directive === "concatenate") {
+                // console.log("objectTypeName: ");
+                // console.log(objectTypeName);
+                // console.log("directivesUsed: ");
+                // console.log(directivesUsed[i]);
+                // console.log(remote);
+                // console.log();
+                // console.log("remoteSchema: ");
+                // console.log(remoteSchema);
+                // text, concValues += generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
+                
+                textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
+
+                text += textAndConcValues[0];
+                concValues = textAndConcValues[1];
+            }
         }
     }
     text += `
@@ -343,6 +454,11 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                 if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
                     text += generateWrapResult(directivesUsed[i]);
                 }
+            }
+            if(directivesUsed[i].directive === "concatenate") {
+                text += generateConcatenateResult(directivesUsed[i], concValues);
+                // console.log("concValues: ");
+                // console.log(concValues);
             }
         }
     }
