@@ -9,6 +9,13 @@ const { wrapSchema, introspectSchema } = require('@graphql-tools/wrap');
 const { split } = require("lodash");
 const prompt = require('prompt-sync')({sigint: true});
 
+const builtInScalars = [
+    "Int", "Float", "String", "Boolean", "ID", 
+    "Int!", "Float!", "String!", "Boolean!", "ID!", 
+    "['Int']", "['Float']", "['String']", "['Boolean']", "['ID']",
+    "['Int!']", "['Float!']", "['String!']", "['Boolean!']", "['ID!']",
+    "['Int!']!", "['Float!']!", "['String!']!", "['Boolean!']!", "['ID!']!"
+]
 /**
  * @param {*} wsDef is the typedefs of the wrapper schema definitions
  * @param {*} directivesUsed is a list of directives parsed from the wrapper schema definitions
@@ -19,7 +26,7 @@ const prompt = require('prompt-sync')({sigint: true});
  */
 const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, wrapperName) {
     let errorMessage;
-    const typeDefinitions = await generateWrapperTypedefs(wsDef.schema[0].document, wrapperName);
+    const typeDefinitions = await generateTypeDefinitions(wsDef.schema[0].document, wrapperName);
     const delegatedResolvers = await generateResolvers(wsDef.schema[0].document, directivesUsed, remoteSchema.schema[0], remoteServerUrl, wrapperName);
     let success = (typeDefinitions !== "" && delegatedResolvers !== "");
     return {
@@ -29,19 +36,20 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
 }
 
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl) {
-    let fileContent = `const { wrapSchema, introspectSchema, RenameTypes, WrapFields, MapFields, MapLeafValues, RenameObjectFields } = require('@graphql-tools/wrap');
+    let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
+const { Kind } = require('graphql');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
     const fetchResult = await fetch("${remoteServerUrl}", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query, variables }),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, variables }),
     });
     return fetchResult.json();
 };
@@ -49,27 +57,25 @@ const executor = async ({ document, variables }) => {
 const remoteSchema = async () => {
     const schema = await introspectSchema(executor);
     return wrapSchema({
-    schema,
-    executor,
-    /*transforms: [
-        new RenameObjectFields((_typeName, fieldName) => fieldName.replace(/^title/, "emailAddress"))
-    ]*/
+        schema,
+        executor
     });
 };
 
 const resolvers = {
     Query: {
     `;
+    console.log(directivesUsed);
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].argumentName === "type") {
             if(directivesUsed[i].resolvers !== undefined){
-                for(let resolver = 0; resolver < directivesUsed[i].resolvers.length; resolver++){
-                    let parsedArgument = parseArgument(directivesUsed[i].resolvers[resolver].value);
-                    if(parsedArgument.argument !== undefined) {
-                        fileContent += writeResolverWithArgs(directivesUsed[i], parsedArgument.remoteResolver, parsedArgument.argument);
-                    } else {
-                        fileContent += writeResolverWithoutArgs(directivesUsed[i], parsedArgument.remoteResolver);
-                    }
+                let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+                let objectTypeName = directivesUsed[i].objectTypeName;
+                if(parsedArgument.singleQuery !== undefined) {
+                    fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef);
+                } 
+                if(parsedArgument.listQuery !== undefined) {
+                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
                 }
             }
         }
@@ -89,8 +95,26 @@ const camelCase = function(input) {
 }
 
 const parseArgument = function(input) {
-    let regex = /[\W\!]/;
-    let splitString = input.split(regex);
+    let regex = /[\W]/;
+    let parsedValues = {};
+    if(input.singleQuery !== undefined){
+        let splitSingle = input.singleQuery.split(regex);
+        //console.log(splitSingle);
+        parsedValues.singleQuery = {
+            "resolver": splitSingle[0],
+            "left": splitSingle[1],
+            "right": splitSingle[3]
+        };
+    }
+    if(input.listQuery !== undefined){
+        let splitList = input.listQuery.split(regex);
+        parsedValues.listQuery = {
+            "resolver": splitList[0]
+        };
+    }
+    //console.log(parsedValues);
+    return parsedValues;
+    /*let splitSingle = input.split(regex);
     let parsedValues = {
         "remoteResolver": splitString[0]
     }
@@ -101,45 +125,300 @@ const parseArgument = function(input) {
         }
         parsedValues.argument = argument;
     }
-    return parsedValues;
+    return parsedValues;*/
 }
 
-const writeResolverWithArgs = function(directivesUsed, remoteResolver, argument) {
-    let text = `    ${camelCase(directivesUsed.objectTypeName)}: async(_, args, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: '${remoteResolver}',
-                args: {
-                    ${argument.left}: args.${argument.right}
-                },
-                context, 
-                info
-            })
-            return data;
+const generateIndentation = function(factor) {
+    let text = "";
+    for(let i = 0; i < factor; i++){
+        text += "\t";
+    }
+    return text;
+}
+
+const generateWrapQueryField = function(directivesUsed, wsDef) {
+    let text = "";
+    if(builtInScalars.includes(directivesUsed.fieldValue)) {
+        text += `
+            ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
+            ${generateIndentation(7)}return {
+            ${generateIndentation(8)}kind: Kind.FIELD,
+            ${generateIndentation(8)}name: {
+            ${generateIndentation(9)}kind: Kind.NAME,
+            ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
+            ${generateIndentation(8)}}
+            ${generateIndentation(7)}}
+            ${generateIndentation(6)}}
+        `;
+    } else {
+        text += `
+            ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
+            ${generateIndentation(7)}return {
+            ${generateIndentation(8)}kind: Kind.FIELD,
+            ${generateIndentation(8)}name: {
+            ${generateIndentation(9)}kind: Kind.NAME,
+            ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
+            ${generateIndentation(8)}},
+            ${generateIndentation(8)}selectionSet: {
+            ${generateIndentation(9)}kind: Kind.SELECTION_SET,
+            ${generateIndentation(9)}selections: [
+        `;
+        //console.log(wsDef);
+        for(let i = 0; i < wsDef.length; i++) {
+            console.log(directivesUsed.argumentValues);
+            if(wsDef[i].objectTypeName === directivesUsed.fieldValue && wsDef[i].argumentName !== "type") {
+                //console.log(wsDef[i]);
+                text += `
+                    ${generateIndentation(8)}{
+                    ${generateIndentation(9)}kind: Kind.FIELD,
+                    ${generateIndentation(9)}name: {
+                    ${generateIndentation(10)}kind: Kind.NAME,
+                    ${generateIndentation(10)}value: "${wsDef[i].fieldName}"
+                    ${generateIndentation(9)}}
+                    ${generateIndentation(8)}},
+                `;
+            }
+        }
+        text += `
+            ${generateIndentation(9)}]
+            ${generateIndentation(8)}}
+            ${generateIndentation(7)}}
+            ${generateIndentation(6)}}
+        `;
+    }
+    return text;
+}
+
+const generateWrapQueryPath = function(directivesUsed) {
+    let text =`
+        ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
+        ${generateIndentation(8)}return {
+    `;
+    for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+        if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
+            text += `
+                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + 7)}name: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + 7)}}
+            `;
+            /* Loop to close out all brackets are square parenthesis */
+            for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
+                // Close selections object }, selections list ], selection set } 
+                text += `
+                    ${generateIndentation(i - (j*2) + 7)}}]
+                    ${generateIndentation(i - (j*2) + 6)}}
+                `;
+            }
+        } else {
+            text += `
+                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + 7)}name: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + 7)}}, 
+                ${generateIndentation((i*2) + 7)}selectionSet: {
+                ${generateIndentation((i*2) + 8)}kind: Kind.SELECTION_SET,
+                ${generateIndentation((i*2) + 8)}selections: [{
+            `;
+        }
+    }
+    text += `
+        ${generateIndentation(8)}}
+        ${generateIndentation(7)}}
+    `;
+    return text;
+}
+
+const generateWrapResult = function(directivesUsed) {
+    let text = "";
+    //console.log(directivesUsed);
+    if(directivesUsed.argumentName.includes("field")) {
+        text += `
+            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues} !== undefined) {
+            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
+            ${generateIndentation(3)}}
+        `;
+    } 
+    if(directivesUsed.argumentName.includes("path")) {
+        let tempText = "result";
+        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+            tempText += "." + directivesUsed.argumentValues[i].value;
+            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
+                text += `
+                    ${generateIndentation(i + 1)}result.${directivesUsed.fieldName} = ${tempText};
+                `;
+                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
+                    text += `
+                        ${generateIndentation(i + 1 - j)}}
+                    `;
+                }
+            } else { // Else, just keep building the if statement
+                text += `
+                    ${generateIndentation(i + 1)}if(${tempText} !== undefined) {
+                `;
+            }
+        }
+    }
+    return text;
+}
+
+const generateWrapListResult = function(directivesUsed) {
+    let text = "";
+    //console.log(directivesUsed);
+    if(directivesUsed.argumentName.includes("field")) {
+        text += `
+            ${generateIndentation(4)}if(element.${directivesUsed.argumentValues} !== undefined) {
+            ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues};
+            ${generateIndentation(4)}}
+        `;
+    } 
+    if(directivesUsed.argumentName.includes("path")) {
+        let tempText = "element";
+        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+            tempText += "." + directivesUsed.argumentValues[i].value;
+            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
+                text += `
+                    ${generateIndentation(i + 2)}element.${directivesUsed.fieldName} = ${tempText};
+                `;
+                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
+                    text += `
+                        ${generateIndentation(i + 1 - j)}}
+                    `;
+                }
+            } else { // Else, just keep building the if statement
+                text += `
+                    ${generateIndentation(i + 2)}if(${tempText} !== undefined) {
+                `;
+            }
+        }
+    }
+    return text;
+}
+
+const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef) {
+    let text = `    
+        ${camelCase(objectTypeName)}: async(_, args, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}args: {
+        ${generateIndentation(3)}${remoteResolver.left}: args.${remoteResolver.left}
+        ${generateIndentation(2)}},
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName){
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field")) {
+                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
+                } 
+                if(directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapQueryPath(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(6)}})
+        ${generateIndentation(5)}};
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName) {
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapResult(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
         },
     `;
     return text;
 }
 
-const writeResolverWithoutArgs = function(directivesUsed, remoteResolver){
-    let text = `    ${camelCase(directivesUsed.objectTypeName)}s: async(_, __, context, info) => {
-            const schema = await remoteSchema();
-            const data = await delegateToSchema({
-                schema: schema,
-                operation: 'query',
-                fieldName: '${remoteResolver}',
-                context, 
-                info
-            })
-            return data;
+const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver){
+    let text = `    
+        ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName){
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field")) {
+                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
+                } 
+                if(directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapQueryPath(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(6)}})
+        ${generateIndentation(5)}};
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+        ${generateIndentation(4)}result.forEach(function(element) {
+    `;
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName) {
+            if(directivesUsed[i].directive === "wrap") {
+                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
+                    text += generateWrapListResult(directivesUsed[i]);
+                }
+            }
+        }
+    }
+    text += `
+        ${generateIndentation(4)}})
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
         },
     `;
     return text;
 }
 
-const generateWrapperTypedefs = async function(wsDef, fileName) {
+const generateTypeDefinitions = async function(wsDef, fileName) {
     let fileContent = "";
     wsDef.definitions.forEach(ast => {
         visit(ast, {
@@ -166,7 +445,11 @@ const generateWrapperTypedefs = async function(wsDef, fileName) {
                 if(node.arguments.length > 0) {
                     fileContent += ")";
                 }
-                fileContent += ": " + parseValue(node) + "\n";
+                let value = parseValue(node);
+                if(Array.isArray(value)) {
+                    value = `[${value}]`;
+                }
+                fileContent += ": " + value + "\n";
             }
         });
     });

@@ -57,28 +57,48 @@ const parseValue = function(node) {
     return returnValue;
 }
 
+const parseResolvers = function(args) {
+    let singleQuery;
+    let listQuery;
+    for(let i = 0; i < args.length; i++){
+        if(args[i].name.value === "singleQuery") {
+            singleQuery = args[i].value.value;
+        } else if(args[i].name.value === "listQuery") {
+            listQuery = args[i].value.value;
+        }
+    }
+    return {
+        "singleQuery": singleQuery,
+        "listQuery": listQuery
+    }
+}
+
 const parseSchemaDirectives = function(schema) {
     directivesUsed = [];
     let remoteObjectTypeName;
+    let valid = true;
+    let errorMessage = "";
     schema.definitions.forEach(ast => {
         visit(ast, {
             ObjectTypeDefinition(node) {
                 if(node.directives.length) {
-                    let resolvers = node.directives[0].arguments[1];
-                    if(resolvers !== undefined){
-                        resolvers = resolvers.value.values;
-                    }
-                    let temp = {
-                        "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
-                        "objectTypeName": node.name.value,
-                        "directive": node.directives[0].name.value,
-                        "argumentName": node.directives[0].arguments[0].name.value,
-                        "argumentValues": node.directives[0].arguments[0].value.value,
-                        "resolvers": resolvers
-                    };
-                    if(!directivesUsed.includes(temp)){
-                        directivesUsed.push(temp); 
-                        remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                    if(node.directives[0].arguments === undefined) {
+                        valid = false; // There needs to be atleast one argument
+                        errorMessage = `No arguments found for type ${node.name.value}, atleast one argument is required!`;
+                    } else {
+                        let resolvers = parseResolvers(node.directives[0].arguments);
+                        let temp = {
+                            "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
+                            "objectTypeName": node.name.value,
+                            "directive": node.directives[0].name.value,
+                            "argumentName": node.directives[0].arguments[0].name.value,
+                            "argumentValues": node.directives[0].arguments[0].value.value,
+                            "resolvers": resolvers
+                        };
+                        if(!directivesUsed.includes(temp)){
+                            directivesUsed.push(temp); 
+                            remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                        }
                     }
                 }
             }
