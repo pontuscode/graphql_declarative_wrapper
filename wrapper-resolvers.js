@@ -144,173 +144,67 @@ const resolvers = {
         },
         myTrack: async(_, args, context, info) => {
             const schema = await remoteSchema();
+            const listOfStuff = [["thumbnail", true],[" ", false], ["description", true]];
             const data = await delegateToSchema({
                 schema: schema,
                 
                 operation: 'query',
                 fieldName: 'track',
                 args: {
-                    id: args.id,
-                    thumbnail: args.concatenateTest
+                    id: args.id
                 },
-                context: {
-                    concatenatedTest: args.thumbnail //Det här verkar inte göra nånting :(
-                }, 
+                context,
                 info,
-                // transforms: [
-                //     WrapQuery
-                // ]
-                    
                 transforms: [
                     new WrapQuery(
                         ["track"],
                         (subtree) => {
-                            // console.log(subtree.selections[0]);
                             const newSelectionSet = {
                                 kind: Kind.SELECTION_SET,
                                 selections: []
                             };
-
                             subtree.selections.forEach(selection => {
                                 if(selection.name.value === "concatenateTest"){
-                                    ["thumbnail"].forEach(function(currName) { //This should not be hardcoded!
-                                        console.log(currName);
-                                        temp = {
-                                            kind: Kind.FIELD,
-                                            name: {
-                                                kind: Kind.NAME,
-                                                value: currName
+                                    listOfStuff.forEach(function(currName) { //This forEach function will add a new selection the the selectionSet for the (to be) concatenated field.
+                                        if(currName[1] === true){
+                                            temp = {
+                                                kind: Kind.FIELD,
+                                                name: {
+                                                    kind: Kind.NAME,
+                                                    value: currName[0]
+                                                }
                                             }
-                                            // value: {
-                                            //     kind: Kind.VARIABLE,
-                                            //     name: {
-                                            //         kind: Kind.NAME,
-                                            //         value: currName
-                                            //     }
-                                            // }
+                                            newSelectionSet.selections.push(temp);
                                         }
-                                        newSelectionSet.selections.push(temp);
                                     })
                                 }
                                 else{
                                     newSelectionSet.selections.push(selection);
                                 }
-                                // newSelectionSet.selections.push(selection);
-                                // console.log(selection);
+
                             })
-                                // selections: subtree.selections.map(selection => {
-                                //     if(selection.name.value === "concatenateTest") {
-                                //         // console.log(selection.name.value);
-                                //         return {
-                                //             // kind: Kind.SELECTION_SET,
-                                            
-                                //             kind: Kind.FIELD,
-                                //             name: {
-                                //                 kind: Kind.NAME,
-                                //                 value: "thumbnail"
-                                //             },
-                                //             value: {
-                                //                 kind: Kind.VARIABLE,
-                                //                 name: {
-                                //                     kind: Kind.NAME,
-                                //                     value: "thumbnail"
-                                //                 }
-                                //             }
-                                //              &&
-                                //             {   
-                                //                 kind: Kind.FIELD,
-                                //                 name: {
-                                //                     kind: Kind.NAME,
-                                //                     value: "description"
-                                //                 },
-                                //                 value: {
-                                //                     kind: Kind.VARIABLE,
-                                //                     name: {
-                                //                         kind: Kind.NAME,
-                                //                         value: "description"
-                                //                     }
-                                //                 }
-                                //             }
-                                //         }   
-                                //     } else {
-                                //         return selection;
-                                //     }
-                                // }),
-                            //   };
-                              //console.log(newSelectionSet.selections[2]);
-                            // console.log(newSelectionSet);
-                            console.log("return works");
-                            newSelectionSet.selections.forEach(function(element){
-                                console.log(element);
-                            })
-                            // console.log(subtree);
+
                             return newSelectionSet;
                         },
                         (result) => {
-                            console.log("HEY");
-                            console.log(result);
-                            result.concatenateTest = result.thumbnail + " " + result.description;
+                            for(var pair in listOfStuff){
+                                if(listOfStuff[pair][1] === true)
+                                {
+                                    if(result.concatenateTest === undefined)
+                                        result.concatenateTest = result[listOfStuff[pair][0]];
+                                    else
+                                        result.concatenateTest += result[listOfStuff[pair][0]];
+                                    
+                                }
+                                else
+                                    result.concatenateTest += listOfStuff[pair][0];
+                            }
                             return result;
                         }
                     ),
-
-
-                    // Wrap document takes a subtree as an AST node
-                //     new TransformQuery({
-                //       // path at which to apply wrapping and extracting
-                //       path: ['track'],
-                //       queryTransformer: (subtree) => ({
-                //         kind: Kind.SELECTION_SET,
-                //         selections: [
-                //           {
-                //             // we create a wrapping AST Field
-                //             kind: Kind.FIELD,
-                //             name: {
-                //               kind: Kind.NAME,
-                //               // that field is `address`
-                //               value: 'thumbnail',
-                //             },
-                //             // Inside the field selection
-                //             selectionSet: subtree,
-                //           },
-                //           {
-                //             // we create a wrapping AST Field
-                //             kind: Kind.FIELD,
-                //             name: {
-                //               kind: Kind.NAME,
-                //               // that field is `address`
-                //               value: 'description',
-                //             },
-                //             // Inside the field selection
-                //             selectionSet: subtree,
-                //           },
-                //         ],
-                //       }),
-                //       // how to process the data result at path
-                //       resultTransformer: (result) => {
-                //           console.log("yep " + result?.description);
-                //           return (result?.description)
-                //       },
-                //       errorPathTransformer: (path) => path.slice(1),
-                //     }),
                   ],
-//                 transforms: [
-// // https://github.com/ardatan/graphql-tools/blob/27d1b77b790e81225d8b767f2fa2fe259e8cb37d/src/test/transforms.test.ts#L1180
-// //  Check the above for examples of how to use transforms.
-//                     // WrapQuery
-//                 ]
-                // transforms : [
-                //     WrapFields ( " g r a d u a t e s t u d e n t _ b y _ p k " , [ createField ( " nr " ) ,
-                //     ... fields ]) ,
-                // ] ,
 
-                // transforms: [
-                //     transformMyTrack()
-                // ]
             })
-            console.log(data);
-            // data["concatenateTest"] = 
-
             return data;
 
         },
