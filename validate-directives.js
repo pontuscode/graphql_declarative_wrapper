@@ -81,7 +81,7 @@ const parseSchemaDirectives = function(schema) {
     schema.definitions.forEach(ast => {
         visit(ast, {
             ObjectTypeDefinition(node) {
-                if(node.directives.length) {
+                if(node.directives.length > 0) {
                     if(node.directives[0].arguments === undefined) {
                         valid = false; // There needs to be atleast one argument
                         errorMessage = `No arguments found for type ${node.name.value}, atleast one argument is required!`;

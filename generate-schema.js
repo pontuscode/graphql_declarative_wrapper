@@ -35,7 +35,8 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
     }
 }
 
-const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl) {
+const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, typeDefFileName) {
+    let typeDefFileContent = "";
     let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
@@ -65,7 +66,6 @@ const remoteSchema = async () => {
 const resolvers = {
     Query: {
     `;
-    console.log(directivesUsed);
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].argumentName === "type") {
             if(directivesUsed[i].resolvers !== undefined){
@@ -73,9 +73,11 @@ const resolvers = {
                 let objectTypeName = directivesUsed[i].objectTypeName;
                 if(parsedArgument.singleQuery !== undefined) {
                     fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef);
+                    typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.singleQuery, isList = false);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
                     fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
+                    typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.listQuery, isList = true);
                 }
             }
         }
@@ -85,6 +87,8 @@ const resolvers = {
 module.exports = resolvers;    
     `;
     await fs.writeFile("wrapper-resolvers.js", fileContent);
+    typeDefFileContent += "\n}";
+    await fs.appendFile(typeDefFileName, typeDefFileContent);
     return fileContent;
 }
 
@@ -165,7 +169,6 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
         `;
         //console.log(wsDef);
         for(let i = 0; i < wsDef.length; i++) {
-            console.log(directivesUsed.argumentValues);
             if(wsDef[i].objectTypeName === directivesUsed.fieldValue && wsDef[i].argumentName !== "type") {
                 //console.log(wsDef[i]);
                 text += `
@@ -233,7 +236,6 @@ const generateWrapQueryPath = function(directivesUsed) {
 
 const generateWrapResult = function(directivesUsed) {
     let text = "";
-    //console.log(directivesUsed);
     if(directivesUsed.argumentName.includes("field")) {
         text += `
             ${generateIndentation(3)}if(result.${directivesUsed.argumentValues} !== undefined) {
@@ -358,6 +360,21 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     return text;
 }
 
+const addToQueryType = function(objectTypeName, argument, isList) {
+    let text;
+
+    if(isList === true) {
+        text = `
+    ${camelCase(objectTypeName)}s: [${objectTypeName}]
+        `;
+    } else {
+        text = `
+    ${camelCase(objectTypeName)}(${argument.left}: ${argument.right}!): ${objectTypeName}
+        `;
+    }
+    return text;
+}
+
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver){
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
@@ -454,6 +471,10 @@ const generateTypeDefinitions = async function(wsDef, fileName) {
         });
     });
     fileContent += "}";
+    fileContent += `
+
+type Query {
+    `;
     await fs.writeFile(fileName, fileContent);
     return fileContent;
 }

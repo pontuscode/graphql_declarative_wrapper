@@ -16,9 +16,12 @@ type MyTrack {
 	concatenateTest: String
 }
 
- type Query {
-	myTrack(id: ID!): MyTrack
-	myTracks: [MyTrack]
-	myModule(id: ID!): MyModule
-	myModules: [MyModule]
+type Query {
+    
+    myTrack(id: ID!): MyTrack
+        
+    myTracks: [MyTrack]
+        
+    myModule(id: ID!): MyModule
+        
 }

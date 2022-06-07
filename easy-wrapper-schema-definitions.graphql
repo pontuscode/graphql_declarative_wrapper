@@ -1,4 +1,4 @@
-directive @wrap(type: String!, resolvers: [String!]) on OBJECT
+directive @wrap(type: String!, resolvers: [String!], includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on OBJECT
 directive @wrap(path: [String!]!) on FIELD_DEFINITION
 directive @wrap(field: String!) on FIELD_DEFINITION
 directive @concatenate(values: [String]) on FIELD_DEFINITION
@@ -19,11 +19,4 @@ type MyModule @wrap(type: "Module", singleQuery: "module(id: ID!)") {
     id: ID! @wrap(field: "id")
     content: String @wrap(field: "content")
     concatenateTest: String @concatenate(values: ["content", " ", "videoUrl"])
-}
-
-type Query {
-    myTrack(id: ID!): MyTrack!
-    myTracks: [MyTrack!]
-    myModule(id: ID!): MyModule!
-    myModules: [MyModule!]
 }
