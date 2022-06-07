@@ -126,7 +126,19 @@ const parseResolvers = function(args) {
     }
 }
 
-const parseSchemaDirectives = function(schema) {
+/**
+ * 
+ * @param {*} schema: the wrapper schema definitions
+ * @returns object with the directives used, a bool that indicates if errors were found, and an errorMessage that is blank if no errors were found
+ * 
+ * Since we don't have any knowledge of the remote schema at this point, we only validate the syntax and structure of the wrapper schema definitions at this point.
+ * Examples of validation steps: 
+ *   Ensure there are arguments for each type and field 
+ *   Ensure the arguments are of the expected data types
+ *   Ensure the arguments are used correctly 
+ */
+
+const parseSchemaDirectives = function(schema) { 
     directivesUsed = [];
     let remoteObjectTypeName;
     let valid = true;
@@ -146,7 +158,7 @@ const parseSchemaDirectives = function(schema) {
                         if(validateInclude.valid === false) {
                             valid = false;
                             errorMessage = validateInclude.errorMessage;
-                        }
+                        } 
                         let temp = {
                             "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
                             "objectTypeName": node.name.value,
@@ -155,7 +167,8 @@ const parseSchemaDirectives = function(schema) {
                             "argumentValues": node.directives[0].arguments[0].value.value,
                             "resolvers": resolvers,
                             "includeAllFields": includeExcludeFields.includeAllFields,
-                            "excludeFields": includeExcludeFields.excludeFields
+                            "excludeFields": includeExcludeFields.excludeFields,
+                            "includeFields": {} // These will be added later if includeAllFields is true
                         };
                         if(!directivesUsed.includes(temp)){
                             directivesUsed.push(temp); 
@@ -169,8 +182,7 @@ const parseSchemaDirectives = function(schema) {
             FieldDefinition(node) {
                 if(node.directives.length > 0) {
                     for(let i = 0; i < node.directives.length; i++){
-                        let fieldValue = parseValue(node);
-                        // if(node.directives[i].arguments.length > 1) continue; //Here it should break I guess?
+                        const fieldValue = parseValue(node);
                         let argumentType = node.directives[i].arguments[0].value.kind;
                         let argumentValue;
                         switch(argumentType) {
@@ -181,7 +193,8 @@ const parseSchemaDirectives = function(schema) {
                                 argumentValue = node.directives[i].arguments[0].value.values;
                                 break;
                             default:
-                                console.log("invalid");
+                                valid = false;
+                                errorMessage = `Expected List or String for argument ${node.directives[i].arguments[0].name.value.toUpperCase()} on field ${node.name.value.toUpperCase()}, got ${argumentType}.`;
                         }
                         let temp = {
                             "remoteObjectTypeName": remoteObjectTypeName,
@@ -234,6 +247,69 @@ const traversePath = function(item, currNode, remoteSchema) {
     });
 }
 
+const validateAgainstRemoteSchema = function(item, node, argument) {
+    let valid = true;
+    let errorMessage = "";
+    switch(argument) {
+        case "includeExclude":
+            let foundFields = 0;
+            let neededFields = 0;
+            if(item.excludeFields !== undefined) {
+                neededFields = item.excludeFields.length;
+                for(let i = 0; i < item.excludeFields.length; i++) {
+                    visit(node, {
+                        FieldDefinition(field) {
+                            if(field.name.value === item.excludeFields[i]) {
+                                foundFields++;
+                            }
+                        }
+                    });
+                    if(foundFields !== (i + 1)) { // Make sure we found a new field in each iteration.
+                        errorMessage = `Did not find field ${item.excludeFields[i].toUpperCase()} in remote schema.`;
+                        break;
+                    }
+                }
+            }
+            valid = (foundFields === neededFields);
+            break;
+            
+        case "field": 
+            break;
+
+        default: 
+            valid = false;
+            errorMessage
+            break;
+    }
+
+    return {
+        "valid": valid,
+        "errorMessage": errorMessage
+    }
+}
+
+/**
+ * @param {*} item: the directive used on the current node in the AST
+ * @param {*} node: the current node in the AST
+ * 
+ * This function is called when the user has used includeAllFields on a wrapper type.
+ * The function appends all fields to the wrapper type except the ones specified in excludeFields.
+ */
+const appendFieldsToType = function(item, node) {
+    let temp = {};
+    visit(node, {
+        FieldDefinition(field) {
+            temp[field.name.value] = parseValue(field);
+        }
+    });
+    if(item.excludeFields !== undefined) {
+        for(let i = 0; i < item.excludeFields.length; i++) {
+            delete temp[item.excludeFields[i]];
+        }
+    }
+    item.includeFields = temp;
+}
+
 /**
  * 
  * @param {*} item is the directive definitions parsed from parseSchemaDirectives
@@ -249,12 +325,17 @@ const traversePath = function(item, currNode, remoteSchema) {
 const validateWrap = function(item, remoteSchema) {
     let found = false;
 
-    if(item.argumentName === "type") { // Validation case 1 
-        
+    if(item.argumentName === "type") { // Validation case 1   
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
-                    if(item.remoteObjectTypeName === node.name.value) {
+                    if(item.remoteObjectTypeName === node.name.value) { // Does the type exist? 
+                        if(item.includeAllFields === true) { // If they want to include all fields, validate it against the remote schema.
+                            let checkIncludeExclude = validateAgainstRemoteSchema(item, node, "includeExclude");
+                            if(checkIncludeExclude.valid === true) {
+                                appendFieldsToType(item, node); //If the arguments were correctly used, append the fields to the wrapper type defs
+                            }
+                        }
                         found = true;
                         WrappedTypes.push(item.objectTypeName);
                     }
@@ -325,7 +406,7 @@ const validateConcatenate = function(item, remoteSchema) {
                     argFound = true;
                     CorrectargType = true;
                   }
-                  else valid=false;//console.log("INCORRECT")//valid = false;
+                  else valid=false;
                 }
                 else if(field.type.kind === "ListType"){
                   if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
@@ -382,7 +463,7 @@ const validateDirectives = function(wsDef, remoteSchema) {
     if(parsedDirectives.valid === true) {
         directivesUsed.forEach(item => {
             if(remoteSchema.fromUrl) { // Schemas from url currently have a different structure than local schemas.
-                console.log("Remote schemas from url's are not currently supported");
+                errorMessage = "Remote schemas from url's are not currently supported.";
                 directivesAreValid = false;
             } else {
                 if(!validateDirective(item, remoteSchema.schema[0].document)) {
@@ -394,7 +475,6 @@ const validateDirectives = function(wsDef, remoteSchema) {
         directivesAreValid = parsedDirectives.valid;
         errorMessage = parsedDirectives.errorMessage;
     }
-
     return {
         "directivesAreValid": directivesAreValid,
         "directivesUsed": parsedDirectives.directivesUsed,

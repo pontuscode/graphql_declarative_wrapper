@@ -340,6 +340,21 @@ const resolvers = {
         	})
         	return data;
         },
+        
+        myFullModule: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'module',
+        		args: {
+        			id: args.id
+        		},
+        		context, 
+        		info,
+        });
+        return data;
+    },
     }
 }
 module.exports = resolvers;    
