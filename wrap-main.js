@@ -126,7 +126,7 @@ const main = async function() {
             }
         } else {
             console.log(consoleColors.red, "Schema validation failed.")
-            console.log(consoleColors.cyan, `Error: ${validationResult.error}`);
+            console.log(consoleColors.cyan, `Error: ${validationResult.errorMessage}`);
         }
     } else if(process.argv.length === 5) { // If the user did not include wrapperName, we simply assign it the name wrapper-schema.graphql (CHECK IF THIS ALREADY EXISTS FIRST!!!)
         const wsDef = await read(process.argv[2]);
