@@ -44,30 +44,32 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        						subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "myTitle") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "title"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "author") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
@@ -95,11 +97,11 @@ const resolvers = {
                 
             									]
             								}
-            							}
+            							})
             						}
         
         							if(selection.name.value === "authorName") {
-        								return {
+        								newSelectionSet.selections.push( {
     
                 							kind: Kind.FIELD,
                 							name: {
@@ -119,7 +121,7 @@ const resolvers = {
                     								}]
                     							}
                 
-        								}
+        								})
         							}
     
         							if(selection.name.value === "concatenateTest") {
@@ -145,7 +147,6 @@ const resolvers = {
         							}
         
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -168,14 +169,14 @@ const resolvers = {
                 
                         	}
                     
-                		if(element.concatenateTest === undefined) 
+                		if(result.concatenateTest === undefined) 
                 			result.concatenateTest = result.description
                 		else
                 			result.concatenateTest += result.description
             
                 		result.concatenateTest += " "
             
-                		if(element.concatenateTest === undefined) 
+                		if(result.concatenateTest === undefined) 
                 			result.concatenateTest = result.thumbnail
                 		else
                 			result.concatenateTest += result.thumbnail
@@ -202,30 +203,32 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        						subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "myTitle") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "title"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "author") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
@@ -253,11 +256,11 @@ const resolvers = {
                 
             									]
             								}
-            							}
+            							})
             						}
         
         							if(selection.name.value === "authorName") {
-        								return {
+        								newSelectionSet.selections.push( {
     
                 							kind: Kind.FIELD,
                 							name: {
@@ -277,11 +280,32 @@ const resolvers = {
                     								}]
                     							}
                 
-        								}
+        								})
         							}
     
+        							if(selection.name.value === "concatenateTest") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "description"
+                    							}
+                    						}
+                    					)
+                
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "thumbnail"
+                    							}
+                    						}
+                    					)
+                
+        							}
+        
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -305,6 +329,18 @@ const resolvers = {
                 
                         	}
                     
+                		if(element.concatenateTest === undefined) 
+                			element.concatenateTest = element.description
+                		else
+                			element.concatenateTest += element.description
+            
+                		element.concatenateTest += " "
+            
+                		if(element.concatenateTest === undefined) 
+                			element.concatenateTest = element.thumbnail
+                		else
+                			element.concatenateTest += element.thumbnail
+            
         				})
         				return result;
         			}
@@ -331,30 +367,31 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        						subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "content") {
-            							return {
+            							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "content"
             								}
-            							}
+            							})
             						}
         
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {

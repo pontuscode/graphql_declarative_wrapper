@@ -77,7 +77,7 @@ const resolvers = {
                     fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef, remoteSchema);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
-                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery);
+                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
                 }
             }
         }
@@ -143,19 +143,19 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
     if(builtInScalars.includes(directivesUsed.fieldValue)) {
         text += `
             ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
-            ${generateIndentation(7)}return {
+            ${generateIndentation(7)}newSelectionSet.selections.push( {
             ${generateIndentation(8)}kind: Kind.FIELD,
             ${generateIndentation(8)}name: {
             ${generateIndentation(9)}kind: Kind.NAME,
             ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
             ${generateIndentation(8)}}
-            ${generateIndentation(7)}}
+            ${generateIndentation(7)}})
             ${generateIndentation(6)}}
         `;
     } else {
         text += `
             ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
-            ${generateIndentation(7)}return {
+            ${generateIndentation(7)}newSelectionSet.selections.push( {
             ${generateIndentation(8)}kind: Kind.FIELD,
             ${generateIndentation(8)}name: {
             ${generateIndentation(9)}kind: Kind.NAME,
@@ -184,7 +184,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
         text += `
             ${generateIndentation(9)}]
             ${generateIndentation(8)}}
-            ${generateIndentation(7)}}
+            ${generateIndentation(7)}})
             ${generateIndentation(6)}}
         `;
     }
@@ -194,7 +194,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
 const generateWrapQueryPath = function(directivesUsed) {
     let text =`
         ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
-        ${generateIndentation(8)}return {
+        ${generateIndentation(8)}newSelectionSet.selections.push( {
     `;
     for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
         if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
@@ -227,7 +227,7 @@ const generateWrapQueryPath = function(directivesUsed) {
         }
     }
     text += `
-        ${generateIndentation(8)}}
+        ${generateIndentation(8)}})
         ${generateIndentation(7)}}
     `;
     return text;
@@ -325,8 +325,6 @@ const parseConcArgs = function(directive, rsDef) {
 
 const generateConcatenateField = function(directive, rsDef) {
     const concValues = parseConcArgs(directive,rsDef);
-    // console.log(concValues);
-    // console.log(directive);
     let text = "";
     if(builtInScalars.includes(directive.fieldValue)) {
         text += `
@@ -356,13 +354,10 @@ const generateConcatenateField = function(directive, rsDef) {
 const generateConcatenateResult = function(directive, concValues) {
     let text = "";
     console.log(directive);
-    // text += `
-    //     ${generateIndentation(4)}if(element.${directive.fieldName} !== undefined) {
-    // `;
     concValues.forEach(value => {
         if(value[1]){
             text += `
-                ${generateIndentation(2)}if(element.${directive.fieldName} === undefined) 
+                ${generateIndentation(2)}if(result.${directive.fieldName} === undefined) 
                 ${generateIndentation(3)}result.${directive.fieldName} = result.${value[0]}
                 ${generateIndentation(2)}else
                 ${generateIndentation(3)}result.${directive.fieldName} += result.${value[0]}
@@ -376,19 +371,28 @@ const generateConcatenateResult = function(directive, concValues) {
         
     })
     return text;
-    // for(var pair in concValues){
-    //     if(concValues[pair][1] === true)
-    //     {
-    //         if(result.concatenateTest === undefined)
-    //             result.concatenateTest = result[concValues[pair][0]];
-    //         else
-    //             result.concatenateTest += result[concValues[pair][0]];            
-    //     }
-    //     else
-    //         result.concatenateTest += concValues[pair][0];
-    // }
 }
 
+const generateConcatenateListResult = function(directive, concValues) {
+    let text = "";
+    concValues.forEach(value => {
+        if(value[1]){
+            text += `
+                ${generateIndentation(2)}if(element.${directive.fieldName} === undefined) 
+                ${generateIndentation(3)}element.${directive.fieldName} = element.${value[0]}
+                ${generateIndentation(2)}else
+                ${generateIndentation(3)}element.${directive.fieldName} += element.${value[0]}
+            `;
+        }
+        else{
+            text += `
+                ${generateIndentation(2)}element.${directive.fieldName} += "${value[0]}"
+            `;
+        }
+        
+    })
+    return text;
+}
 
 
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema) {
@@ -411,7 +415,9 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(4)}(subtree) => {
         ${generateIndentation(5)}const newSelectionSet = {
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
-        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(6)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -424,18 +430,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                 }
             }
             if(directivesUsed[i].directive === "concatenate") {
-                // console.log("objectTypeName: ");
-                // console.log(objectTypeName);
-                // console.log("directivesUsed: ");
-                // console.log(directivesUsed[i]);
-                // console.log(remote);
-                // console.log();
-                // console.log("remoteSchema: ");
-                // console.log(remoteSchema);
-                // text, concValues += generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
-                
                 textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
-
                 text += textAndConcValues[0];
                 concValues = textAndConcValues[1];
             }
@@ -443,7 +438,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     }
     text += `
         ${generateIndentation(6)}})
-        ${generateIndentation(5)}};
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
@@ -457,8 +451,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             }
             if(directivesUsed[i].directive === "concatenate") {
                 text += generateConcatenateResult(directivesUsed[i], concValues);
-                // console.log("concValues: ");
-                // console.log(concValues);
             }
         }
     }
@@ -474,7 +466,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     return text;
 }
 
-const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver){
+const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema){
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -490,7 +482,9 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(4)}(subtree) => {
         ${generateIndentation(5)}const newSelectionSet = {
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
-        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(6)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -502,11 +496,15 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                     text += generateWrapQueryPath(directivesUsed[i]);
                 }
             }
+            if(directivesUsed[i].directive === "concatenate") {             
+                textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
+                text += textAndConcValues[0];
+                concValues = textAndConcValues[1];
+            }
         }
     }
     text += `
         ${generateIndentation(6)}})
-        ${generateIndentation(5)}};
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
@@ -518,6 +516,9 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                 if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
                     text += generateWrapListResult(directivesUsed[i]);
                 }
+            }
+            if(directivesUsed[i].directive === "concatenate") {
+                text += generateConcatenateListResult(directivesUsed[i], concValues);
             }
         }
     }
