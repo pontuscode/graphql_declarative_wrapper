@@ -24,6 +24,17 @@ type MyTrack {
 	durationInSeconds: Int
 }
 
+ type MyFullTrack {
+	id: ID!
+	title: String!
+	thumbnail: String
+	length: Int
+	modulesCount: Int
+	description: String
+	numberOfViews: Int
+	durationInSeconds: Int
+}
+
 type Query {
     
     myTrack(id: ID!): MyTrack
@@ -33,5 +44,9 @@ type Query {
     myModule(id: ID!): MyModule
         
     myFullModule(id: ID!): MyFullModule
+        
+    myFullTrack(id: ID!): MyFullTrack
+        
+    myFullTracks: [MyFullTrack]
         
 }

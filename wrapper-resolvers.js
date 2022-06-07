@@ -352,9 +352,169 @@ const resolvers = {
         		},
         		context, 
         		info,
-        });
-        return data;
-    },
+        	});
+        	return data;
+        },
+        
+        myFullTrack: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'track',
+        		args: {
+        			id: args.id
+        		},
+        		context, 
+        		info,
+        	});
+        	return data;
+        },
+        
+        myFullTracks: async(_, __, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'tracksForHome',
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["tracksForHome"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        						subtree.selections.forEach(selection => {
+    
+                						if(selection.name.value === "id") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "id"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "title") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "title"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "thumbnail") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "thumbnail"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "length") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "length"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "modulesCount") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "modulesCount"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "description") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "description"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "numberOfViews") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "numberOfViews"
+                								}
+                							})
+                						}
+            
+                						if(selection.name.value === "durationInSeconds") {
+                							newSelectionSet.selections.push({
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "durationInSeconds"
+                								}
+                							})
+                						}
+            
+        						})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				result.forEach(function(element) {
+    
+                			if(element.id !== undefined) {
+                				element.id = element.id; 
+                			}
+            
+                			if(element.title !== undefined) {
+                				element.title = element.title; 
+                			}
+            
+                			if(element.thumbnail !== undefined) {
+                				element.thumbnail = element.thumbnail; 
+                			}
+            
+                			if(element.length !== undefined) {
+                				element.length = element.length; 
+                			}
+            
+                			if(element.modulesCount !== undefined) {
+                				element.modulesCount = element.modulesCount; 
+                			}
+            
+                			if(element.description !== undefined) {
+                				element.description = element.description; 
+                			}
+            
+                			if(element.numberOfViews !== undefined) {
+                				element.numberOfViews = element.numberOfViews; 
+                			}
+            
+                			if(element.durationInSeconds !== undefined) {
+                				element.durationInSeconds = element.durationInSeconds; 
+                			}
+            
+        				});
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
     }
 }
 module.exports = resolvers;    

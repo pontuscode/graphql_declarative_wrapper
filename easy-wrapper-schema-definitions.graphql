@@ -22,3 +22,5 @@ type MyModule @wrap(type: "Module", singleQuery: "module(id: ID!)") {
 }
 
 type MyFullModule @wrap(type: "Module", singleQuery: "module(id: ID!)", includeAllFields: true, excludeFields: ["videoUrl"])
+
+type MyFullTrack @wrap(type: "Track", singleQuery: "track(id: ID!)", listQuery: "tracksForHome", includeAllFields: true)
