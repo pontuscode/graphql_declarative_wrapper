@@ -44,30 +44,32 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "myTitle") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "title"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "author") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
@@ -95,11 +97,11 @@ const resolvers = {
                 
             									]
             								}
-            							}
+            							})
             						}
         
         							if(selection.name.value === "authorName") {
-        								return {
+        								newSelectionSet.selections.push({
     
                 							kind: Kind.FIELD,
                 							name: {
@@ -119,11 +121,22 @@ const resolvers = {
                     								}]
                     							}
                 
-        								}
+        								})
+        							}
+    
+        							if(selection.name.value === "myModulesCount") {
+        								newSelectionSet.selections.push({
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "modulesCount"
+                							}
+            
+        								})
         							}
     
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -146,6 +159,8 @@ const resolvers = {
                 
                         	}
                     
+                    	result.myModulesCount = result.modulesCount;
+                
         				return result;
         			}
         		),
@@ -168,30 +183,32 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "myTitle") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "title"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "author") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
@@ -219,11 +236,11 @@ const resolvers = {
                 
             									]
             								}
-            							}
+            							})
             						}
         
         							if(selection.name.value === "authorName") {
-        								return {
+        								newSelectionSet.selections.push({
     
                 							kind: Kind.FIELD,
                 							name: {
@@ -243,11 +260,22 @@ const resolvers = {
                     								}]
                     							}
                 
-        								}
+        								})
+        							}
+    
+        							if(selection.name.value === "myModulesCount") {
+        								newSelectionSet.selections.push({
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "modulesCount"
+                							}
+            
+        								})
         							}
     
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -271,6 +299,8 @@ const resolvers = {
                 
                         	}
                     
+                    		element.myModulesCount = element.modulesCount;
+                
         				})
         				return result;
         			}
@@ -297,30 +327,31 @@ const resolvers = {
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
-        						selections: subtree.selections.map(selection => {
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "id"
             								}
-            							}
+            							})
             						}
         
             						if(selection.name.value === "content") {
-            							return {
+            							newSelectionSet.selections.push({
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
             									value: "content"
             								}
-            							}
+            							})
             						}
         
         						})
-        					};
         				return newSelectionSet;
         			},
         			(result) => {
@@ -352,7 +383,75 @@ const resolvers = {
         		},
         		context, 
         		info,
-        	});
+        		transforms: [
+        			new WrapQuery(
+        				["module"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "content") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "content"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
+                						}
+                					})
+                				}
+            
+        					})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				return result;
+        			}
+        		),
+        	]
+        	})
         	return data;
         },
         
@@ -367,7 +466,105 @@ const resolvers = {
         		},
         		context, 
         		info,
-        	});
+        		transforms: [
+        			new WrapQuery(
+        				["track"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "thumbnail") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "thumbnail"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "modulesCount") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "modulesCount"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "description") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "description"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "numberOfViews") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "numberOfViews"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
+                						}
+                					})
+                				}
+            
+        					})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				return result;
+        			}
+        		),
+        	]
+        	})
         	return data;
         },
         
@@ -387,89 +584,89 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
-        						subtree.selections.forEach(selection => {
+        					subtree.selections.forEach(selection => {
     
-                						if(selection.name.value === "id") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "id"
-                								}
-                							})
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "title") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "title"
-                								}
-                							})
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "thumbnail") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "thumbnail"
-                								}
-                							})
+                				if(selection.name.value === "thumbnail") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "thumbnail"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "length") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "length"
-                								}
-                							})
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "modulesCount") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "modulesCount"
-                								}
-                							})
+                				if(selection.name.value === "modulesCount") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "modulesCount"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "description") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "description"
-                								}
-                							})
+                				if(selection.name.value === "description") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "description"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "numberOfViews") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "numberOfViews"
-                								}
-                							})
+                				if(selection.name.value === "numberOfViews") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "numberOfViews"
                 						}
+                					})
+                				}
             
-                						if(selection.name.value === "durationInSeconds") {
-                							newSelectionSet.selections.push({
-                								kind: Kind.FIELD,
-                								name: {
-                									kind: Kind.NAME,
-                									value: "durationInSeconds"
-                								}
-                							})
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
                 						}
+                					})
+                				}
             
-        						})
+        					})
         				return newSelectionSet;
         			},
         			(result) => {

@@ -3,6 +3,7 @@ type MyTrack {
 	myTitle: String
 	author: MyAuthor
 	authorName: String
+	myModulesCount: Int
 }
 
  type MyAuthor {

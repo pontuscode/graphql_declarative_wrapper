@@ -147,20 +147,20 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
     if(builtInScalars.includes(directivesUsed.fieldValue)) {
         text += `
             ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
-            ${generateIndentation(7)}return {
+            ${generateIndentation(7)}newSelectionSet.selections.push({
             ${generateIndentation(8)}kind: Kind.FIELD,
             ${generateIndentation(8)}name: {
             ${generateIndentation(9)}kind: Kind.NAME,
             ${generateIndentation(9)}value: "${directivesUsed.argumentValues}"
             ${generateIndentation(8)}}
-            ${generateIndentation(7)}}
+            ${generateIndentation(7)}})
             ${generateIndentation(6)}}
         `;
     } // If the value is not a built-in scalar, we need to fetch the values of the type in the remote schema in order to correctly map them.
     else {
         text += `
             ${generateIndentation(6)}if(selection.name.value === "${directivesUsed.fieldName}") {
-            ${generateIndentation(7)}return {
+            ${generateIndentation(7)}newSelectionSet.selections.push({
             ${generateIndentation(8)}kind: Kind.FIELD,
             ${generateIndentation(8)}name: {
             ${generateIndentation(9)}kind: Kind.NAME,
@@ -187,7 +187,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
         text += `
             ${generateIndentation(9)}]
             ${generateIndentation(8)}}
-            ${generateIndentation(7)}}
+            ${generateIndentation(7)}})
             ${generateIndentation(6)}}
         `;
     }
@@ -197,7 +197,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
 const generateWrapQueryPath = function(directivesUsed) {
     let text =`
         ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
-        ${generateIndentation(8)}return {
+        ${generateIndentation(8)}newSelectionSet.selections.push({
     `;
     for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
         if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
@@ -230,7 +230,7 @@ const generateWrapQueryPath = function(directivesUsed) {
         }
     }
     text += `
-        ${generateIndentation(8)}}
+        ${generateIndentation(8)}})
         ${generateIndentation(7)}}
     `;
     return text;
@@ -334,7 +334,9 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(4)}(subtree) => {
         ${generateIndentation(5)}const newSelectionSet = {
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
-        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -350,7 +352,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     }
     text += `
         ${generateIndentation(6)}})
-        ${generateIndentation(5)}};
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
@@ -392,7 +393,9 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(4)}(subtree) => {
         ${generateIndentation(5)}const newSelectionSet = {
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
-        ${generateIndentation(6)}selections: subtree.selections.map(selection => {
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -408,7 +411,6 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
     }
     text += `
         ${generateIndentation(6)}})
-        ${generateIndentation(5)}};
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
@@ -449,10 +451,45 @@ const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, 
         ${generateIndentation(2)}},
         ${generateIndentation(2)}context, 
         ${generateIndentation(2)}info,
-        ${generateIndentation(1)}});
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
+    `;
+    Object.entries(directiveItem.includeFields).forEach(entry => {
+        const [name, value] = entry;
+        if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
+            text += `
+                ${generateIndentation(4)}if(selection.name.value === "${name}") {
+                ${generateIndentation(5)}newSelectionSet.selections.push({
+                ${generateIndentation(6)}kind: Kind.FIELD,
+                ${generateIndentation(6)}name: {
+                ${generateIndentation(7)}kind: Kind.NAME,
+                ${generateIndentation(7)}value: "${name}"
+                ${generateIndentation(6)}}
+                ${generateIndentation(5)}})
+                ${generateIndentation(4)}}
+            `; 
+        }
+    });
+    text += `
+        ${generateIndentation(5)}})
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
         ${generateIndentation(1)}return data;
         },
-    `
+    `;
     return text;
 }
 
@@ -474,26 +511,26 @@ const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveIt
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
-        ${generateIndentation(6)}subtree.selections.forEach(selection => {
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     Object.entries(directiveItem.includeFields).forEach(entry => {
         const [name, value] = entry;
         if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
             text += `
-                ${generateIndentation(6)}if(selection.name.value === "${name}") {
-                ${generateIndentation(7)}newSelectionSet.selections.push({
-                ${generateIndentation(8)}kind: Kind.FIELD,
-                ${generateIndentation(8)}name: {
-                ${generateIndentation(9)}kind: Kind.NAME,
-                ${generateIndentation(9)}value: "${name}"
-                ${generateIndentation(8)}}
-                ${generateIndentation(7)}})
+                ${generateIndentation(4)}if(selection.name.value === "${name}") {
+                ${generateIndentation(5)}newSelectionSet.selections.push({
+                ${generateIndentation(6)}kind: Kind.FIELD,
+                ${generateIndentation(6)}name: {
+                ${generateIndentation(7)}kind: Kind.NAME,
+                ${generateIndentation(7)}value: "${name}"
                 ${generateIndentation(6)}}
+                ${generateIndentation(5)}})
+                ${generateIndentation(4)}}
             `; 
         }
     });
     text += `
-        ${generateIndentation(6)}})
+        ${generateIndentation(5)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
