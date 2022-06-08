@@ -46,7 +46,7 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
-        						subtree.selections.forEach(selection => {
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
             							newSelectionSet.selections.push( {
@@ -124,6 +124,18 @@ const resolvers = {
         								})
         							}
     
+        							if(selection.name.value === "myModulesCount") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "modulesCount"
+                							}
+            
+        								})
+        							}
+    
         							if(selection.name.value === "concatenateTest") {
         
                     					newSelectionSet.selections.push( {
@@ -169,6 +181,8 @@ const resolvers = {
                 
                         	}
                     
+                    	result.myModulesCount = result.modulesCount;
+                
                 		if(result.concatenateTest === undefined) 
                 			result.concatenateTest = result.description
                 		else
@@ -205,7 +219,7 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
-        						subtree.selections.forEach(selection => {
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
             							newSelectionSet.selections.push( {
@@ -280,6 +294,18 @@ const resolvers = {
                     								}]
                     							}
                 
+        								})
+        							}
+    
+        							if(selection.name.value === "myModulesCount") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "modulesCount"
+                							}
+            
         								})
         							}
     
@@ -329,6 +355,8 @@ const resolvers = {
                 
                         	}
                     
+                    		element.myModulesCount = element.modulesCount;
+                
                 		if(element.concatenateTest === undefined) 
                 			element.concatenateTest = element.description
                 		else
@@ -341,10 +369,9 @@ const resolvers = {
                 		else
                 			element.concatenateTest += element.thumbnail
             
-        				})
         				return result;
-        			}
-        		),
+        			})
+        		})
         	]
         	})
         	return data;
@@ -369,7 +396,7 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
-        						subtree.selections.forEach(selection => {
+        					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
             							newSelectionSet.selections.push( {
@@ -404,6 +431,347 @@ const resolvers = {
             				result.content = result.content;
             			}
         
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
+        
+        myFullModule: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'module',
+        		args: {
+        			id: args.id
+        		},
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["module"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "content") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "content"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
+                						}
+                					})
+                				}
+            
+        					})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
+        
+        myFullTrack: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'track',
+        		args: {
+        			id: args.id
+        		},
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["track"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "thumbnail") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "thumbnail"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "modulesCount") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "modulesCount"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "description") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "description"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "numberOfViews") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "numberOfViews"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
+                						}
+                					})
+                				}
+            
+        					})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				return result;
+        			}
+        		),
+        	]
+        	})
+        	return data;
+        },
+        
+        myFullTracks: async(_, __, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'tracksForHome',
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["tracksForHome"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+                				if(selection.name.value === "id") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "title") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "title"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "thumbnail") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "thumbnail"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "length") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "length"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "modulesCount") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "modulesCount"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "description") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "description"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "numberOfViews") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "numberOfViews"
+                						}
+                					})
+                				}
+            
+                				if(selection.name.value === "durationInSeconds") {
+                					newSelectionSet.selections.push({
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "durationInSeconds"
+                						}
+                					})
+                				}
+            
+        					})
+        				return newSelectionSet;
+        			},
+        			(result) => {
+        				result.forEach(function(element) {
+    
+                			if(element.id !== undefined) {
+                				element.id = element.id; 
+                			}
+            
+                			if(element.title !== undefined) {
+                				element.title = element.title; 
+                			}
+            
+                			if(element.thumbnail !== undefined) {
+                				element.thumbnail = element.thumbnail; 
+                			}
+            
+                			if(element.length !== undefined) {
+                				element.length = element.length; 
+                			}
+            
+                			if(element.modulesCount !== undefined) {
+                				element.modulesCount = element.modulesCount; 
+                			}
+            
+                			if(element.description !== undefined) {
+                				element.description = element.description; 
+                			}
+            
+                			if(element.numberOfViews !== undefined) {
+                				element.numberOfViews = element.numberOfViews; 
+                			}
+            
+                			if(element.durationInSeconds !== undefined) {
+                				element.durationInSeconds = element.durationInSeconds; 
+                			}
+            
+        				});
         				return result;
         			}
         		),

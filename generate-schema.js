@@ -26,7 +26,7 @@ const builtInScalars = [
  */
 const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, wrapperName) {
     let errorMessage;
-    const typeDefinitions = await generateTypeDefinitions(wsDef.schema[0].document, wrapperName);
+    const typeDefinitions = await generateTypeDefinitions(wsDef.schema[0].document, wrapperName, directivesUsed);
     const delegatedResolvers = await generateResolvers(wsDef.schema[0].document, directivesUsed, remoteSchema.schema[0], remoteServerUrl, wrapperName);
     let success = (typeDefinitions !== "" && delegatedResolvers !== "");
     return {
@@ -35,7 +35,8 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
     }
 }
 
-const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl) {
+const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, typeDefFileName) {
+    let typeDefFileContent = "";
     let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
 const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
@@ -66,15 +67,32 @@ const resolvers = {
     Query: {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].argumentName === "type") {
+        // If the user does not want to include all fields, make "custom" resolver for each field value
+        if(directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === false) {
             if(directivesUsed[i].resolvers !== undefined){
                 let parsedArgument = parseArgument(directivesUsed[i].resolvers);
                 let objectTypeName = directivesUsed[i].objectTypeName;
                 if(parsedArgument.singleQuery !== undefined) {
                     fileContent += writeResolverWithArgs(objectTypeName, directivesUsed, parsedArgument.singleQuery, wsDef, remoteSchema);
+                    typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.singleQuery, isList = false);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
                     fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
+                    typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.listQuery, isList = true);
+                }
+            }
+        } // If the user wants to include all fields and has specified a resolver function, just delegate everything to the resolver function "as is".
+        else if(directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === true) {
+            if(directivesUsed[i].resolvers !== undefined) {
+                let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+                let objectTypeName = directivesUsed[i].objectTypeName;
+                if(parsedArgument.singleQuery !== undefined) {
+                    fileContent += writeIncludeAllResolverWithArgs(objectTypeName, directivesUsed[i], parsedArgument.singleQuery);
+                    typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.singleQuery, isList = false);
+                }
+                if(parsedArgument.listQuery !== undefined) {
+                    fileContent += writeIncludeAllResolversWithoutArgs(objectTypeName, directivesUsed[i], parsedArgument.listQuery);
+                    typeDefFileContent += addToQueryType(objectTypeName, parseArgument.listQuery, isList = true);
                 }
             }
         }
@@ -84,6 +102,8 @@ const resolvers = {
 module.exports = resolvers;    
     `;
     await fs.writeFile("wrapper-resolvers.js", fileContent);
+    typeDefFileContent += "\n}";
+    await fs.appendFile(typeDefFileName, typeDefFileContent);
     return fileContent;
 }
 
@@ -111,7 +131,6 @@ const parseArgument = function(input) {
         };
     }
     return parsedValues;
-
 }
 
 const generateIndentation = function(factor) {
@@ -373,6 +392,21 @@ const generateConcatenateListResult = function(directive, concValues) {
 }
 
 
+const addToQueryType = function(objectTypeName, argument, isList) {
+    let text;
+
+    if(isList === true) {
+        text = `
+    ${camelCase(objectTypeName)}s: [${objectTypeName}]
+        `;
+    } else {
+        text = `
+    ${camelCase(objectTypeName)}(${argument.left}: ${argument.right}!): ${objectTypeName}
+        `;
+    }
+    return text;
+}
+
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema) {
     let concValues;
     let text = `    
@@ -395,7 +429,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
-        ${generateIndentation(6)}subtree.selections.forEach(selection => {
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -462,7 +496,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(6)}kind: Kind.SELECTION_SET,
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
-        ${generateIndentation(6)}subtree.selections.forEach(selection => {
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName){
@@ -501,7 +535,61 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         }
     }
     text += `
-        ${generateIndentation(4)}})
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}})
+        ${generateIndentation(2)}})
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
+        },
+    `;
+    return text;
+}
+
+const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, remoteResolver) {
+    let text = `    
+        ${camelCase(objectTypeName)}: async(_, args, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}args: {
+        ${generateIndentation(3)}${remoteResolver.left}: args.${remoteResolver.left}
+        ${generateIndentation(2)}},
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
+    `;
+    Object.entries(directiveItem.includeFields).forEach(entry => {
+        const [name, value] = entry;
+        if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
+            text += `
+                ${generateIndentation(4)}if(selection.name.value === "${name}") {
+                ${generateIndentation(5)}newSelectionSet.selections.push({
+                ${generateIndentation(6)}kind: Kind.FIELD,
+                ${generateIndentation(6)}name: {
+                ${generateIndentation(7)}kind: Kind.NAME,
+                ${generateIndentation(7)}value: "${name}"
+                ${generateIndentation(6)}}
+                ${generateIndentation(5)}})
+                ${generateIndentation(4)}}
+            `; 
+        }
+    });
+    text += `
+        ${generateIndentation(5)}})
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
         ${generateIndentation(4)}return result;
         ${generateIndentation(3)}}
         ${generateIndentation(2)}),
@@ -513,7 +601,73 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
     return text;
 }
 
-const generateTypeDefinitions = async function(wsDef, fileName) {
+const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveItem, remoteResolver) {
+    let text = `    
+        ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
+        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const data = await delegateToSchema({
+        ${generateIndentation(2)}schema: schema,
+        ${generateIndentation(2)}operation: 'query',
+        ${generateIndentation(2)}fieldName: '${remoteResolver.resolver}',
+        ${generateIndentation(2)}context, 
+        ${generateIndentation(2)}info,
+        ${generateIndentation(2)}transforms: [
+        ${generateIndentation(3)}new WrapQuery(
+        ${generateIndentation(4)}["${remoteResolver.resolver}"],
+        ${generateIndentation(4)}(subtree) => {
+        ${generateIndentation(5)}const newSelectionSet = {
+        ${generateIndentation(6)}kind: Kind.SELECTION_SET,
+        ${generateIndentation(6)}selections: [] 
+        ${generateIndentation(5)}}
+        ${generateIndentation(5)}subtree.selections.forEach(selection => {
+    `;
+    Object.entries(directiveItem.includeFields).forEach(entry => {
+        const [name, value] = entry;
+        if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
+            text += `
+                ${generateIndentation(4)}if(selection.name.value === "${name}") {
+                ${generateIndentation(5)}newSelectionSet.selections.push({
+                ${generateIndentation(6)}kind: Kind.FIELD,
+                ${generateIndentation(6)}name: {
+                ${generateIndentation(7)}kind: Kind.NAME,
+                ${generateIndentation(7)}value: "${name}"
+                ${generateIndentation(6)}}
+                ${generateIndentation(5)}})
+                ${generateIndentation(4)}}
+            `; 
+        }
+    });
+    text += `
+        ${generateIndentation(5)}})
+        ${generateIndentation(4)}return newSelectionSet;
+        ${generateIndentation(3)}},
+        ${generateIndentation(3)}(result) => {
+        ${generateIndentation(4)}result.forEach(function(element) {
+    `;
+    Object.entries(directiveItem.includeFields).forEach(entry => {
+        const [name, value] = entry;
+        if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
+            text += `
+                ${generateIndentation(3)}if(element.${name} !== undefined) {
+                ${generateIndentation(4)}element.${name} = element.${name}; 
+                ${generateIndentation(3)}}
+            `;
+        }
+    });
+    text += `
+        ${generateIndentation(4)}});
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
+        ${generateIndentation(1)}})
+        ${generateIndentation(1)}return data;
+        },
+    `;
+    return text;
+}
+
+const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) {
     let fileContent = "";
     wsDef.definitions.forEach(ast => {
         visit(ast, {
@@ -522,6 +676,18 @@ const generateTypeDefinitions = async function(wsDef, fileName) {
                     fileContent += "type " + node.name.value + " {\n";
                 } else {
                     fileContent += "}\n\n type " + node.name.value + " {\n";
+                }
+                // Check if the user wants to include all fields
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
+                        // If they want to include all fields, add the fields to the type definition
+                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
+                            const [name, value] = entry;
+                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
+                                fileContent += `\t${name}: ${value}\n`;
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -549,6 +715,10 @@ const generateTypeDefinitions = async function(wsDef, fileName) {
         });
     });
     fileContent += "}";
+    fileContent += `
+
+type Query {
+    `;
     await fs.writeFile(fileName, fileContent);
     return fileContent;
 }

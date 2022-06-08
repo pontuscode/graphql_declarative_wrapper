@@ -3,6 +3,7 @@ type MyTrack {
 	myTitle: String
 	author: MyAuthor
 	authorName: String
+	myModulesCount: Int
 	concatenateTest: String
 }
 
@@ -16,9 +17,37 @@ type MyTrack {
 	content: String
 }
 
- type Query {
-	myTrack(id: ID!): MyTrack
-	myTracks: [MyTrack]
-	myModule(id: ID!): MyModule
-	myModules: [MyModule]
+ type MyFullModule {
+	id: ID!
+	title: String!
+	length: Int
+	content: String
+	durationInSeconds: Int
+}
+
+ type MyFullTrack {
+	id: ID!
+	title: String!
+	thumbnail: String
+	length: Int
+	modulesCount: Int
+	description: String
+	numberOfViews: Int
+	durationInSeconds: Int
+}
+
+type Query {
+    
+    myTrack(id: ID!): MyTrack
+        
+    myTracks: [MyTrack]
+        
+    myModule(id: ID!): MyModule
+        
+    myFullModule(id: ID!): MyFullModule
+        
+    myFullTrack(id: ID!): MyFullTrack
+        
+    myFullTracks: [MyFullTrack]
+        
 }
