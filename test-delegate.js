@@ -15,7 +15,7 @@ class RemoveNonExistentFieldsTransform {
 }
 
 const schemaWithResolvers = addResolversToSchema({
-  schema: loadSchemaSync(join(__dirname, "./wrapper-schema.graphql"), {
+  schema: loadSchemaSync(join(__dirname, "./new-wrapper-schema.graphql"), {
     loaders: [new GraphQLFileLoader()],
   }),
   resolvers: resolvers,
