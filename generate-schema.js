@@ -244,8 +244,13 @@ const generateWrapResult = function(directivesUsed) {
             ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
             ${generateIndentation(3)}}
         `;
-    } 
-    if(directivesUsed.argumentName.includes("path")) {
+    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
+        text += `
+            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues[0].value} !== undefined) {
+            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues[0].value};
+            ${generateIndentation(3)}}
+        `;
+    } else {
         let tempText = "result";
         for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
             tempText += "." + directivesUsed.argumentValues[i].value;
@@ -276,8 +281,13 @@ const generateWrapListResult = function(directivesUsed) {
             ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues};
             ${generateIndentation(4)}}
         `;
-    } 
-    if(directivesUsed.argumentName.includes("path")) {
+    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
+        text += `
+            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues[0].value} !== undefined) {
+            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues[0].value};
+            ${generateIndentation(3)}}
+        `;
+    } else {
         let tempText = "element";
         for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
             tempText += "." + directivesUsed.argumentValues[i].value;

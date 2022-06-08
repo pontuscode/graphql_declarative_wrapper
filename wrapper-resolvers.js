@@ -159,8 +159,10 @@ const resolvers = {
                 
                         	}
                     
-                    	result.myModulesCount = result.modulesCount;
-                
+            			if(result.modulesCount !== undefined) {
+            				result.myModulesCount = result.modulesCount;
+            			}
+        
         				return result;
         			}
         		),
@@ -299,8 +301,10 @@ const resolvers = {
                 
                         	}
                     
-                    		element.myModulesCount = element.modulesCount;
-                
+            			if(result.modulesCount !== undefined) {
+            				result.myModulesCount = result.modulesCount;
+            			}
+        
         				})
         				return result;
         			}
