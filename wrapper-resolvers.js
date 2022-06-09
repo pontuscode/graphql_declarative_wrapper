@@ -181,8 +181,10 @@ const resolvers = {
                 
                         	}
                     
-                    	result.myModulesCount = result.modulesCount;
-                
+            			if(result.modulesCount !== undefined) {
+            				result.myModulesCount = result.modulesCount;
+            			}
+        
                 		if(result.concatenateTest === undefined) 
                 			result.concatenateTest = result.description
                 		else
@@ -202,9 +204,11 @@ const resolvers = {
         	})
         	return data;
         },
-        
+
         myTracks: async(_, __, context, info) => {
-        	const schema = await remoteSchema();
+        	
+			const schema = await remoteSchema();
+			
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -219,6 +223,7 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
+
         					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
@@ -355,22 +360,34 @@ const resolvers = {
                 
                         	}
                     
-                    		element.myModulesCount = element.modulesCount;
-                
-                		if(element.concatenateTest === undefined) 
-                			element.concatenateTest = element.description
-                		else
-                			element.concatenateTest += element.description
+            				if(element.modulesCount !== undefined) {
+            					element.myModulesCount = element.modulesCount;
+            				}
+							
+							if(element.description !== undefined && element.thumbnail !== undefined){
+								if(element.concatenateTest === undefined) 
+									element.concatenateTest = element.description
+								else
+									element.concatenateTest += element.description
+			
+								element.concatenateTest += " "
+			
+								if(element.concatenateTest === undefined) 
+									element.concatenateTest = element.thumbnail
+								else
+									element.concatenateTest += element.thumbnail
+							}
+                				
             
-                		element.concatenateTest += " "
-            
-                		if(element.concatenateTest === undefined) 
-                			element.concatenateTest = element.thumbnail
-                		else
-                			element.concatenateTest += element.thumbnail
-            
-        				return result;
-        			})
+
+    
+        				})
+						
+						// info.fieldNodes[0].selectionSet.selections.forEach(element =>{
+						// 	console.log(element);
+						// })
+						console.log(result);
+        			return result;
         		})
         	]
         	})
@@ -779,7 +796,8 @@ const resolvers = {
         	})
         	return data;
         },
-    }
+    },
+
 }
 module.exports = resolvers;    
     

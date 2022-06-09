@@ -241,8 +241,13 @@ const generateWrapResult = function(directivesUsed) {
             ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
             ${generateIndentation(3)}}
         `;
-    } 
-    if(directivesUsed.argumentName.includes("path")) {
+    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
+        text += `
+            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues[0].value} !== undefined) {
+            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues[0].value};
+            ${generateIndentation(3)}}
+        `;
+    } else {
         let tempText = "result";
         for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
             tempText += "." + directivesUsed.argumentValues[i].value;
@@ -273,8 +278,13 @@ const generateWrapListResult = function(directivesUsed) {
             ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues};
             ${generateIndentation(4)}}
         `;
-    } 
-    if(directivesUsed.argumentName.includes("path")) {
+    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
+        text += `
+            ${generateIndentation(4)}if(element.${directivesUsed.argumentValues[0].value} !== undefined) {
+            ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues[0].value};
+            ${generateIndentation(4)}}
+        `;
+    } else {
         let tempText = "element";
         for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
             tempText += "." + directivesUsed.argumentValues[i].value;
@@ -372,22 +382,28 @@ const generateConcatenateResult = function(directive, concValues) {
 
 const generateConcatenateListResult = function(directive, concValues) {
     let text = "";
+    text += `
+        ${generateIndentation(5)}if(element.${directive.fieldName} !== undefined){ 
+    `;
     concValues.forEach(value => {
         if(value[1]){
             text += `
-                ${generateIndentation(2)}if(element.${directive.fieldName} === undefined) 
-                ${generateIndentation(3)}element.${directive.fieldName} = element.${value[0]}
-                ${generateIndentation(2)}else
-                ${generateIndentation(3)}element.${directive.fieldName} += element.${value[0]}
+                ${generateIndentation(4)}if(element.${directive.fieldName} === undefined) 
+                ${generateIndentation(5)}element.${directive.fieldName} = element.${value[0]}
+                ${generateIndentation(4)}else
+                ${generateIndentation(5)}element.${directive.fieldName} += element.${value[0]}
             `;
         }
         else{
             text += `
-                ${generateIndentation(2)}element.${directive.fieldName} += "${value[0]}"
+                ${generateIndentation(4)}element.${directive.fieldName} += "${value[0]}"
             `;
         }
         
     })
+    text += `
+        ${generateIndentation(5)}}
+    `
     return text;
 }
 
@@ -535,8 +551,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         }
     }
     text += `
-        ${generateIndentation(4)}return result;
-        ${generateIndentation(3)}})
+        ${generateIndentation(4)}})
+        ${generateIndentation(3)}return result;
         ${generateIndentation(2)}})
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})

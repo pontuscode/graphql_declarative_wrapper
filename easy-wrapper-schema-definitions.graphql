@@ -1,7 +1,7 @@
 directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on OBJECT
 directive @wrap(path: [String!]!) on FIELD_DEFINITION
 directive @wrap(field: String!) on FIELD_DEFINITION
-directive @concatenate(values: [String]) on FIELD_DEFINITION
+directive @concatenate(values: [String!]!) on FIELD_DEFINITION
 
 type MyTrack @wrap(type: "Track", listQuery: "tracksForHome", singleQuery: "track(id: ID!)") {
     id: ID! @wrap(field: "id")
