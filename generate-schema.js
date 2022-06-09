@@ -535,8 +535,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         }
     }
     text += `
-        ${generateIndentation(4)}return result;
         ${generateIndentation(3)}})
+        ${generateIndentation(4)}return result;
         ${generateIndentation(2)}})
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})

@@ -369,8 +369,8 @@ const resolvers = {
                 		else
                 			element.concatenateTest += element.thumbnail
             
-        				return result;
         			})
+        				return result;
         		})
         	]
         	})
