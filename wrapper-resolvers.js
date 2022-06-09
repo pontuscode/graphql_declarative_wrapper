@@ -185,18 +185,6 @@ const resolvers = {
             				result.myModulesCount = result.modulesCount;
             			}
         
-                		if(result.concatenateTest === undefined) 
-                			result.concatenateTest = result.description
-                		else
-                			result.concatenateTest += result.description
-            
-                		result.concatenateTest += " "
-            
-                		if(result.concatenateTest === undefined) 
-                			result.concatenateTest = result.thumbnail
-                		else
-                			result.concatenateTest += result.thumbnail
-            
         				return result;
         			}
         		),
@@ -204,11 +192,9 @@ const resolvers = {
         	})
         	return data;
         },
-
+        
         myTracks: async(_, __, context, info) => {
-        	
-			const schema = await remoteSchema();
-			
+        	const schema = await remoteSchema();
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -223,7 +209,6 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
-
         					subtree.selections.forEach(selection => {
     
             						if(selection.name.value === "id") {
@@ -363,22 +348,7 @@ const resolvers = {
             				if(element.modulesCount !== undefined) {
             					element.myModulesCount = element.modulesCount;
             				}
-							
-							if(element.description !== undefined && element.thumbnail !== undefined){
-								if(element.concatenateTest === undefined) 
-									element.concatenateTest = element.description
-								else
-									element.concatenateTest += element.description
-			
-								element.concatenateTest += " "
-			
-								if(element.concatenateTest === undefined) 
-									element.concatenateTest = element.thumbnail
-								else
-									element.concatenateTest += element.thumbnail
-							}
-                				
-            
+        
         			})
         				return result;
         		})
@@ -427,6 +397,28 @@ const resolvers = {
             								}
             							})
             						}
+        
+        							if(selection.name.value === "anotherConcatenate") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "content"
+                    							}
+                    						}
+                    					)
+                
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "videoUrl"
+                    							}
+                    						}
+                    					)
+                
+        							}
         
         						})
         				return newSelectionSet;
@@ -789,8 +781,49 @@ const resolvers = {
         	})
         	return data;
         },
-    },
-
+    
+        },
+        
+        MyTrack: {
+            
+            concatenateTest: async(parent, _, _context, _info) => {
+        
+                if(parent.concatenateTest === undefined) 
+                	parent.concatenateTest = parent.description
+                else
+                	parent.concatenateTest += parent.description
+                
+                parent.concatenateTest += " "
+                
+                if(parent.concatenateTest === undefined) 
+                	parent.concatenateTest = parent.thumbnail
+                else
+                	parent.concatenateTest += parent.thumbnail
+                
+            	return parent.concatenateTest
+            }
+        
+        },
+        
+        MyModule: {
+            
+            anotherConcatenate: async(parent, _, _context, _info) => {
+        
+                if(parent.anotherConcatenate === undefined) 
+                	parent.anotherConcatenate = parent.content
+                else
+                	parent.anotherConcatenate += parent.content
+                
+                parent.anotherConcatenate += " "
+                
+                if(parent.anotherConcatenate === undefined) 
+                	parent.anotherConcatenate = parent.videoUrl
+                else
+                	parent.anotherConcatenate += parent.videoUrl
+                
+            	return parent.anotherConcatenate
+            }
+        }
 }
 module.exports = resolvers;    
     

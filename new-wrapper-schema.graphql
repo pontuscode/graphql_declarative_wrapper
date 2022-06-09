@@ -15,6 +15,7 @@ type MyTrack {
  type MyModule {
 	id: ID
 	content: String
+	anotherConcatenate: String
 }
 
  type MyFullModule {

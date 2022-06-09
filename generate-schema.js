@@ -97,6 +97,7 @@ const resolvers = {
             }
         }
     }
+    fileContent += addConcatenateResolvers(directivesUsed, remoteSchema.document.definitions);
     fileContent += `}
 }
 module.exports = resolvers;    
@@ -359,53 +360,102 @@ const generateConcatenateField = function(directive, rsDef) {
     return [text, concValues];    
 }
 
-const generateConcatenateResult = function(directive, concValues) {
+const addConcatenateResolvers = function(directivesUsed, rsDef) {
+    const concValues = [];
     let text = "";
-    concValues.forEach(value => {
-        if(value[1]){
-            text += `
-                ${generateIndentation(2)}if(result.${directive.fieldName} === undefined) 
-                ${generateIndentation(3)}result.${directive.fieldName} = result.${value[0]}
-                ${generateIndentation(2)}else
-                ${generateIndentation(3)}result.${directive.fieldName} += result.${value[0]}
-            `;
+    directivesUsed.forEach(directive =>{
+        if(directive.directive === "concatenate"){
+            concValues.push([directive.fieldName, directive.objectTypeName, parseConcArgs(directive,rsDef)]);    
         }
-        else{
-            text += `
-                ${generateIndentation(2)}result.${directive.fieldName} += "${value[0]}"
-            `;
-        }
-        
+    
     })
-    return text;
+    let objectTypeName = "";
+    concValues.forEach(concDirective => {
+        text += `
+        ${generateIndentation(0)}},
+        `
+        if(objectTypeName !== concDirective[1])
+        {
+            objectTypeName = concDirective[1];
+            text += `
+        ${generateIndentation(0)}${objectTypeName}: {
+            `;
+        }
+        text += `
+            ${generateIndentation(0)}${concDirective[0]}: async(parent, _, _context, _info) => {
+        `;
+        concDirective[2].forEach(value => {    
+
+            if(value[1]){
+                text += `
+                ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined) 
+                ${generateIndentation(1)}parent.${concDirective[0]} = parent.${value[0]}
+                ${generateIndentation(0)}else
+                ${generateIndentation(1)}parent.${concDirective[0]} += parent.${value[0]}
+                `;
+            }
+            else{
+                text += `
+                ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}"
+                `;
+            }
+        })
+        text += `
+            ${generateIndentation(1)}return parent.${concDirective[0]}
+            ${generateIndentation(0)}}
+        `
+    })
+    return text
 }
 
-const generateConcatenateListResult = function(directive, concValues) {
-    let text = "";
-    text += `
-        ${generateIndentation(5)}if(element.${directive.fieldName} !== undefined){ 
-    `;
-    concValues.forEach(value => {
-        if(value[1]){
-            text += `
-                ${generateIndentation(4)}if(element.${directive.fieldName} === undefined) 
-                ${generateIndentation(5)}element.${directive.fieldName} = element.${value[0]}
-                ${generateIndentation(4)}else
-                ${generateIndentation(5)}element.${directive.fieldName} += element.${value[0]}
-            `;
-        }
-        else{
-            text += `
-                ${generateIndentation(4)}element.${directive.fieldName} += "${value[0]}"
-            `;
-        }
+// ---------------------------- THE ABOVE SOLVES BOTH generateConcatenateResult AND generateConcatenateListResult -----------------------------
+// const generateConcatenateResult = function(directive, concValues) {
+//     let text = "";
+//     concValues.forEach(value => {
+//         if(value[1]){
+//             text += `
+//                 ${generateIndentation(2)}if(result.${directive.fieldName} === undefined) 
+//                 ${generateIndentation(3)}result.${directive.fieldName} = result.${value[0]}
+//                 ${generateIndentation(2)}else
+//                 ${generateIndentation(3)}result.${directive.fieldName} += result.${value[0]}
+//             `;
+//         }
+//         else{
+//             text += `
+//                 ${generateIndentation(2)}result.${directive.fieldName} += "${value[0]}"
+//             `;
+//         }
         
-    })
-    text += `
-        ${generateIndentation(5)}}
-    `
-    return text;
-}
+//     })
+//     return text;
+// }
+
+// const generateConcatenateListResult = function(directive, concValues) {
+//     let text = "";
+//     text += `
+//         ${generateIndentation(5)}if(element.${directive.fieldName} !== undefined){ 
+//     `;
+//     concValues.forEach(value => {
+//         if(value[1]){
+//             text += `
+//                 ${generateIndentation(4)}if(element.${directive.fieldName} === undefined) 
+//                 ${generateIndentation(5)}element.${directive.fieldName} = element.${value[0]}
+//                 ${generateIndentation(4)}else
+//                 ${generateIndentation(5)}element.${directive.fieldName} += element.${value[0]}
+//             `;
+//         }
+//         else{
+//             text += `
+//                 ${generateIndentation(4)}element.${directive.fieldName} += "${value[0]}"
+//             `;
+//         }
+        
+//     })
+//     text += `
+//         ${generateIndentation(5)}}
+//     `
+//     return text;
+// }
 
 
 const addToQueryType = function(objectTypeName, argument, isList) {
@@ -424,7 +474,8 @@ const addToQueryType = function(objectTypeName, argument, isList) {
 }
 
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema) {
-    let concValues;
+    let concValues =[];
+    let concCounter = 0;
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -460,7 +511,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             if(directivesUsed[i].directive === "concatenate") {
                 textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
                 text += textAndConcValues[0];
-                concValues = textAndConcValues[1];
+                concValues.push(textAndConcValues[1]);
             }
         }
     }
@@ -477,9 +528,10 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                     text += generateWrapResult(directivesUsed[i]);
                 }
             }
-            if(directivesUsed[i].directive === "concatenate") {
-                text += generateConcatenateResult(directivesUsed[i], concValues);
-            }
+            // if(directivesUsed[i].directive === "concatenate") {                                  THIS IS NOT NEEDED WHEN THE CONCATENATE RESOLVER HAS BEEN CREATED
+            //     text += generateConcatenateResult(directivesUsed[i], concValues[concCounter]);
+            //     concCounter = concCounter+1;
+            // }
         }
     }
     text += `
@@ -545,19 +597,14 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                     text += generateWrapListResult(directivesUsed[i]);
                 }
             }
-            if(directivesUsed[i].directive === "concatenate") {
-                text += generateConcatenateListResult(directivesUsed[i], concValues);
-            }
+            // if(directivesUsed[i].directive === "concatenate") {                          THIS IS NOT NEEDED WHEN THE CONCATENATE RESOLVER HAS BEEN CREATED
+            //     text += generateConcatenateListResult(directivesUsed[i], concValues);
+            // }
         }
     }
     text += `
-<<<<<<< HEAD
-        ${generateIndentation(4)}})
-        ${generateIndentation(3)}return result;
-=======
         ${generateIndentation(3)}})
         ${generateIndentation(4)}return result;
->>>>>>> 749173e1e299308d8fb9da7e8d32c7b3de15aa7c
         ${generateIndentation(2)}})
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
