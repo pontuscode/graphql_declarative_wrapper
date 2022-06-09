@@ -379,15 +379,8 @@ const resolvers = {
 							}
                 				
             
-
-    
-        				})
-						
-						// info.fieldNodes[0].selectionSet.selections.forEach(element =>{
-						// 	console.log(element);
-						// })
-						console.log(result);
-        			return result;
+        			})
+        				return result;
         		})
         	]
         	})

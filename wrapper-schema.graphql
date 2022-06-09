@@ -3,7 +3,8 @@ type MyTrack {
 	myTitle: String
 	author: MyAuthor
 	authorName: String
-	myModulesCount: [Int]
+	myModulesCount: Int
+	concatenateTest: String
 }
 
  type MyAuthor {
@@ -14,7 +15,6 @@ type MyTrack {
  type MyModule {
 	id: ID
 	content: String
-	concatenateTest: String
 }
 
  type MyFullModule {

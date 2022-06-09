@@ -1,21 +1,13 @@
-const { loadSchemaSync, loadDocumentsSync } = require('@graphql-tools/load');
+const { loadSchemaSync } = require('@graphql-tools/load');
 const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
-const { wrapSchema, RenameTypes } = require('@graphql-tools/wrap');
-const { ApolloServer, gql } = require('apollo-server');
-const { WrapQuery, WrapType } = require('@graphql-tools/wrap');
-const { SelectionSetNode, Kind } = require('graphql');
+const { ApolloServer } = require('apollo-server');
 const { join } = require("path");
 const resolvers  = require("./wrapper-resolvers");
 const { addResolversToSchema } = require("@graphql-tools/schema");
 
-class RemoveNonExistentFieldsTransform {
-  transformSchema(originalWrappingSchema) {
-
-  }
-}
 
 const schemaWithResolvers = addResolversToSchema({
-  schema: loadSchemaSync(join(__dirname, "./new-wrapper-schema.graphql"), {
+  schema: loadSchemaSync(join(__dirname, "./wrapper-schema.graphql"), {
     loaders: [new GraphQLFileLoader()],
   }),
   resolvers: resolvers,
