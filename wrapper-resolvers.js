@@ -161,42 +161,10 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-    
-            			if(result.id !== undefined) {
-            				result.id = result.id;
-            			}
-        
-            			if(result.title !== undefined) {
-            				result.myTitle = result.title;
-            			}
-        
-            			if(result.author !== undefined) {
-            				result.author = result.author;
-            			}
-        
-                    	if(result.author !== undefined) {
-                
-                    		result.authorName = result.author.name;
-                
-                        	}
-                    
-                    	result.myModulesCount = result.modulesCount;
-                
-                		if(result.concatenateTest === undefined) 
-                			result.concatenateTest = result.description
-                		else
-                			result.concatenateTest += result.description
-            
-                		result.concatenateTest += " "
-            
-                		if(result.concatenateTest === undefined) 
-                			result.concatenateTest = result.thumbnail
-                		else
-                			result.concatenateTest += result.thumbnail
-            
+        			result => {
         				return result;
         			}
+    
         		),
         	]
         	})
@@ -334,45 +302,12 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-        				result.forEach(function(element) {
-    
-            				if(element.id !== undefined) {
-            					element.id = element.id;
-            				}
-        
-            				if(element.title !== undefined) {
-            					element.myTitle = element.title;
-            				}
-        
-            				if(element.author !== undefined) {
-            					element.author = element.author;
-            				}
-        
-                    		if(element.author !== undefined) {
-                
-                    			element.authorName = element.author.name;
-                
-                        	}
-                    
-                    		element.myModulesCount = element.modulesCount;
-                
-                		if(element.concatenateTest === undefined) 
-                			element.concatenateTest = element.description
-                		else
-                			element.concatenateTest += element.description
-            
-                		element.concatenateTest += " "
-            
-                		if(element.concatenateTest === undefined) 
-                			element.concatenateTest = element.thumbnail
-                		else
-                			element.concatenateTest += element.thumbnail
-            
-        			})
+        			result => {
         				return result;
-        		})
+        			}
+        		)
         	]
+    
         	})
         	return data;
         },
@@ -421,18 +356,10 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-    
-            			if(result.id !== undefined) {
-            				result.id = result.id;
-            			}
-        
-            			if(result.content !== undefined) {
-            				result.content = result.content;
-            			}
-        
+        			result => {
         				return result;
         			}
+    
         		),
         	]
         	})
@@ -779,7 +706,45 @@ const resolvers = {
         	})
         	return data;
         },
-    }
+    },
+	MyTrack: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		myTitle: (parent) => {
+			return (parent.title !== undefined) ? parent.title : null;
+		},
+		author: (parent) => {
+			return (parent.author !== undefined) ? parent.author : null;
+		},
+		authorName: (parent) => {
+			return (parent.author.name !== undefined) ? parent.author.name : null;
+		},
+		myModulesCount: (parent) => {
+			return (parent.modulesCount !== undefined) ? parent.modulesCount : null;
+		},
+	},
+	MyAuthor: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		name: (parent) => {
+			return (parent.name !== undefined) ? parent.name : null;
+		},
+	},
+	MyModule: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		content: (parent) => {
+			return (parent.content !== undefined) ? parent.content : null;
+		},
+	},
+	MyFullModule: {
+	},
+	MyFullTrack: {
+	},
+
 }
 module.exports = resolvers;    
     
