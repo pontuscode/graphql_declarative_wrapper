@@ -740,10 +740,6 @@ const resolvers = {
 			return (parent.content !== undefined) ? parent.content : null;
 		},
 	},
-	MyFullModule: {
-	},
-	MyFullTrack: {
-	},
 
 }
 module.exports = resolvers;    

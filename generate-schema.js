@@ -99,25 +99,22 @@ const resolvers = {
         }
     }
     fileContent += `},\n`
-    let typeSpecificResolvers = [];
     /* In this for-loop we write all the field-specific resolvers that map the results from the remote server to the correct wrapper fields. */
     for(let i = 0; i < directivesUsed.length; i++) {
-        // If we are wrapping a type
-        if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type") {
-            // If we have not yet created type-specific resolvers for this object type
-            if(typeSpecificResolvers.includes(directivesUsed[i].objectTypeName) === false) {
-                fileContent += `${generateIndentation(1)}${directivesUsed[i].objectTypeName}: {\n`;
-                // Loop through all the directives and look for fields inside this object type
-                for(let j = 0; j < directivesUsed.length; j++) {
-                    // If it's the same type and we are using some other directive argument than 'type'
-                    if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
-                        if(directivesUsed[j].argumentName !== "type") {
-                            fileContent += generateTypeSpecificResolver(directivesUsed[j]);
-                        }
+        // If we are wrapping a type that does not include all fields, create type-specific resolvers for it
+        if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === false) {
+        // If we have not yet created type-specific resolvers for this object type
+            fileContent += `${generateIndentation(1)}${directivesUsed[i].objectTypeName}: {\n`;
+            // Loop through all the directives and look for fields inside this object type
+            for(let j = 0; j < directivesUsed.length; j++) {
+                // If it's the same type and we are using some other directive argument than 'type'
+                if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
+                    if(directivesUsed[j].argumentName !== "type") {
+                        fileContent += generateTypeSpecificResolver(directivesUsed[j]);
                     }
                 }
-                fileContent += `${generateIndentation(1)}},\n`;
             }
+            fileContent += `${generateIndentation(1)}},\n`;
         }
     }
 
