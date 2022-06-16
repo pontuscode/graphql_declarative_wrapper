@@ -745,6 +745,23 @@ const resolvers = {
 		myModulesCount: (parent) => {
 			return (parent.modulesCount !== undefined) ? parent.modulesCount : null;
 		},
+
+        concatenateTest: async(parent, _, _context, _info) => {
+    
+            if(parent.concatenateTest === undefined) 
+            	parent.concatenateTest = parent.description
+            else
+            	parent.concatenateTest += parent.description
+            
+            parent.concatenateTest += " " 
+
+            if(parent.concatenateTest === undefined) 
+            	parent.concatenateTest = parent.thumbnail
+            else
+            	parent.concatenateTest += parent.thumbnail
+            
+        	return parent.concatenateTest
+        }
 	},
 	MyAuthor: {
 		id: (parent) => {
@@ -761,30 +778,7 @@ const resolvers = {
 		content: (parent) => {
 			return (parent.content !== undefined) ? parent.content : null;
 		},
-	},
 
-    MyTrack: {
-        
-        concatenateTest: async(parent, _, _context, _info) => {
-    
-            if(parent.concatenateTest === undefined) 
-            	parent.concatenateTest = parent.description
-            else
-            	parent.concatenateTest += parent.description
-            
-            parent.concatenateTest += " "
-            
-            if(parent.concatenateTest === undefined) 
-            	parent.concatenateTest = parent.thumbnail
-            else
-            	parent.concatenateTest += parent.thumbnail
-            
-        	return parent.concatenateTest
-        }
-    },
-        
-    MyModule: {
-        
         anotherConcatenate: async(parent, _, _context, _info) => {
     
             if(parent.anotherConcatenate === undefined) 
@@ -792,8 +786,8 @@ const resolvers = {
             else
             	parent.anotherConcatenate += parent.content
             
-            parent.anotherConcatenate += " "
-            
+            parent.anotherConcatenate += " " 
+
             if(parent.anotherConcatenate === undefined) 
             	parent.anotherConcatenate = parent.videoUrl
             else
@@ -801,8 +795,8 @@ const resolvers = {
             
         	return parent.anotherConcatenate
         }
-    },
-        
+	},
+
 }
 module.exports = resolvers;    
     

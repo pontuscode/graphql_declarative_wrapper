@@ -110,15 +110,18 @@ const resolvers = {
             for(let j = 0; j < directivesUsed.length; j++) {
                 // If it's the same type and we are using some other directive argument than 'type'
                 if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
-                    if(directivesUsed[j].argumentName !== "type") {
+                    if(directivesUsed[j].argumentName[0] === "field" || directivesUsed[j].argumentName[0] === "path") {
                         fileContent += generateTypeSpecificResolver(directivesUsed[j]);
+                    }
+                    // If the argumentName is 'values', the directive is concatenate
+                    if(directivesUsed[j].argumentName[0] === "values") {
+                        fileContent += addConcatenateResolvers(directivesUsed[j], remoteSchema.document.definitions);
                     }
                 }
             }
             fileContent += `${generateIndentation(1)}},\n`;
         }
     }
-    fileContent += addConcatenateResolvers(directivesUsed, remoteSchema.document.definitions);
     fileContent += `
 }
 module.exports = resolvers;    
@@ -381,27 +384,9 @@ const generateConcatenateField = function(directive, rsDef) {
     return [text, concValues];    
 }
 
-const addConcatenateResolvers = function(directivesUsed, rsDef) {
-    const concValues = [];
+const addConcatenateResolvers = function(directive, rsDef) {
+    const concDirective = [directive.fieldName, directive.objectTypeName, parseConcArgs(directive,rsDef)];
     let text = "";
-    directivesUsed.forEach(directive =>{
-        if(directive.directive === "concatenate"){
-            concValues.push([directive.fieldName, directive.objectTypeName, parseConcArgs(directive,rsDef)]);    
-        }
-    
-    })
-    let objectTypeName = "";
-    concValues.forEach(concDirective => {
-        // text += `
-        // ${generateIndentation(0)}},
-        // `
-    if(objectTypeName !== concDirective[1])
-    {
-        objectTypeName = concDirective[1];
-        text += `
-    ${generateIndentation(0)}${objectTypeName}: {
-        `;
-    }
     text += `
         ${generateIndentation(0)}${concDirective[0]}: async(parent, _, _context, _info) => {
     `;
@@ -417,16 +402,12 @@ const addConcatenateResolvers = function(directivesUsed, rsDef) {
         }
         else{
             text += `
-            ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}"
-            `;
+            ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}" \n`;
         }
     })
     text += `
         ${generateIndentation(1)}return parent.${concDirective[0]}
-        ${generateIndentation(0)}}
-    ${generateIndentation(0)}},
-        `
-    })
+        ${generateIndentation(0)}}\n`
     return text
 }
 
