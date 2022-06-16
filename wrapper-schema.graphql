@@ -2,6 +2,7 @@ type WrappedUniversity {
 	id: ID
 	undergraduateDegreeObtainedByFaculty: [WrappedFaculty]
 	departments: [WrappedDepartment]
+	undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent]
 }
 
  interface WrappedFaculty {
@@ -48,6 +49,16 @@ type WrappedUniversity {
 	worksFor: WrappedDepartment
 }
 
+ type WrappedGraduateStudent implements & WrappedAuthor {
+	id: ID
+	telephone: String
+	emailAddress: String
+	age: Int
+	memberOf: WrappedDepartment
+	undergraduateDegreeFrom: WrappedUniversity
+	advisor: WrappedProfessor
+}
+
 type Query {
     
     wrappedUniversity(nr: ID!): WrappedUniversity
@@ -55,5 +66,7 @@ type Query {
     wrappedFaculty(nr: ID!): WrappedFaculty
         
     wrappedDepartment(nr: ID!): WrappedDepartment
+        
+    wrappedGraduateStudents: [WrappedGraduateStudent]
         
 }

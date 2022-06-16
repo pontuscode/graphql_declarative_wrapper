@@ -8,6 +8,7 @@ type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID
     id: ID! @wrap(field: "id")
     undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
     departments: [WrappedDepartment] @wrap(field: "departments")
+    undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")
 }
 
 interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: ID!)") {
@@ -52,4 +53,15 @@ type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lect
 	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
 	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 	worksFor: WrappedDepartment @wrap(field: "worksFor") 
+} 
+
+# FIXA SÅ ATT TYPER SOM IMPLEMENTERAR INTERFACES KAN HA EGNA FÄLT
+type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") { 
+	id: ID! @wrap(field: "id")
+	telephone: String @wrap(field: "telephone")
+	emailAddress: String @wrap(field: "emailAddress")
+	age: Int @wrap(field: "age")
+	memberOf: WrappedDepartment @wrap(field: "memberOf")
+	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+	advisor: WrappedProfessor @wrap(field: "advisor")
 } 

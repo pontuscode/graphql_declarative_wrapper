@@ -162,6 +162,78 @@ const resolvers = {
             							})
             						}
         
+            						if(selection.name.value === "undergraduateDegreeObtainedBystudent") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "undergraduateDegreeObtainedBystudent"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "age"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "memberOf"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "advisor"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
@@ -262,6 +334,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -302,6 +382,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -339,6 +427,14 @@ const resolvers = {
                     									name: {
                     										kind: Kind.NAME,
                     										value: "departments"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
                     									}
                     								},
                 
@@ -438,6 +534,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -520,6 +624,253 @@ const resolvers = {
         	})
         	return data;
         },
+        
+        wrappedGraduateStudents: async(_, __, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'graduateStudents',
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["graduateStudents"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+            						if(selection.name.value === "id") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "telephone") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "telephone"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "emailAddress") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "emailAddress"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "age") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "age"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "memberOf") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "memberOf"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "subOrganizationOf"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "faculties"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "undergraduateDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "undergraduateDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "advisor") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "advisor"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "researchInterest"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "profType"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "masterDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "worksFor"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+        						})
+        				return newSelectionSet;
+        			},
+        			result => {
+        				return result;
+        			}
+        		)
+        	]
+    
+        	})
+        	return data;
+        },
     },
 	WrappedUniversity: {
 		id: (parent) => {
@@ -530,6 +881,9 @@ const resolvers = {
 		},
 		departments: (parent) => {
 			return (parent.departments !== undefined) ? parent.departments : null;
+		},
+		undergraduateDegreeObtainedBystudent: (parent) => {
+			return (parent.undergraduateDegreeObtainedBystudent !== undefined) ? parent.undergraduateDegreeObtainedBystudent : null;
 		},
 	},
 	WrappedDepartment: {
@@ -596,6 +950,29 @@ const resolvers = {
 		},
 		worksFor: (parent) => {
 			return (parent.worksFor !== undefined) ? parent.worksFor : null;
+		},
+	},
+	WrappedGraduateStudent: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		telephone: (parent) => {
+			return (parent.telephone !== undefined) ? parent.telephone : null;
+		},
+		emailAddress: (parent) => {
+			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
+		},
+		age: (parent) => {
+			return (parent.age !== undefined) ? parent.age : null;
+		},
+		memberOf: (parent) => {
+			return (parent.memberOf !== undefined) ? parent.memberOf : null;
+		},
+		undergraduateDegreeFrom: (parent) => {
+			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;
+		},
+		advisor: (parent) => {
+			return (parent.advisor !== undefined) ? parent.advisor : null;
 		},
 	},
 
