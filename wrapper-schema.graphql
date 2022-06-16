@@ -9,6 +9,8 @@ type WrappedUniversity {
 	telephone: String
 	emailAddress: String
 	undergraduateDegreeFrom: WrappedUniversity
+	masterDegreeFrom: WrappedUniversity
+	doctoralDegreeFrom: WrappedUniversity
 }
 
  type WrappedDepartment {
@@ -23,12 +25,23 @@ type WrappedUniversity {
 	emailAddress: String
 }
 
- type WrappedProfessor implements WrappedFaculty & WrappedAuthor {
+ type WrappedProfessor implements & WrappedFaculty & WrappedAuthor {
 	id: ID
 	telephone: String
 	emailAddress: String
 	researchInterest: String
 	profType: String
+	undergraduateDegreeFrom: WrappedUniversity
+	masterDegreeFrom: WrappedUniversity
+	doctoralDegreeFrom: WrappedUniversity
+	worksFor: WrappedDepartment
+}
+
+ type WrappedLecturer implements & WrappedFaculty & WrappedAuthor {
+	id: ID
+	telephone: String
+	emailAddress: String
+	position: String
 	undergraduateDegreeFrom: WrappedUniversity
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity

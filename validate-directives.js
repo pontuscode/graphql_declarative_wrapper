@@ -127,15 +127,41 @@ const parseResolvers = function(args) {
 }
 
 const parseInterfaces = function(node) {
-    let interfaces = [];
+    let interfaces = {};
     if(node.interfaces !== undefined) {
         if(node.interfaces.length > 0) { // has the user implemented any interfaces on this type?
             for(let i = 0; i < node.interfaces.length; i++) {
-                interfaces.push(node.interfaces[i].name.value);
+                interfaces[node.interfaces[i].name.value] = "";
             }
         }
     }
-    return (interfaces.length > 0) ? interfaces : undefined;
+    return (Object.entries(interfaces).length > 0) ? interfaces : undefined;
+}
+
+const validateInterfaces = function(directivesUsed, interfaces) {
+    let valid = true;
+    let errorMessage = "";
+    if(interfaces !== undefined) {
+        Object.keys(interfaces).forEach(key => {
+            for(let i = 0; i < directivesUsed.length; i++) {
+                if(directivesUsed[i].argumentName === "interface" && directivesUsed[i].interfaceTypeName === key) {
+                    interfaces[key] = directivesUsed[i].remoteInterfaceTypeName;
+                    //entry[1] = directivesUsed[i].remoteInterfaceTypeName;
+                }
+            }
+        })
+        Object.entries(interfaces).forEach(entry => {
+            const [name, value] = entry;
+            if(name.length === 0 || value.length === 0) {
+                valid = false;
+                errorMessage = `Could not find type ${name} for interface X`;
+            }
+        });
+    }
+    return {
+        "valid": valid,
+        "errorMessage": errorMessage
+    }
 }
 
 /**
@@ -173,6 +199,11 @@ const parseSchemaDirectives = function(schema) {
                             errorMessage = validateInclude.errorMessage;
                         }
                         let interfaces = parseInterfaces(node);
+                        let validateInter = validateInterfaces(directivesUsed, interfaces);
+                        if(validateInter.valid === false) {
+                            valid = false;
+                            errorMessage = validateInter.errorMessage;
+                        }
                         let temp = {
                             "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
                             "objectTypeName": node.name.value,
@@ -210,7 +241,7 @@ const parseSchemaDirectives = function(schema) {
                         } 
                         let temp = {
                             "remoteInterfaceTypeName": node.directives[0].arguments[0].value.value,
-                            "objectInterfaceName": node.name.value,
+                            "interfaceTypeName": node.name.value,
                             "directive": node.directives[0].name.value,
                             "argumentName": node.directives[0].arguments[0].name.value,
                             "argumentValues": node.directives[0].arguments[0].value.value,

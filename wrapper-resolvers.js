@@ -101,6 +101,22 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "masterDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -149,10 +165,11 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			result => {
-        				return result;
-        			}
     
+            		result => {
+            			return result;
+            		}
+        
         		),
         	]
         	})
@@ -250,13 +267,105 @@ const resolvers = {
             							})
             						}
         
+            						if(selection.name.value === "masterDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "masterDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "doctoralDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "doctoralDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
-        			result => {
-        				return result;
-        			}
     
+            		result => {
+            			if(result !== null) {
+        
+                			if(result.__typename === "Professor") {
+                				result.__typename = "WrappedProfessor";
+                			}
+            
+                			if(result.__typename === "Lecturer") {
+                				result.__typename = "WrappedLecturer";
+                			}
+            
+            			}
+            			return result;
+            		}
+        
         		),
         	]
         	})
@@ -377,6 +486,22 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "masterDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -385,10 +510,11 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			result => {
-        				return result;
-        			}
     
+            		result => {
+            			return result;
+            		}
+        
         		),
         	]
         	})
@@ -432,6 +558,32 @@ const resolvers = {
 		},
 		profType: (parent) => {
 			return (parent.profType !== undefined) ? parent.profType : null;
+		},
+		undergraduateDegreeFrom: (parent) => {
+			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;
+		},
+		masterDegreeFrom: (parent) => {
+			return (parent.masterDegreeFrom !== undefined) ? parent.masterDegreeFrom : null;
+		},
+		doctoralDegreeFrom: (parent) => {
+			return (parent.doctoralDegreeFrom !== undefined) ? parent.doctoralDegreeFrom : null;
+		},
+		worksFor: (parent) => {
+			return (parent.worksFor !== undefined) ? parent.worksFor : null;
+		},
+	},
+	WrappedLecturer: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		telephone: (parent) => {
+			return (parent.telephone !== undefined) ? parent.telephone : null;
+		},
+		emailAddress: (parent) => {
+			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
+		},
+		position: (parent) => {
+			return (parent.position !== undefined) ? parent.position : null;
 		},
 		undergraduateDegreeFrom: (parent) => {
 			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;

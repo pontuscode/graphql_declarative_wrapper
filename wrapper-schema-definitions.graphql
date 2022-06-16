@@ -15,6 +15,8 @@ interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: I
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+    masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
+	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 }
 
 type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
@@ -40,3 +42,14 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
 	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 	worksFor: WrappedDepartment @wrap(field: "worksFor")
 }
+
+type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer") { 
+	id: ID! @wrap(field: "id")
+	telephone: String @wrap(field: "telephone")
+	emailAddress: String @wrap(field: "emailAddress")
+	position: String @wrap(field: "position")
+	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom") 
+	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
+	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+	worksFor: WrappedDepartment @wrap(field: "worksFor") 
+} 
