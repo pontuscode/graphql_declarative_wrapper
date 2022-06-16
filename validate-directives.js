@@ -126,6 +126,18 @@ const parseResolvers = function(args) {
     }
 }
 
+const parseInterfaces = function(node) {
+    let interfaces = [];
+    if(node.interfaces !== undefined) {
+        if(node.interfaces.length > 0) { // has the user implemented any interfaces on this type?
+            for(let i = 0; i < node.interfaces.length; i++) {
+                interfaces.push(node.interfaces[i].name.value);
+            }
+        }
+    }
+    return (interfaces.length > 0) ? interfaces : undefined;
+}
+
 /**
  * 
  * @param {*} schema: the wrapper schema definitions
@@ -141,6 +153,7 @@ const parseResolvers = function(args) {
 const parseSchemaDirectives = function(schema) { 
     directivesUsed = [];
     let remoteObjectTypeName;
+    let remoteInterfaceTypeName;
     let valid = true;
     let errorMessage = "";
     schema.definitions.forEach(ast => {
@@ -158,10 +171,46 @@ const parseSchemaDirectives = function(schema) {
                         if(validateInclude.valid === false) {
                             valid = false;
                             errorMessage = validateInclude.errorMessage;
-                        } 
+                        }
+                        let interfaces = parseInterfaces(node);
                         let temp = {
                             "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
                             "objectTypeName": node.name.value,
+                            "directive": node.directives[0].name.value,
+                            "argumentName": node.directives[0].arguments[0].name.value,
+                            "argumentValues": node.directives[0].arguments[0].value.value,
+                            "resolvers": resolvers,
+                            "includeAllFields": includeExcludeFields.includeAllFields,
+                            "excludeFields": includeExcludeFields.excludeFields,
+                            "includeFields": {}, // These will be added later if includeAllFields is true,
+                            "interfaces": interfaces
+                        };
+                        if(!directivesUsed.includes(temp)){
+                            directivesUsed.push(temp); 
+                            remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                        }
+                    }
+                }
+            }
+        });
+        visit(ast, {
+            InterfaceTypeDefinition(node) {
+                if(node.directives.length > 0) {
+                    if(node.directives[0].arguments === undefined) {
+                        valid = false; // There needs to be atleast one argument
+                        errorMessage = `No arguments found for interface ${node.name.value}, atleast one argument is required!`;
+                    } else {
+                        let resolvers = parseResolvers(node.directives[0].arguments);
+                        let includeExcludeFields = parseIncludeExclude(node.directives[0].arguments);
+                        // If the user has indicated that they want to include all or exclude fields, then validate it
+                        let validateInclude = validateIncludeExclude(includeExcludeFields);
+                        if(validateInclude.valid === false) {
+                            valid = false;
+                            errorMessage = validateInclude.errorMessage;
+                        } 
+                        let temp = {
+                            "remoteInterfaceTypeName": node.directives[0].arguments[0].value.value,
+                            "objectInterfaceName": node.name.value,
                             "directive": node.directives[0].name.value,
                             "argumentName": node.directives[0].arguments[0].name.value,
                             "argumentValues": node.directives[0].arguments[0].value.value,
@@ -172,7 +221,7 @@ const parseSchemaDirectives = function(schema) {
                         };
                         if(!directivesUsed.includes(temp)){
                             directivesUsed.push(temp); 
-                            remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                            remoteInterfaceTypeName = ast.directives[0].arguments[0].value.value;
                         }
                     }
                 }
@@ -196,8 +245,14 @@ const parseSchemaDirectives = function(schema) {
                                 valid = false;
                                 errorMessage = `Expected List or String for argument ${node.directives[i].arguments[0].name.value.toUpperCase()} on field ${node.name.value.toUpperCase()}, got ${argumentType}.`;
                         }
+                        let remote;
+                        if(remoteInterfaceTypeName !== undefined) {
+                            remote = remoteInterfaceTypeName;
+                        } else if(remoteObjectTypeName !== undefined) {
+                            remote = remoteObjectTypeName;
+                        }
                         let temp = {
-                            "remoteObjectTypeName": remoteObjectTypeName,
+                            "remoteObjectTypeName": remote,
                             "objectTypeName": ast.name.value,
                             "fieldName": node.name.value,
                             "fieldValue": fieldValue,
@@ -216,7 +271,6 @@ const parseSchemaDirectives = function(schema) {
             }
         });
     });
-
     return {
         "directivesUsed": directivesUsed,
         "valid": valid,
@@ -360,6 +414,23 @@ const validateWrap = function(item, remoteSchema) {
                 });
             }
         });
+    } else if(item.argumentName == "interface") {
+        remoteSchema.definitions.forEach(ast => {
+            visit(ast, {
+                InterfaceTypeDefinition(node) {
+                    if(item.remoteInterfaceTypeName === node.name.value) { // Does the interface exist? 
+                        if(item.includeAllFields === true) { // If they want to include all fields, validate it against the remote schema.
+                            let checkIncludeExclude = validateAgainstRemoteSchema(item, node, "includeExclude");
+                            if(checkIncludeExclude.valid === true) {
+                                appendFieldsToType(item, node); //If the arguments were correctly used, append the fields to the wrapper type defs
+                            }
+                        }
+                        found = true;
+                        WrappedTypes.push(item.objectTypeName);
+                    }
+                }
+            });
+        });   
     }
     return found;
 }

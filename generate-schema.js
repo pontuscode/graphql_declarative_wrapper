@@ -96,6 +96,17 @@ const resolvers = {
                     typeDefFileContent += addToQueryType(objectTypeName, parseArgument.listQuery, isList = true);
                 }
             }
+        } else if(directivesUsed[i].argumentName === "interface" && directivesUsed[i].includeAllFields === false) {
+            let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+            let objectInterfaceName = directivesUsed[i].objectInterfaceName;
+            if(parsedArgument.singleQuery !== undefined) {
+                fileContent += writeResolverWithArgs(objectInterfaceName, directivesUsed, parsedArgument.singleQuery, wsDef, remoteSchema);
+                typeDefFileContent += addToQueryType(objectInterfaceName, parsedArgument.singleQuery, isList = false);
+            } 
+            if(parsedArgument.listQuery !== undefined) {
+                fileContent += writeResolverWithoutArgs(objectInterfaceName, directivesUsed, parsedArgument.listQuery, remoteSchema);
+                typeDefFileContent += addToQueryType(objectInterfaceName, parsedArgument.listQuery, isList = true);
+            }
         }
     }
     fileContent += `},\n`
@@ -717,9 +728,43 @@ const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) 
         visit(ast, {
             ObjectTypeDefinition(node) {
                 if(fileContent === "") { // If the content is currently empty we should not add any brackets 
-                    fileContent += "type " + node.name.value + " {\n";
+                    fileContent += "type " + node.name.value;
                 } else {
-                    fileContent += "}\n\n type " + node.name.value + " {\n";
+                    fileContent += "}\n\n type " + node.name.value;
+                }
+                // Check if the user wants to implement any interfaces
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].interfaces !== undefined) {
+                        fileContent += " implements ";
+                        for(let j = 0; j < directivesUsed[i].interfaces.length; j++) {
+                            fileContent += directivesUsed[i].interfaces[j];
+                            if(j !== (directivesUsed[i].interfaces.length - 1)) { // If we are not at the last interface, add an ampersand
+                                fileContent += " & ";
+                            }
+                        }
+                    }
+                }
+                fileContent += " {\n"; // new line to field declarations
+                // Check if the user wants to include all fields
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
+                        // If they want to include all fields, add the fields to the type definition
+                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
+                            const [name, value] = entry;
+                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
+                                fileContent += `\t${name}: ${value}\n`;
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        visit(ast, {
+            InterfaceTypeDefinition(node) {
+                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
+                    fileContent += "interface " + node.name.value + " {\n";
+                } else {
+                    fileContent += "}\n\n interface " + node.name.value + " {\n";
                 }
                 // Check if the user wants to include all fields
                 for(let i = 0; i < directivesUsed.length; i++) {

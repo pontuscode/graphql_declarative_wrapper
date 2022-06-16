@@ -27,20 +27,20 @@ const remoteSchema = async () => {
 const resolvers = {
     Query: {
         
-        myTrack: async(_, args, context, info) => {
+        wrappedUniversity: async(_, args, context, info) => {
         	const schema = await remoteSchema();
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
-        		fieldName: 'track',
+        		fieldName: 'university',
         		args: {
-        			id: args.id
+        			nr: args.nr
         		},
         		context, 
         		info,
         		transforms: [
         			new WrapQuery(
-        				["track"],
+        				["university"],
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
@@ -58,22 +58,12 @@ const resolvers = {
             							})
             						}
         
-            						if(selection.name.value === "myTitle") {
+            						if(selection.name.value === "undergraduateDegreeObtainedByFaculty") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
-            									value: "title"
-            								}
-            							})
-            						}
-        
-            						if(selection.name.value === "author") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "author"
+            									value: "undergraduateDegreeObtainedByFaculty"
             								},
             								selectionSet: {
             									kind: Kind.SELECTION_SET,
@@ -91,7 +81,23 @@ const resolvers = {
                     									kind: Kind.FIELD,
                     									name: {
                     										kind: Kind.NAME,
-                    										value: "name"
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
                     									}
                     								},
                 
@@ -100,121 +106,12 @@ const resolvers = {
             							})
             						}
         
-        							if(selection.name.value === "authorName") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "author"
-                							}, 
-                							selectionSet: {
-                								kind: Kind.SELECTION_SET,
-                								selections: [{
-            
-                									kind: Kind.FIELD,
-                									name: {
-                										kind: Kind.NAME,
-                										value: "name"
-                									}
-            
-                    								}]
-                    							}
-                
-        								})
-        							}
-    
-        							if(selection.name.value === "myModulesCount") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "modulesCount"
-                							}
-            
-        								})
-        							}
-    
-        							if(selection.name.value === "concatenateTest") {
-        
-                    					newSelectionSet.selections.push( {
-                    						kind: Kind.FIELD,
-                    							name: {
-                    								kind: Kind.NAME,
-                    								value: "description"
-                    							}
-                    						}
-                    					)
-                
-                    					newSelectionSet.selections.push( {
-                    						kind: Kind.FIELD,
-                    							name: {
-                    								kind: Kind.NAME,
-                    								value: "thumbnail"
-                    							}
-                    						}
-                    					)
-                
-        							}
-        
-        						})
-        				return newSelectionSet;
-        			},
-        			result => {
-        				return result;
-        			}
-    
-        		),
-        	]
-        	})
-        	return data;
-        },
-        
-        myTracks: async(_, __, context, info) => {
-        	const schema = await remoteSchema();
-        	const data = await delegateToSchema({
-        		schema: schema,
-        		operation: 'query',
-        		fieldName: 'tracksForHome',
-        		context, 
-        		info,
-        		transforms: [
-        			new WrapQuery(
-        				["tracksForHome"],
-        				(subtree) => {
-        					const newSelectionSet = {
-        						kind: Kind.SELECTION_SET,
-        						selections: [] 
-        					}
-        					subtree.selections.forEach(selection => {
-    
-            						if(selection.name.value === "id") {
+            						if(selection.name.value === "departments") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
-            									value: "id"
-            								}
-            							})
-            						}
-        
-            						if(selection.name.value === "myTitle") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "title"
-            								}
-            							})
-            						}
-        
-            						if(selection.name.value === "author") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "author"
+            									value: "departments"
             								},
             								selectionSet: {
             									kind: Kind.SELECTION_SET,
@@ -232,7 +129,15 @@ const resolvers = {
                     									kind: Kind.FIELD,
                     									name: {
                     										kind: Kind.NAME,
-                    										value: "name"
+                    										value: "subOrganizationOf"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "faculties"
                     									}
                     								},
                 
@@ -241,91 +146,33 @@ const resolvers = {
             							})
             						}
         
-        							if(selection.name.value === "authorName") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "author"
-                							}, 
-                							selectionSet: {
-                								kind: Kind.SELECTION_SET,
-                								selections: [{
-            
-                									kind: Kind.FIELD,
-                									name: {
-                										kind: Kind.NAME,
-                										value: "name"
-                									}
-            
-                    								}]
-                    							}
-                
-        								})
-        							}
-    
-        							if(selection.name.value === "myModulesCount") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "modulesCount"
-                							}
-            
-        								})
-        							}
-    
-        							if(selection.name.value === "concatenateTest") {
-        
-                    					newSelectionSet.selections.push( {
-                    						kind: Kind.FIELD,
-                    							name: {
-                    								kind: Kind.NAME,
-                    								value: "description"
-                    							}
-                    						}
-                    					)
-                
-                    					newSelectionSet.selections.push( {
-                    						kind: Kind.FIELD,
-                    							name: {
-                    								kind: Kind.NAME,
-                    								value: "thumbnail"
-                    							}
-                    						}
-                    					)
-                
-        							}
-        
         						})
         				return newSelectionSet;
         			},
         			result => {
         				return result;
         			}
-        		)
-        	]
     
+        		),
+        	]
         	})
         	return data;
         },
         
-        myModule: async(_, args, context, info) => {
+        wrappedFaculty: async(_, args, context, info) => {
         	const schema = await remoteSchema();
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
-        		fieldName: 'module',
+        		fieldName: 'faculty',
         		args: {
-        			id: args.id
+        			nr: args.nr
         		},
         		context, 
         		info,
         		transforms: [
         			new WrapQuery(
-        				["module"],
+        				["faculty"],
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
@@ -343,12 +190,62 @@ const resolvers = {
             							})
             						}
         
-            						if(selection.name.value === "content") {
+            						if(selection.name.value === "telephone") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
             								name: {
             									kind: Kind.NAME,
-            									value: "content"
+            									value: "telephone"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "emailAddress") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "emailAddress"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "undergraduateDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "undergraduateDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+            									]
             								}
             							})
             						}
@@ -366,20 +263,20 @@ const resolvers = {
         	return data;
         },
         
-        myFullModule: async(_, args, context, info) => {
+        wrappedDepartment: async(_, args, context, info) => {
         	const schema = await remoteSchema();
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
-        		fieldName: 'module',
+        		fieldName: 'department',
         		args: {
-        			id: args.id
+        			nr: args.nr
         		},
         		context, 
         		info,
         		transforms: [
         			new WrapQuery(
-        				["module"],
+        				["department"],
         				(subtree) => {
         					const newSelectionSet = {
         						kind: Kind.SELECTION_SET,
@@ -387,357 +284,166 @@ const resolvers = {
         					}
         					subtree.selections.forEach(selection => {
     
-                				if(selection.name.value === "id") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "id"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "title") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "title"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "length") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "length"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "content") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "content"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "durationInSeconds") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "durationInSeconds"
-                						}
-                					})
-                				}
-            
-        					})
-        				return newSelectionSet;
-        			},
-        			(result) => {
-        				return result;
-        			}
-        		),
-        	]
-        	})
-        	return data;
-        },
+            						if(selection.name.value === "id") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								}
+            							})
+            						}
         
-        myFullTrack: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
-        	const data = await delegateToSchema({
-        		schema: schema,
-        		operation: 'query',
-        		fieldName: 'track',
-        		args: {
-        			id: args.id
-        		},
-        		context, 
-        		info,
-        		transforms: [
-        			new WrapQuery(
-        				["track"],
-        				(subtree) => {
-        					const newSelectionSet = {
-        						kind: Kind.SELECTION_SET,
-        						selections: [] 
-        					}
-        					subtree.selections.forEach(selection => {
-    
-                				if(selection.name.value === "id") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "id"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "title") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "title"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "thumbnail") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "thumbnail"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "length") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "length"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "modulesCount") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "modulesCount"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "description") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "description"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "numberOfViews") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "numberOfViews"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "durationInSeconds") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "durationInSeconds"
-                						}
-                					})
-                				}
-            
-        					})
-        				return newSelectionSet;
-        			},
-        			(result) => {
-        				return result;
-        			}
-        		),
-        	]
-        	})
-        	return data;
-        },
+            						if(selection.name.value === "subOrganizationOf") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "subOrganizationOf"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
         
-        myFullTracks: async(_, __, context, info) => {
-        	const schema = await remoteSchema();
-        	const data = await delegateToSchema({
-        		schema: schema,
-        		operation: 'query',
-        		fieldName: 'tracksForHome',
-        		context, 
-        		info,
-        		transforms: [
-        			new WrapQuery(
-        				["tracksForHome"],
-        				(subtree) => {
-        					const newSelectionSet = {
-        						kind: Kind.SELECTION_SET,
-        						selections: [] 
-        					}
-        					subtree.selections.forEach(selection => {
-    
-                				if(selection.name.value === "id") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "id"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "title") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "title"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "thumbnail") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "thumbnail"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "length") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "length"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "modulesCount") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "modulesCount"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "description") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "description"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "numberOfViews") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "numberOfViews"
-                						}
-                					})
-                				}
-            
-                				if(selection.name.value === "durationInSeconds") {
-                					newSelectionSet.selections.push({
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "durationInSeconds"
-                						}
-                					})
-                				}
-            
-        					})
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "faculties") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "faculties"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+        						})
         				return newSelectionSet;
         			},
-        			(result) => {
-        				result.forEach(function(element) {
-    
-                			if(element.id !== undefined) {
-                				element.id = element.id; 
-                			}
-            
-                			if(element.title !== undefined) {
-                				element.title = element.title; 
-                			}
-            
-                			if(element.thumbnail !== undefined) {
-                				element.thumbnail = element.thumbnail; 
-                			}
-            
-                			if(element.length !== undefined) {
-                				element.length = element.length; 
-                			}
-            
-                			if(element.modulesCount !== undefined) {
-                				element.modulesCount = element.modulesCount; 
-                			}
-            
-                			if(element.description !== undefined) {
-                				element.description = element.description; 
-                			}
-            
-                			if(element.numberOfViews !== undefined) {
-                				element.numberOfViews = element.numberOfViews; 
-                			}
-            
-                			if(element.durationInSeconds !== undefined) {
-                				element.durationInSeconds = element.durationInSeconds; 
-                			}
-            
-        				});
+        			result => {
         				return result;
         			}
+    
         		),
         	]
         	})
         	return data;
         },
     },
-	MyTrack: {
+	WrappedUniversity: {
 		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
-		myTitle: (parent) => {
-			return (parent.title !== undefined) ? parent.title : null;
+		undergraduateDegreeObtainedByFaculty: (parent) => {
+			return (parent.undergraduateDegreeObtainedByFaculty !== undefined) ? parent.undergraduateDegreeObtainedByFaculty : null;
 		},
-		author: (parent) => {
-			return (parent.author !== undefined) ? parent.author : null;
-		},
-		authorName: (parent) => {
-			return (parent.author.name !== undefined) ? parent.author.name : null;
-		},
-		myModulesCount: (parent) => {
-			return (parent.modulesCount !== undefined) ? parent.modulesCount : null;
+		departments: (parent) => {
+			return (parent.departments !== undefined) ? parent.departments : null;
 		},
 	},
-	MyAuthor: {
+	WrappedDepartment: {
 		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
-		name: (parent) => {
-			return (parent.name !== undefined) ? parent.name : null;
+		subOrganizationOf: (parent) => {
+			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
+		},
+		faculties: (parent) => {
+			return (parent.faculties !== undefined) ? parent.faculties : null;
 		},
 	},
-	MyModule: {
+	WrappedProfessor: {
 		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
-		content: (parent) => {
-			return (parent.content !== undefined) ? parent.content : null;
+		telephone: (parent) => {
+			return (parent.telephone !== undefined) ? parent.telephone : null;
+		},
+		emailAddress: (parent) => {
+			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
+		},
+		researchInterest: (parent) => {
+			return (parent.researchInterest !== undefined) ? parent.researchInterest : null;
+		},
+		profType: (parent) => {
+			return (parent.profType !== undefined) ? parent.profType : null;
+		},
+		undergraduateDegreeFrom: (parent) => {
+			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;
+		},
+		masterDegreeFrom: (parent) => {
+			return (parent.masterDegreeFrom !== undefined) ? parent.masterDegreeFrom : null;
+		},
+		doctoralDegreeFrom: (parent) => {
+			return (parent.doctoralDegreeFrom !== undefined) ? parent.doctoralDegreeFrom : null;
+		},
+		worksFor: (parent) => {
+			return (parent.worksFor !== undefined) ? parent.worksFor : null;
 		},
 	},
 

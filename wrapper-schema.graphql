@@ -1,53 +1,46 @@
-type MyTrack {
+type WrappedUniversity {
 	id: ID
-	myTitle: String
-	author: MyAuthor
-	authorName: String
-	myModulesCount: Int
-	concatenateTest: String
+	undergraduateDegreeObtainedByFaculty: [WrappedFaculty]
+	departments: [WrappedDepartment]
 }
 
- type MyAuthor {
+ interface WrappedFaculty {
 	id: ID
-	name: String
+	telephone: String
+	emailAddress: String
+	undergraduateDegreeFrom: WrappedUniversity
 }
 
- type MyModule {
+ type WrappedDepartment {
 	id: ID
-	content: String
+	subOrganizationOf: WrappedUniversity
+	faculties: [WrappedFaculty]
 }
 
- type MyFullModule {
-	id: ID!
-	title: String!
-	length: Int
-	content: String
-	durationInSeconds: Int
+ interface WrappedAuthor {
+	id: ID
+	telephone: String
+	emailAddress: String
 }
 
- type MyFullTrack {
-	id: ID!
-	title: String!
-	thumbnail: String
-	length: Int
-	modulesCount: Int
-	description: String
-	numberOfViews: Int
-	durationInSeconds: Int
+ type WrappedProfessor implements WrappedFaculty & WrappedAuthor {
+	id: ID
+	telephone: String
+	emailAddress: String
+	researchInterest: String
+	profType: String
+	undergraduateDegreeFrom: WrappedUniversity
+	masterDegreeFrom: WrappedUniversity
+	doctoralDegreeFrom: WrappedUniversity
+	worksFor: WrappedDepartment
 }
 
 type Query {
     
-    myTrack(id: ID!): MyTrack
+    wrappedUniversity(nr: ID!): WrappedUniversity
         
-    myTracks: [MyTrack]
+    wrappedFaculty(nr: ID!): WrappedFaculty
         
-    myModule(id: ID!): MyModule
-        
-    myFullModule(id: ID!): MyFullModule
-        
-    myFullTrack(id: ID!): MyFullTrack
-        
-    myFullTracks: [MyFullTrack]
+    wrappedDepartment(nr: ID!): WrappedDepartment
         
 }

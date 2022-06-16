@@ -8,11 +8,13 @@
     "dev": "nodemon index.js",
     "generate": "node wrap-main.js",
     "delegate": "nodemon test-delegate.js",
-    "resolvers": "nodemon test-resolvers.js"
+    "resolvers": "nodemon test-resolvers.js",
+    "testdriver": "node test-driver/index.js"
   },
   "author": "Pontus Jarnemyr & Markus Gustafsson",
   "license": "MIT",
   "dependencies": {
+    "@apollo/client": "^3.6.8",
     "@graphql-codegen/cli": "^2.6.2",
     "@graphql-codegen/schema-ast": "^2.4.1",
     "@graphql-codegen/typescript": "^2.4.8",
@@ -21,6 +23,7 @@
     "@graphql-tools/wrap": "^8.4.16",
     "apollo-link-http": "^1.5.17",
     "apollo-server": "^3.6.7",
+    "apollo-server-plugin-response-cache": "^3.6.0",
     "graphql": "^16.5.0",
     "graphql-tools": "^8.2.8",
     "lodash": "^4.17.21",

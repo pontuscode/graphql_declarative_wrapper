@@ -20,7 +20,7 @@ type University
 	graduateStudentConnection: CollectionOfEdgesToUgStudents
 } 
 
-interface Faculty  
+interface Faculty  # denna var interface innan!
 { 
 	id: ID! 
 	telephone: String 

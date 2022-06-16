@@ -1,13 +1,24 @@
 const { gql } = require('apollo-server');
 
 const typeDefs = gql`
+  enum CacheControlScope {
+  PUBLIC
+  PRIVATE
+}
+
+directive @cacheControl(
+  maxAge: Int
+  scope: CacheControlScope
+  inheritMaxAge: Boolean
+) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
+  
   type Query {
     "Query to get tracks array for the homepage grid"
-    tracksForHome: [Track!]!
+    tracksForHome: [Track!]! @cacheControl(maxAge: 0) 
     "Fetch a specific track, provided a track's ID"
-    track(id: ID!): Track!
+    track(id: ID!): Track! @cacheControl(maxAge: 0) 
     "Fetch a specific module, provided a module's ID"
-    module(id: ID!): Module!
+    module(id: ID!): Module! @cacheControl(maxAge: 0) 
   }
 
   type Mutation {
