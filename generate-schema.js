@@ -96,6 +96,30 @@ const resolvers = {
                     typeDefFileContent += addToQueryType(objectTypeName, parseArgument.listQuery, isList = true);
                 }
             }
+        } else if(directivesUsed[i].argumentName === "interface" && directivesUsed[i].includeAllFields === false) {
+            let parsedArgument = parseArgument(directivesUsed[i].resolvers);
+            let interfaceTypeName = directivesUsed[i].interfaceTypeName;
+            let typesImplementingInterface = {};
+            for(let j = 0; j < directivesUsed.length; j++) {
+                if(directivesUsed[j].argumentName === "type") {
+                    if(directivesUsed[j].interfaces !== undefined) {
+                        Object.entries(directivesUsed[j].interfaces).forEach(entry => {
+                            const [name, value] = entry; 
+                            if(name === directivesUsed[i].interfaceTypeName) {
+                                typesImplementingInterface[directivesUsed[j].remoteObjectTypeName] = directivesUsed[j].objectTypeName;
+                            }
+                        })
+                    }
+                }
+            }
+            if(parsedArgument.singleQuery !== undefined) {
+                fileContent += writeResolverWithArgs(interfaceTypeName, directivesUsed, parsedArgument.singleQuery, wsDef, remoteSchema, typesImplementingInterface);
+                typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.singleQuery, isList = false);
+            } 
+            if(parsedArgument.listQuery !== undefined) {
+                fileContent += writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
+                typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.listQuery, isList = true);
+            }
         }
     }
 
@@ -476,9 +500,8 @@ const addToQueryType = function(objectTypeName, argument, isList) {
     return text;
 }
 
-const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema) {
-    let concValues =[];
-    let concCounter = 0;
+const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
+    let concValues = [];
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -502,7 +525,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(5)}subtree.selections.forEach(selection => {
     `;
     for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].objectTypeName === objectTypeName){
+        if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
                 if(directivesUsed[i].argumentName.includes("field")) {
                     text += generateWrapQueryField(directivesUsed[i], directivesUsed);
@@ -522,10 +545,32 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
-        ${generateIndentation(3)}result => {
-        ${generateIndentation(4)}return result;
-        ${generateIndentation(3)}}
     `;
+    if(typesImplementingInterface !== undefined) {
+        text += `
+            ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}if(result !== null) {
+        `;
+        Object.entries(typesImplementingInterface).forEach(entry => {
+            const [name, value] = entry;
+            text += `
+                ${generateIndentation(3)}if(result.__typename === "${name}") {
+                ${generateIndentation(4)}result.__typename = "${value}";
+                ${generateIndentation(3)}}
+            `;
+        })
+        text += `
+            ${generateIndentation(3)}}
+            ${generateIndentation(3)}return result;
+            ${generateIndentation(2)}}
+        `;
+    } else {
+        text += `
+            ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}return result;
+            ${generateIndentation(2)}}
+        `;
+    }
     /*for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName) {
             if(directivesUsed[i].directive === "wrap") {
@@ -767,9 +812,46 @@ const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) 
         visit(ast, {
             ObjectTypeDefinition(node) {
                 if(fileContent === "") { // If the content is currently empty we should not add any brackets 
-                    fileContent += "type " + node.name.value + " {\n";
+                    fileContent += "type " + node.name.value;
                 } else {
-                    fileContent += "}\n\n type " + node.name.value + " {\n";
+                    fileContent += "}\n\n type " + node.name.value;
+                }
+                // Check if the user wants to implement any interfaces
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].interfaces !== undefined) {
+                        fileContent += " implements";
+                        Object.keys(directivesUsed[i].interfaces).forEach(key => {
+                            fileContent += " & " + key;
+                        });
+                        /*for(let j = 0; j < Object.keys(directivesUsed[i].interfaces).length; j++) {
+                            fileContent += directivesUsed[i].interfaces[j];
+                            if(j !== (directivesUsed[i].interfaces.length - 1)) { // If we are not at the last interface, add an ampersand
+                                fileContent += " & ";
+                            }
+                        }*/
+                    }
+                }
+                fileContent += " {\n"; // new line to field declarations
+                // Check if the user wants to include all fields
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
+                        // If they want to include all fields, add the fields to the type definition
+                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
+                            const [name, value] = entry;
+                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
+                                fileContent += `\t${name}: ${value}\n`;
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        visit(ast, {
+            InterfaceTypeDefinition(node) {
+                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
+                    fileContent += "interface " + node.name.value + " {\n";
+                } else {
+                    fileContent += "}\n\n interface " + node.name.value + " {\n";
                 }
                 // Check if the user wants to include all fields
                 for(let i = 0; i < directivesUsed.length; i++) {

@@ -1,37 +1,67 @@
-directive @wrap(type: String!) on OBJECT
+directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on OBJECT
+directive @wrap(interface: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on INTERFACE
 directive @wrap(path: [String!]!) on FIELD_DEFINITION
 directive @wrap(field: String!) on FIELD_DEFINITION
 directive @concatenate(values: [String]) on FIELD_DEFINITION
 
-
-type Student {
-    id: ID!
-    firstName: String
-    lastName: String
-    #fullName: String @concatenate(values: ["firstName", " ", "lastName"], second: ["hej"]) ---SHOULD GIVE ERROR BECAUSE OF TOO MANY ARGS & NO WRAP---
-    professors: [Professor]
-    classes: [Class]
+type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
+    departments: [WrappedDepartment] @wrap(field: "departments")
+    undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")
 }
 
-type MyProfessor @wrap(type: "Professor") {
-    id: ID!
-    firstName: String
-    lastName: String
-    students: [Student]
-   # teaches: [Class] @concatenate(values: ["firstName", " ", "lastName"])  ---- SHOULD GIVE ERRORS BECAUSE TYPES ARE DIFFERING ----
-    emailPhone: String @concatenate(values: ["emailAddress", " ", "telephone"])
-    examinerOf: [GraduateStudent] @wrap(path: ["supervisedGraduateStudents", "emailAddress"])
+interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
+    undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+    masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
+	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 }
 
-type Class {
-    id: ID
-    name: String
-    students: [Student]
-    teacher: Professor 
+type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
+    faculties: [WrappedFaculty] @wrap(field: "faculties")
 }
 
-type Query {
-    getStudents: [Student!]
-    getProfessors: [Professor!]
-    getClasses: [Class!]
+interface WrappedAuthor @wrap(interface: "Author") {#, includeAllFields: true)
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
 }
+
+type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Professor") {
+    id: ID! @wrap(field: "id")
+	telephone: String @wrap(field: "telephone")
+	emailAddress: String @wrap(field: "emailAddress")
+	researchInterest: String @wrap(field: "researchInterest")
+	profType: String @wrap(field: "profType")
+	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
+	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+	worksFor: WrappedDepartment @wrap(field: "worksFor")
+}
+
+type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer") { 
+	id: ID! @wrap(field: "id")
+	telephone: String @wrap(field: "telephone")
+	emailAddress: String @wrap(field: "emailAddress")
+	position: String @wrap(field: "position")
+	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom") 
+	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
+	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+	worksFor: WrappedDepartment @wrap(field: "worksFor") 
+} 
+
+# FIXA SÅ ATT TYPER SOM IMPLEMENTERAR INTERFACES KAN HA EGNA FÄLT
+type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") { 
+	id: ID! @wrap(field: "id")
+	telephone: String @wrap(field: "telephone")
+	emailAddress: String @wrap(field: "emailAddress")
+	age: Int @wrap(field: "age")
+	memberOf: WrappedDepartment @wrap(field: "memberOf")
+	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+	advisor: WrappedProfessor @wrap(field: "advisor")
+} 

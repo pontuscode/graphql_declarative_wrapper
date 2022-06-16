@@ -10,12 +10,13 @@ const schemaWithResolvers = addResolversToSchema({
   schema: loadSchemaSync(join(__dirname, "./wrapper-schema.graphql"), {
     loaders: [new GraphQLFileLoader()],
   }),
-  resolvers: resolvers,
+  resolvers: resolvers
 });
 
 const server = new ApolloServer({
   schema: schemaWithResolvers,
   csrfPrevention: true,
+
 });
 
 
