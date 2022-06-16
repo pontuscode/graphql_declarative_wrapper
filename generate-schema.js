@@ -66,6 +66,7 @@ const remoteSchema = async () => {
 const resolvers = {
     Query: {
     `;
+    /* In this for-loop we write all the resolver functions with their respective wrapQuery transforms. */
     for(let i = 0; i < directivesUsed.length; i++){
         // If the user does not want to include all fields, make "custom" resolver for each field value
         if(directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === false) {
@@ -97,8 +98,28 @@ const resolvers = {
             }
         }
     }
+
+    fileContent += `},\n`
+    /* In this for-loop we write all the field-specific resolvers that map the results from the remote server to the correct wrapper fields. */
+    for(let i = 0; i < directivesUsed.length; i++) {
+        // If we are wrapping a type that does not include all fields, create type-specific resolvers for it
+        if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === false) {
+        // If we have not yet created type-specific resolvers for this object type
+            fileContent += `${generateIndentation(1)}${directivesUsed[i].objectTypeName}: {\n`;
+            // Loop through all the directives and look for fields inside this object type
+            for(let j = 0; j < directivesUsed.length; j++) {
+                // If it's the same type and we are using some other directive argument than 'type'
+                if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
+                    if(directivesUsed[j].argumentName !== "type") {
+                        fileContent += generateTypeSpecificResolver(directivesUsed[j]);
+                    }
+                }
+            }
+            fileContent += `${generateIndentation(1)}},\n`;
+        }
+    }
     fileContent += addConcatenateResolvers(directivesUsed, remoteSchema.document.definitions);
-    fileContent += `}
+    fileContent += `
 }
 module.exports = resolvers;    
     `;
@@ -371,38 +392,39 @@ const addConcatenateResolvers = function(directivesUsed, rsDef) {
     })
     let objectTypeName = "";
     concValues.forEach(concDirective => {
+        // text += `
+        // ${generateIndentation(0)}},
+        // `
+    if(objectTypeName !== concDirective[1])
+    {
+        objectTypeName = concDirective[1];
         text += `
-        ${generateIndentation(0)}},
-        `
-        if(objectTypeName !== concDirective[1])
-        {
-            objectTypeName = concDirective[1];
+    ${generateIndentation(0)}${objectTypeName}: {
+        `;
+    }
+    text += `
+        ${generateIndentation(0)}${concDirective[0]}: async(parent, _, _context, _info) => {
+    `;
+    concDirective[2].forEach(value => {    
+
+        if(value[1]){
             text += `
-        ${generateIndentation(0)}${objectTypeName}: {
+            ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined) 
+            ${generateIndentation(1)}parent.${concDirective[0]} = parent.${value[0]}
+            ${generateIndentation(0)}else
+            ${generateIndentation(1)}parent.${concDirective[0]} += parent.${value[0]}
             `;
         }
-        text += `
-            ${generateIndentation(0)}${concDirective[0]}: async(parent, _, _context, _info) => {
-        `;
-        concDirective[2].forEach(value => {    
-
-            if(value[1]){
-                text += `
-                ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined) 
-                ${generateIndentation(1)}parent.${concDirective[0]} = parent.${value[0]}
-                ${generateIndentation(0)}else
-                ${generateIndentation(1)}parent.${concDirective[0]} += parent.${value[0]}
-                `;
-            }
-            else{
-                text += `
-                ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}"
-                `;
-            }
-        })
-        text += `
-            ${generateIndentation(1)}return parent.${concDirective[0]}
-            ${generateIndentation(0)}}
+        else{
+            text += `
+            ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}"
+            `;
+        }
+    })
+    text += `
+        ${generateIndentation(1)}return parent.${concDirective[0]}
+        ${generateIndentation(0)}}
+    ${generateIndentation(0)}},
         `
     })
     return text
@@ -519,9 +541,11 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
-        ${generateIndentation(3)}(result) => {
+        ${generateIndentation(3)}result => {
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
     `;
-    for(let i = 0; i < directivesUsed.length; i++){
+    /*for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName) {
             if(directivesUsed[i].directive === "wrap") {
                 if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
@@ -533,16 +557,38 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             //     concCounter = concCounter+1;
             // }
         }
-    }
+    }*/
     text += `
-        ${generateIndentation(4)}return result;
-        ${generateIndentation(3)}}
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
         ${generateIndentation(1)}return data;
         },
     `;
+    return text;
+}
+
+const generateTypeSpecificResolver = function(directive) {
+    let text = "";
+    if(directive.argumentName.includes("field")){
+        text += `${generateIndentation(2)}${directive.fieldName}: (parent) => {\n`;
+        text += `${generateIndentation(3)}return (parent.${directive.argumentValues} !== undefined) ? parent.${directive.argumentValues} : null;\n`;
+        text += `${generateIndentation(2)}},\n`;
+    } else if(directive.argumentName.includes("path")) {
+        text += `${generateIndentation(2)}${directive.fieldName}: (parent) => {\n`;
+        let path = "parent.";
+        for(let i = 0; i < directive.argumentValues.length; i++) {
+            path += directive.argumentValues[i].value;
+            // If we're not on the last element
+            if(i !== (directive.argumentValues.length - 1)) {
+                path += ".";
+            }
+        }
+        text += `${generateIndentation(3)}return (${path} !== undefined) ? ${path} : null;\n`;
+        text += `${generateIndentation(2)}},\n`;
+    } else if(directive.argumentName.includes("concatenate")) {
+        console.log("hey!");
+    }
     return text;
 }
 
@@ -587,10 +633,13 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(6)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
-        ${generateIndentation(3)}(result) => {
-        ${generateIndentation(4)}result.forEach(function(element) {
+        ${generateIndentation(3)}result => {
+        ${generateIndentation(4)}return result;
+        ${generateIndentation(3)}}
+        ${generateIndentation(2)})
+        ${generateIndentation(1)}]
     `;
-    for(let i = 0; i < directivesUsed.length; i++){
+    /*for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName) {
             if(directivesUsed[i].directive === "wrap") {
                 if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
@@ -601,12 +650,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
             //     text += generateConcatenateListResult(directivesUsed[i], concValues);
             // }
         }
-    }
+    }*/
     text += `
-        ${generateIndentation(3)}})
-        ${generateIndentation(4)}return result;
-        ${generateIndentation(2)}})
-        ${generateIndentation(1)}]
         ${generateIndentation(1)}})
         ${generateIndentation(1)}return data;
         },

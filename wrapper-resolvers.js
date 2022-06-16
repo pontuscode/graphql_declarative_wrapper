@@ -161,32 +161,10 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-    
-            			if(result.id !== undefined) {
-            				result.id = result.id;
-            			}
-        
-            			if(result.title !== undefined) {
-            				result.myTitle = result.title;
-            			}
-        
-            			if(result.author !== undefined) {
-            				result.author = result.author;
-            			}
-        
-                    	if(result.author !== undefined) {
-                
-                    		result.authorName = result.author.name;
-                
-                        	}
-                    
-            			if(result.modulesCount !== undefined) {
-            				result.myModulesCount = result.modulesCount;
-            			}
-        
+        			result => {
         				return result;
         			}
+    
         		),
         	]
         	})
@@ -324,35 +302,12 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-        				result.forEach(function(element) {
-    
-            				if(element.id !== undefined) {
-            					element.id = element.id;
-            				}
-        
-            				if(element.title !== undefined) {
-            					element.myTitle = element.title;
-            				}
-        
-            				if(element.author !== undefined) {
-            					element.author = element.author;
-            				}
-        
-                    		if(element.author !== undefined) {
-                
-                    			element.authorName = element.author.name;
-                
-                        	}
-                    
-            				if(element.modulesCount !== undefined) {
-            					element.myModulesCount = element.modulesCount;
-            				}
-        
-        			})
+        			result => {
         				return result;
-        		})
+        			}
+        		)
         	]
+    
         	})
         	return data;
         },
@@ -423,18 +378,10 @@ const resolvers = {
         						})
         				return newSelectionSet;
         			},
-        			(result) => {
-    
-            			if(result.id !== undefined) {
-            				result.id = result.id;
-            			}
-        
-            			if(result.content !== undefined) {
-            				result.content = result.content;
-            			}
-        
+        			result => {
         				return result;
         			}
+    
         		),
         	]
         	})
@@ -781,49 +728,81 @@ const resolvers = {
         	})
         	return data;
         },
+    },
+	MyTrack: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		myTitle: (parent) => {
+			return (parent.title !== undefined) ? parent.title : null;
+		},
+		author: (parent) => {
+			return (parent.author !== undefined) ? parent.author : null;
+		},
+		authorName: (parent) => {
+			return (parent.author.name !== undefined) ? parent.author.name : null;
+		},
+		myModulesCount: (parent) => {
+			return (parent.modulesCount !== undefined) ? parent.modulesCount : null;
+		},
+	},
+	MyAuthor: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		name: (parent) => {
+			return (parent.name !== undefined) ? parent.name : null;
+		},
+	},
+	MyModule: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		content: (parent) => {
+			return (parent.content !== undefined) ? parent.content : null;
+		},
+	},
+
+    MyTrack: {
+        
+        concatenateTest: async(parent, _, _context, _info) => {
     
-        },
-        
-        MyTrack: {
+            if(parent.concatenateTest === undefined) 
+            	parent.concatenateTest = parent.description
+            else
+            	parent.concatenateTest += parent.description
             
-            concatenateTest: async(parent, _, _context, _info) => {
-        
-                if(parent.concatenateTest === undefined) 
-                	parent.concatenateTest = parent.description
-                else
-                	parent.concatenateTest += parent.description
-                
-                parent.concatenateTest += " "
-                
-                if(parent.concatenateTest === undefined) 
-                	parent.concatenateTest = parent.thumbnail
-                else
-                	parent.concatenateTest += parent.thumbnail
-                
-            	return parent.concatenateTest
-            }
-        
-        },
-        
-        MyModule: {
+            parent.concatenateTest += " "
             
-            anotherConcatenate: async(parent, _, _context, _info) => {
-        
-                if(parent.anotherConcatenate === undefined) 
-                	parent.anotherConcatenate = parent.content
-                else
-                	parent.anotherConcatenate += parent.content
-                
-                parent.anotherConcatenate += " "
-                
-                if(parent.anotherConcatenate === undefined) 
-                	parent.anotherConcatenate = parent.videoUrl
-                else
-                	parent.anotherConcatenate += parent.videoUrl
-                
-            	return parent.anotherConcatenate
-            }
+            if(parent.concatenateTest === undefined) 
+            	parent.concatenateTest = parent.thumbnail
+            else
+            	parent.concatenateTest += parent.thumbnail
+            
+        	return parent.concatenateTest
         }
+    },
+        
+    MyModule: {
+        
+        anotherConcatenate: async(parent, _, _context, _info) => {
+    
+            if(parent.anotherConcatenate === undefined) 
+            	parent.anotherConcatenate = parent.content
+            else
+            	parent.anotherConcatenate += parent.content
+            
+            parent.anotherConcatenate += " "
+            
+            if(parent.anotherConcatenate === undefined) 
+            	parent.anotherConcatenate = parent.videoUrl
+            else
+            	parent.anotherConcatenate += parent.videoUrl
+            
+        	return parent.anotherConcatenate
+        }
+    },
+        
 }
 module.exports = resolvers;    
     
