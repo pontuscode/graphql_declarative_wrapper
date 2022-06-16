@@ -1,12 +1,5 @@
-const { makeExecutableSchema } = require("@graphql-tools/schema");
-const { loadSchemaSync } = require('@graphql-tools/load');
-const { GraphQLFileLoader } = require('@graphql-tools/graphql-file-loader');
-const { delegateToSchema } = require("@graphql-tools/delegate");
 const fs = require("fs").promises;
-const { parse, visit, print } = require("graphql/language");
-const { ApolloServer } = require("apollo-server/node_modules/apollo-server-express");
-const { wrapSchema, introspectSchema } = require('@graphql-tools/wrap');
-const { split } = require("lodash");
+const { visit } = require("graphql/language");
 const prompt = require('prompt-sync')({sigint: true});
 
 const builtInScalars = [
@@ -282,79 +275,6 @@ const generateWrapQueryPath = function(directivesUsed) {
     return text;
 }
 
-const generateWrapResult = function(directivesUsed) {
-    let text = "";
-    if(directivesUsed.argumentName.includes("field")) {
-        text += `
-            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues} !== undefined) {
-            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues};
-            ${generateIndentation(3)}}
-        `;
-    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
-        text += `
-            ${generateIndentation(3)}if(result.${directivesUsed.argumentValues[0].value} !== undefined) {
-            ${generateIndentation(4)}result.${directivesUsed.fieldName} = result.${directivesUsed.argumentValues[0].value};
-            ${generateIndentation(3)}}
-        `;
-    } else {
-        let tempText = "result";
-        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
-            tempText += "." + directivesUsed.argumentValues[i].value;
-            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
-                text += `
-                    ${generateIndentation(i + 1)}result.${directivesUsed.fieldName} = ${tempText};
-                `;
-                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
-                    text += `
-                        ${generateIndentation(i + 1 - j)}}
-                    `;
-                }
-            } else { // Else, just keep building the if statement
-                text += `
-                    ${generateIndentation(i + 1)}if(${tempText} !== undefined) {
-                `;
-            }
-        }
-    }
-    return text;
-}
-
-const generateWrapListResult = function(directivesUsed) {
-    let text = "";
-    if(directivesUsed.argumentName.includes("field")) {
-        text += `
-            ${generateIndentation(4)}if(element.${directivesUsed.argumentValues} !== undefined) {
-            ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues};
-            ${generateIndentation(4)}}
-        `;
-    } else if(directivesUsed.argumentName.includes("path") && directivesUsed.argumentValues.length === 1) {
-        text += `
-            ${generateIndentation(4)}if(element.${directivesUsed.argumentValues[0].value} !== undefined) {
-            ${generateIndentation(5)}element.${directivesUsed.fieldName} = element.${directivesUsed.argumentValues[0].value};
-            ${generateIndentation(4)}}
-        `;
-    } else {
-        let tempText = "element";
-        for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
-            tempText += "." + directivesUsed.argumentValues[i].value;
-            if(i == directivesUsed.argumentValues.length - 1) { // If we are at the last element, set the result object to its value
-                text += `
-                    ${generateIndentation(i + 2)}element.${directivesUsed.fieldName} = ${tempText};
-                `;
-                for(let j = 1; j < directivesUsed.argumentValues.length; j++) {
-                    text += `
-                        ${generateIndentation(i + 1 - j)}}
-                    `;
-                }
-            } else { // Else, just keep building the if statement
-                text += `
-                    ${generateIndentation(i + 2)}if(${tempText} !== undefined) {
-                `;
-            }
-        }
-    }
-    return text;
-}
 
 const parseConcArgs = function(directive, rsDef) {
     let remoteName = directive.remoteObjectTypeName;
@@ -434,56 +354,6 @@ const addConcatenateResolvers = function(directive, rsDef) {
         ${generateIndentation(0)}}\n`
     return text
 }
-
-// ---------------------------- THE ABOVE SOLVES BOTH generateConcatenateResult AND generateConcatenateListResult -----------------------------
-// const generateConcatenateResult = function(directive, concValues) {
-//     let text = "";
-//     concValues.forEach(value => {
-//         if(value[1]){
-//             text += `
-//                 ${generateIndentation(2)}if(result.${directive.fieldName} === undefined) 
-//                 ${generateIndentation(3)}result.${directive.fieldName} = result.${value[0]}
-//                 ${generateIndentation(2)}else
-//                 ${generateIndentation(3)}result.${directive.fieldName} += result.${value[0]}
-//             `;
-//         }
-//         else{
-//             text += `
-//                 ${generateIndentation(2)}result.${directive.fieldName} += "${value[0]}"
-//             `;
-//         }
-        
-//     })
-//     return text;
-// }
-
-// const generateConcatenateListResult = function(directive, concValues) {
-//     let text = "";
-//     text += `
-//         ${generateIndentation(5)}if(element.${directive.fieldName} !== undefined){ 
-//     `;
-//     concValues.forEach(value => {
-//         if(value[1]){
-//             text += `
-//                 ${generateIndentation(4)}if(element.${directive.fieldName} === undefined) 
-//                 ${generateIndentation(5)}element.${directive.fieldName} = element.${value[0]}
-//                 ${generateIndentation(4)}else
-//                 ${generateIndentation(5)}element.${directive.fieldName} += element.${value[0]}
-//             `;
-//         }
-//         else{
-//             text += `
-//                 ${generateIndentation(4)}element.${directive.fieldName} += "${value[0]}"
-//             `;
-//         }
-        
-//     })
-//     text += `
-//         ${generateIndentation(5)}}
-//     `
-//     return text;
-// }
-
 
 const addToQueryType = function(objectTypeName, argument, isList) {
     let text;
@@ -571,19 +441,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             ${generateIndentation(2)}}
         `;
     }
-    /*for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].objectTypeName === objectTypeName) {
-            if(directivesUsed[i].directive === "wrap") {
-                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
-                    text += generateWrapResult(directivesUsed[i]);
-                }
-            }
-            // if(directivesUsed[i].directive === "concatenate") {                                  THIS IS NOT NEEDED WHEN THE CONCATENATE RESOLVER HAS BEEN CREATED
-            //     text += generateConcatenateResult(directivesUsed[i], concValues[concCounter]);
-            //     concCounter = concCounter+1;
-            // }
-        }
-    }*/
+
     text += `
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
@@ -665,18 +523,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(2)})
         ${generateIndentation(1)}]
     `;
-    /*for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].objectTypeName === objectTypeName) {
-            if(directivesUsed[i].directive === "wrap") {
-                if(directivesUsed[i].argumentName.includes("field") || directivesUsed[i].argumentName.includes("path")) {
-                    text += generateWrapListResult(directivesUsed[i]);
-                }
-            }
-            // if(directivesUsed[i].directive === "concatenate") {                          THIS IS NOT NEEDED WHEN THE CONCATENATE RESOLVER HAS BEEN CREATED
-            //     text += generateConcatenateListResult(directivesUsed[i], concValues);
-            // }
-        }
-    }*/
+
     text += `
         ${generateIndentation(1)}})
         ${generateIndentation(1)}return data;
@@ -823,12 +670,6 @@ const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) 
                         Object.keys(directivesUsed[i].interfaces).forEach(key => {
                             fileContent += " & " + key;
                         });
-                        /*for(let j = 0; j < Object.keys(directivesUsed[i].interfaces).length; j++) {
-                            fileContent += directivesUsed[i].interfaces[j];
-                            if(j !== (directivesUsed[i].interfaces.length - 1)) { // If we are not at the last interface, add an ampersand
-                                fileContent += " & ";
-                            }
-                        }*/
                     }
                 }
                 fileContent += " {\n"; // new line to field declarations
