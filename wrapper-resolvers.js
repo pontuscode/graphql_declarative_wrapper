@@ -117,6 +117,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "publications"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -234,6 +242,78 @@ const resolvers = {
             							})
             						}
         
+            						if(selection.name.value === "doctoralDegreeObtainers") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "doctoralDegreeObtainers"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "masterDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "publications"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
@@ -342,6 +422,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -390,6 +478,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -435,6 +531,62 @@ const resolvers = {
                     									name: {
                     										kind: Kind.NAME,
                     										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "publications") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "publications"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "title"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "abstract"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "authors"
                     									}
                     								},
                 
@@ -542,6 +694,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -603,6 +763,14 @@ const resolvers = {
                     									name: {
                     										kind: Kind.NAME,
                     										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "publications"
                     									}
                     								},
                 
@@ -766,6 +934,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -854,6 +1030,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "publications"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -871,12 +1055,79 @@ const resolvers = {
         	})
         	return data;
         },
+        
+        wrappedResearchGroup: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'researchGroup',
+        		args: {
+        			nr: args.nr
+        		},
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["researchGroup"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+        							if(selection.name.value === "id") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "id"
+                							}
+            
+        								})
+        							}
+    
+        							if(selection.name.value === "subOrganizationOf") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "subOrganizationOf"
+                							}
+            
+        								})
+        							}
+    
+        						})
+        				return newSelectionSet;
+        			},
+    
+            		result => {
+            			return result;
+            		}
+        
+        		),
+        	]
+        	})
+        	return data;
+        },
     },
 	WrappedUniversity: {
 		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
 		undergraduateDegreeObtainedByFaculty: (parent) => {
+			parent.undergraduateDegreeObtainedByFaculty.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
 			return (parent.undergraduateDegreeObtainedByFaculty !== undefined) ? parent.undergraduateDegreeObtainedByFaculty : null;
 		},
 		departments: (parent) => {
@@ -884,6 +1135,17 @@ const resolvers = {
 		},
 		undergraduateDegreeObtainedBystudent: (parent) => {
 			return (parent.undergraduateDegreeObtainedBystudent !== undefined) ? parent.undergraduateDegreeObtainedBystudent : null;
+		},
+		doctoralDegreeObtainers: (parent) => {
+			parent.doctoralDegreeObtainers.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
+			return (parent.doctoralDegreeObtainers !== undefined) ? parent.doctoralDegreeObtainers : null;
 		},
 	},
 	WrappedDepartment: {
@@ -894,6 +1156,14 @@ const resolvers = {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
 		},
 		faculties: (parent) => {
+			parent.faculties.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
 			return (parent.faculties !== undefined) ? parent.faculties : null;
 		},
 	},
@@ -925,6 +1195,9 @@ const resolvers = {
 		worksFor: (parent) => {
 			return (parent.worksFor !== undefined) ? parent.worksFor : null;
 		},
+		publications: (parent) => {
+			return (parent.publications !== undefined) ? parent.publications : null;
+		},
 	},
 	WrappedLecturer: {
 		id: (parent) => {
@@ -951,6 +1224,9 @@ const resolvers = {
 		worksFor: (parent) => {
 			return (parent.worksFor !== undefined) ? parent.worksFor : null;
 		},
+		publications: (parent) => {
+			return (parent.publications !== undefined) ? parent.publications : null;
+		},
 	},
 	WrappedGraduateStudent: {
 		id: (parent) => {
@@ -973,6 +1249,39 @@ const resolvers = {
 		},
 		advisor: (parent) => {
 			return (parent.advisor !== undefined) ? parent.advisor : null;
+		},
+	},
+	WrappedResearchGroup: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		subOrganizationOf: (parent) => {
+			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
+		},
+	},
+	WrappedPublication: {
+		id: (parent) => {
+			return (parent.id !== undefined) ? parent.id : null;
+		},
+		title: (parent) => {
+			return (parent.title !== undefined) ? parent.title : null;
+		},
+		abstract: (parent) => {
+			return (parent.abstract !== undefined) ? parent.abstract : null;
+		},
+		authors: (parent) => {
+			parent.authors.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+				if(child.__typename === "GraduateStudent") {
+					child.__typename = "WrappedGraduateStudent"
+				}
+			})
+			return (parent.authors !== undefined) ? parent.authors : null;
 		},
 	},
 

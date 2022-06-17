@@ -3,6 +3,7 @@ type WrappedUniversity {
 	undergraduateDegreeObtainedByFaculty: [WrappedFaculty]
 	departments: [WrappedDepartment]
 	undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent]
+	doctoralDegreeObtainers: [WrappedFaculty]
 }
 
  interface WrappedFaculty {
@@ -12,6 +13,7 @@ type WrappedUniversity {
 	undergraduateDegreeFrom: WrappedUniversity
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity
+	publications: [WrappedPublication]
 }
 
  type WrappedDepartment {
@@ -36,6 +38,7 @@ type WrappedUniversity {
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity
 	worksFor: WrappedDepartment
+	publications: [WrappedPublication]
 }
 
  type WrappedLecturer implements & WrappedFaculty & WrappedAuthor {
@@ -47,6 +50,7 @@ type WrappedUniversity {
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity
 	worksFor: WrappedDepartment
+	publications: [WrappedPublication]
 }
 
  type WrappedGraduateStudent implements & WrappedAuthor {
@@ -59,6 +63,18 @@ type WrappedUniversity {
 	advisor: WrappedProfessor
 }
 
+ type WrappedResearchGroup {
+	id: ID
+	subOrganizationOf: WrappedDepartment
+}
+
+ type WrappedPublication {
+	id: ID
+	title: String
+	abstract: String
+	authors: [WrappedAuthor]
+}
+
 type Query {
     
     wrappedUniversity(nr: ID!): WrappedUniversity
@@ -68,5 +84,7 @@ type Query {
     wrappedDepartment(nr: ID!): WrappedDepartment
         
     wrappedGraduateStudents: [WrappedGraduateStudent]
+        
+    wrappedResearchGroup(nr: ID!): WrappedResearchGroup
         
 }

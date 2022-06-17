@@ -9,6 +9,7 @@ type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID
     undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
     departments: [WrappedDepartment] @wrap(field: "departments")
     undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")
+    doctoralDegreeObtainers: [WrappedFaculty] @wrap(field: "doctoralDegreeObtainers")
 }
 
 interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: ID!)") {
@@ -18,6 +19,7 @@ interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: I
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
 	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+	publications: [WrappedPublication] @wrap(field: "publications")
 }
 
 type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
@@ -42,6 +44,7 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
 	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
 	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 	worksFor: WrappedDepartment @wrap(field: "worksFor")
+	publications: [WrappedPublication] @wrap(field: "publications")
 }
 
 type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer") { 
@@ -53,9 +56,9 @@ type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lect
 	masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
 	doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
 	worksFor: WrappedDepartment @wrap(field: "worksFor") 
+	publications: [WrappedPublication] @wrap(field: "publications")
 } 
 
-# FIXA SÅ ATT TYPER SOM IMPLEMENTERAR INTERFACES KAN HA EGNA FÄLT
 type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") { 
 	id: ID! @wrap(field: "id")
 	telephone: String @wrap(field: "telephone")
@@ -65,3 +68,15 @@ type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStuden
 	undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
 	advisor: WrappedProfessor @wrap(field: "advisor")
 } 
+
+type WrappedResearchGroup @wrap(type: "ResearchGroup", singleQuery: "researchGroup(nr: ID!)") { 
+	id: ID! @wrap(path: ["id"])
+	subOrganizationOf: WrappedDepartment @wrap(path: ["subOrganizationOf"])
+} 
+
+type WrappedPublication @wrap(type: "Publication") { 
+	id: ID! @wrap(field: "id")
+	title: String @wrap(field: "title")
+	abstract: String @wrap(field: "abstract")
+	authors: [WrappedAuthor] @wrap(field: "authors")
+}  

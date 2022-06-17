@@ -128,7 +128,7 @@ const resolvers = {
                 // If it's the same type and we are using some other directive argument than 'type'
                 if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
                     if(directivesUsed[j].argumentName[0] === "field" || directivesUsed[j].argumentName[0] === "path") {
-                        fileContent += generateTypeSpecificResolver(directivesUsed[j]);
+                        fileContent += generateTypeSpecificResolver(directivesUsed[j], directivesUsed);
                     }
                     // If the argumentName is 'values', the directive is concatenate
                     if(directivesUsed[j].argumentName[0] === "values") {
@@ -452,25 +452,50 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     return text;
 }
 
-const generateTypeSpecificResolver = function(directive) {
+const generateTypeSpecificResolver = function(currentDirective, directivesUsed) {
     let text = "";
-    if(directive.argumentName.includes("field")){
-        text += `${generateIndentation(2)}${directive.fieldName}: (parent) => {\n`;
-        text += `${generateIndentation(3)}return (parent.${directive.argumentValues} !== undefined) ? parent.${directive.argumentValues} : null;\n`;
+    let interfaceTypeResolvers = {};
+    // Check if the value of the current directive is of type Interface. If it is, we need to resolve the __typename before resolving anything else. 
+    for(let i = 0; i < directivesUsed.length; i++) {
+        if(currentDirective.fieldValue === directivesUsed[i].interfaceTypeName) {
+            for(let j = 0; j < directivesUsed.length; j++) {
+                if(directivesUsed[j].interfaces !== undefined) {
+                    Object.keys(directivesUsed[j].interfaces).forEach(key => {
+                        if(key === directivesUsed[i].interfaceTypeName) {
+                            interfaceTypeResolvers[directivesUsed[j].remoteObjectTypeName] = directivesUsed[j].objectTypeName;
+                        }
+                    })
+                }
+            }
+        }
+    }
+    if(currentDirective.argumentName.includes("field")){
+        text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
+        if(Object.keys(interfaceTypeResolvers).length > 0) {
+            text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
+            Object.entries(interfaceTypeResolvers).forEach(entry => {
+                const [name, value] = entry;
+                text += `${generateIndentation(4)}if(child.__typename === "${name}") {\n`;
+                text += `${generateIndentation(5)}child.__typename = "${value}"\n`;
+                text += `${generateIndentation(4)}}\n`;
+            });
+            text += `${generateIndentation(3)}})\n`;
+        }
+        text += `${generateIndentation(3)}return (parent.${currentDirective.argumentValues} !== undefined) ? parent.${currentDirective.argumentValues} : null;\n`;
         text += `${generateIndentation(2)}},\n`;
-    } else if(directive.argumentName.includes("path")) {
-        text += `${generateIndentation(2)}${directive.fieldName}: (parent) => {\n`;
+    } else if(currentDirective.argumentName.includes("path")) {
+        text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
         let path = "parent.";
-        for(let i = 0; i < directive.argumentValues.length; i++) {
-            path += directive.argumentValues[i].value;
+        for(let i = 0; i < currentDirective.argumentValues.length; i++) {
+            path += currentDirective.argumentValues[i].value;
             // If we're not on the last element
-            if(i !== (directive.argumentValues.length - 1)) {
+            if(i !== (currentDirective.argumentValues.length - 1)) {
                 path += ".";
             }
         }
         text += `${generateIndentation(3)}return (${path} !== undefined) ? ${path} : null;\n`;
         text += `${generateIndentation(2)}},\n`;
-    } else if(directive.argumentName.includes("concatenate")) {
+    } else if(currentDirective.argumentName.includes("concatenate")) {
         console.log("hey!");
     }
     return text;
