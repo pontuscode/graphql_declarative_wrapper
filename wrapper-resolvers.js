@@ -165,6 +165,14 @@ const resolvers = {
                     									}
                     								},
                 
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "head"
+                    									}
+                    								},
+                
             									]
             								}
             							})
@@ -779,6 +787,357 @@ const resolvers = {
             							})
             						}
         
+        							if(selection.name.value === "head") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "head"
+                							}
+            
+        								})
+        							}
+    
+        						})
+        				return newSelectionSet;
+        			},
+    
+            		result => {
+            			return result;
+            		}
+        
+        		),
+        	]
+        	})
+        	return data;
+        },
+        
+        wrappedLecturer: async(_, args, context, info) => {
+        	const schema = await remoteSchema();
+        	const data = await delegateToSchema({
+        		schema: schema,
+        		operation: 'query',
+        		fieldName: 'lecturer',
+        		args: {
+        			nr: args.nr
+        		},
+        		context, 
+        		info,
+        		transforms: [
+        			new WrapQuery(
+        				["lecturer"],
+        				(subtree) => {
+        					const newSelectionSet = {
+        						kind: Kind.SELECTION_SET,
+        						selections: [] 
+        					}
+        					subtree.selections.forEach(selection => {
+    
+            						if(selection.name.value === "id") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "id"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "telephone") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "telephone"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "emailAddress") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "emailAddress"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "position") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "position"
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "undergraduateDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "undergraduateDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "masterDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "masterDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "doctoralDegreeFrom") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "doctoralDegreeFrom"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedByFaculty"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "departments"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeObtainedBystudent"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeObtainers"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "worksFor") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "worksFor"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "subOrganizationOf"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "faculties"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "head"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
+            						if(selection.name.value === "publications") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "publications"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "title"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "abstract"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "authors"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
@@ -883,6 +1242,14 @@ const resolvers = {
                     									name: {
                     										kind: Kind.NAME,
                     										value: "faculties"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "head"
                     									}
                     								},
                 
@@ -1165,6 +1532,9 @@ const resolvers = {
 				}
 			})
 			return (parent.faculties !== undefined) ? parent.faculties : null;
+		},
+		head: (parent) => {
+			return (parent.head !== undefined) ? parent.head : null;
 		},
 	},
 	WrappedProfessor: {

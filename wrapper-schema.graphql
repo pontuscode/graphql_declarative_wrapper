@@ -20,6 +20,7 @@ type WrappedUniversity {
 	id: ID
 	subOrganizationOf: WrappedUniversity
 	faculties: [WrappedFaculty]
+	head: WrappedProfessor
 }
 
  interface WrappedAuthor {
@@ -82,6 +83,8 @@ type Query {
     wrappedFaculty(nr: ID!): WrappedFaculty
         
     wrappedDepartment(nr: ID!): WrappedDepartment
+        
+    wrappedLecturer(nr: ID!): WrappedLecturer
         
     wrappedGraduateStudents: [WrappedGraduateStudent]
         

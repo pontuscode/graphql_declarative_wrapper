@@ -26,6 +26,7 @@ type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID
     id: ID! @wrap(field: "id")
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
+	head: WrappedProfessor @wrap(path: ["head"])
 }
 
 interface WrappedAuthor @wrap(interface: "Author") {#, includeAllFields: true)
@@ -47,7 +48,7 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
 	publications: [WrappedPublication] @wrap(field: "publications")
 }
 
-type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer") { 
+type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer", singleQuery: "lecturer(nr: ID!)") { 
 	id: ID! @wrap(field: "id")
 	telephone: String @wrap(field: "telephone")
 	emailAddress: String @wrap(field: "emailAddress")
