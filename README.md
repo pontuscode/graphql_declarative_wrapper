@@ -13,3 +13,5 @@
 ## Change concatenate validation. If object type is not wrapped, then return false
 
 ## Change concatenate resolver generation, the if-else part should be present for simple strings (not only for delegated fields).
+
+## Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example)
