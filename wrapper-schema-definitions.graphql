@@ -29,7 +29,7 @@ type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID
     head: WrappedProfessor @wrap(path: ["head"])
 }
 
-interface WrappedAuthor @wrap(interface: "Author") 
+interface WrappedAuthor @wrap(interface: "Author") {
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
