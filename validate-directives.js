@@ -409,25 +409,33 @@ const appendFieldsToType = function(item, node) {
 
 const validateWrap = function(item, remoteSchema) {
     let found = false;
-
+    let validType = true;
     if(item.argumentName === "type") { // Validation case 1   
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
-                    if(item.remoteObjectTypeName === node.name.value) { // Does the type exist? 
-                        if(item.includeAllFields === true) { // If they want to include all fields, validate it against the remote schema.
+                    if(item.remoteObjectTypeName === node.name.value) { // Does the type exist? Validation case 2
+                        if(item.includeAllFields === true) { // If they want to include all fields, validate it against the remote schema. Validation case 3
                             let checkIncludeExclude = validateAgainstRemoteSchema(item, node, "includeExclude");
                             if(checkIncludeExclude.valid === true) {
                                 appendFieldsToType(item, node); //If the arguments were correctly used, append the fields to the wrapper type defs
+                            } else {
+                                validType = false;
+                            }
+                        } else if(item.includeAllFields === false || item.includeAllFields === undefined) { // Validation case 4
+                            if(item.excludeFields !== undefined) {
+                                validType = false;
                             }
                         }
-                        found = true;
-                        WrappedTypes.push(item.objectTypeName);
+                        if(validType === true) {
+                            found = true;
+                            WrappedTypes.push(item.objectTypeName);
+                        }
                     }
                 }
             });
         });
-    } else if(item.argumentName == "field" || item.argumentName == "path"){ // Validation case 2, 3, 4
+    } else if(item.argumentName == "field" || item.argumentName == "path"){ // Validation case 
         remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
                 visit(ast, {
