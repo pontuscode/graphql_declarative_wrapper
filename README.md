@@ -4,7 +4,7 @@
 
 ## Fix traversePath in the validation algorithm
 
-## Implement/finish wrap validation conditions 3, 4, 6, 7
+## Implement/finish wrap validation conditions 3, 4, 6, 7 - done
 
 ## Add proper error messages to everything, both validation and generation errors
 
