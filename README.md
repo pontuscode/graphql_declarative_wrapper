@@ -1,6 +1,6 @@
 # Todo
 
-## Add typesImplementingInterface to resolver without arguments
+## Add typesImplementingInterface to resolver without arguments - done
 
 ## Fix traversePath in the validation algorithm
 

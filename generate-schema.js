@@ -89,6 +89,7 @@ const resolvers = {
                     typeDefFileContent += addToQueryType(objectTypeName, parseArgument.listQuery, isList = true);
                 }
             }
+            // If it is an interface type we need to find which object types are implementing it
         } else if(directivesUsed[i].argumentName === "interface" && directivesUsed[i].includeAllFields === false) {
             let parsedArgument = parseArgument(directivesUsed[i].resolvers);
             let interfaceTypeName = directivesUsed[i].interfaceTypeName;
@@ -485,6 +486,16 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
         text += `${generateIndentation(2)}},\n`;
     } else if(currentDirective.argumentName.includes("path")) {
         text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
+        if(Object.keys(interfaceTypeResolvers).length > 0) {
+            text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
+            Object.entries(interfaceTypeResolvers).forEach(entry => {
+                const [name, value] = entry;
+                text += `${generateIndentation(4)}if(child.__typename === "${name}") {\n`;
+                text += `${generateIndentation(5)}child.__typename = "${value}"\n`;
+                text += `${generateIndentation(4)}}\n`;
+            });
+            text += `${generateIndentation(3)}})\n`;
+        }
         let path = "parent.";
         for(let i = 0; i < currentDirective.argumentValues.length; i++) {
             path += currentDirective.argumentValues[i].value;
@@ -501,7 +512,7 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
     return text;
 }
 
-const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema){
+const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema, typesImplementingInterface){
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -542,14 +553,36 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(6)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
-        ${generateIndentation(3)}result => {
-        ${generateIndentation(4)}return result;
-        ${generateIndentation(3)}}
-        ${generateIndentation(2)})
-        ${generateIndentation(1)}]
     `;
+    if(typesImplementingInterface !== undefined) {
+        text += `
+            ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}if(result !== null) {
+        `;
+        Object.entries(typesImplementingInterface).forEach(entry => {
+            const [name, value] = entry;
+            text += `
+                ${generateIndentation(3)}if(result.__typename === "${name}") {
+                ${generateIndentation(4)}result.__typename = "${value}";
+                ${generateIndentation(3)}}
+            `;
+        })
+        text += `
+            ${generateIndentation(3)}}
+            ${generateIndentation(3)}return result;
+            ${generateIndentation(2)}}
+        `;
+    } else {
+        text += `
+            ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}return result;
+            ${generateIndentation(2)}}
+        `;
+    }
 
     text += `
+        ${generateIndentation(2)}),
+        ${generateIndentation(1)}]
         ${generateIndentation(1)}})
         ${generateIndentation(1)}return data;
         },

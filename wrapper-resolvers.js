@@ -555,54 +555,18 @@ const resolvers = {
             							})
             						}
         
-            						if(selection.name.value === "publications") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "publications"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "id"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "title"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "abstract"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "authors"
-                    									}
-                    								},
-                
-            									]
-            								}
-            							})
-            						}
-        
+        							if(selection.name.value === "publications") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "publications"
+                							}
+            
+        								})
+        							}
+    
         						})
         				return newSelectionSet;
         			},
@@ -1314,111 +1278,28 @@ const resolvers = {
             							})
             						}
         
-            						if(selection.name.value === "advisor") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "advisor"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "id"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "telephone"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "emailAddress"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "researchInterest"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "profType"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "undergraduateDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "masterDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "doctoralDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "worksFor"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "publications"
-                    									}
-                    								},
-                
-            									]
-            								}
-            							})
-            						}
-        
+        							if(selection.name.value === "advisor") {
+        								newSelectionSet.selections.push( {
+    
+                							kind: Kind.FIELD,
+                							name: {
+                								kind: Kind.NAME,
+                								value: "advisor"
+                							}
+            
+        								})
+        							}
+    
         						})
         				return newSelectionSet;
         			},
-        			result => {
-        				return result;
-        			}
-        		)
-        	]
     
+            		result => {
+            			return result;
+            		}
+        
+        		),
+        	]
         	})
         	return data;
         },

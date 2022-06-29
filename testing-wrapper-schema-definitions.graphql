@@ -1,0 +1,83 @@
+directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on OBJECT
+directive @wrap(interface: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String) on INTERFACE
+directive @wrap(path: [String!]!) on FIELD_DEFINITION
+directive @wrap(field: String!) on FIELD_DEFINITION
+directive @concatenate(values: [String]) on FIELD_DEFINITION
+
+type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
+    departments: [WrappedDepartment] @wrap(field: "departments")
+    undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")
+    doctoralDegreeObtainers: [WrappedFaculty] @wrap(field: "doctoralDegreeObtainers")
+}
+
+interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
+    undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+    masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
+    doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+    publications: [WrappedPublication] @wrap(path: ["publications"])
+}
+
+type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
+    id: ID! @wrap(field: "id")
+    subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
+    faculties: [WrappedFaculty] @wrap(field: "faculties")
+    head: WrappedProfessor @wrap(path: ["head"])
+}
+
+interface WrappedAuthor @wrap(interface: "Author") {
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(path: ["emailAddress"])
+}
+
+type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Professor") {
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
+    researchInterest: String @wrap(field: "researchInterest")
+    profType: String @wrap(field: "profType")
+    undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+    masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
+    doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+    worksFor: WrappedDepartment @wrap(field: "worksFor")
+    publications: [WrappedPublication] @wrap(field: "publications")
+}
+
+type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lecturer", singleQuery: "lecturer(nr: ID!)") { 
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
+    position: String @wrap(field: "position")
+    undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom") 
+    masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
+    doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
+    worksFor: WrappedDepartment @wrap(field: "worksFor") 
+    publications: [WrappedPublication] @wrap(field: "publications")
+} 
+
+type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") { 
+    id: ID! @wrap(field: "id")
+    telephone: String @wrap(field: "telephone")
+    emailAddress: String @wrap(field: "emailAddress")
+    age: Int @wrap(field: "age")
+    memberOf: WrappedDepartment @wrap(field: "memberOf")
+    undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
+    advisor: WrappedProfessor @wrap(path: ["advisor"])
+} 
+
+type WrappedResearchGroup @wrap(type: "ResearchGroup", singleQuery: "researchGroup(nr: ID!)") { 
+    id: ID! @wrap(path: ["id"])
+    subOrganizationOf: WrappedDepartment @wrap(path: ["subOrganizationOf"])
+} 
+
+type WrappedPublication @wrap(type: "Publication") { 
+    id: ID! @wrap(field: "id")
+    title: String @wrap(field: "title")
+    abstract: String @wrap(field: "abstract")
+    authors: [WrappedAuthor] @wrap(field: "authors")
+}  
