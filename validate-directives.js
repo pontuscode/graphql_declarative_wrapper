@@ -7,13 +7,6 @@ const { generateWrapperSchema } = require("./generate-schema");
 
 let WrappedTypes = [];
 
-const parseObjectTypeFields = function(ast){
-    fields = {};
-    for(let i = 0; i < ast.length; i++){
-
-    }
-    return fields;
-}
 
 /**
  * @param {*} node: The node from which we want to extract the value
@@ -126,6 +119,26 @@ const parseResolvers = function(args) {
     }
 }
 
+const parseResolverArguments = function(input) {
+    let regex = /[\W]/;
+    let parsedValues = {};
+    if(input.singleQuery !== undefined){
+        let splitSingle = input.singleQuery.split(regex);
+        parsedValues.singleQuery = {
+            "resolver": splitSingle[0],
+            "left": splitSingle[1],
+            "right": splitSingle[3]
+        };
+    }
+    if(input.listQuery !== undefined){
+        let splitList = input.listQuery.split(regex);
+        parsedValues.listQuery = {
+            "resolver": splitList[0]
+        };
+    }
+    return parsedValues;
+}
+
 const parseInterfaces = function(node) {
     let interfaces = {};
     if(node.interfaces !== undefined) {
@@ -146,7 +159,6 @@ const validateInterfaces = function(directivesUsed, interfaces) {
             for(let i = 0; i < directivesUsed.length; i++) {
                 if(directivesUsed[i].argumentName === "interface" && directivesUsed[i].interfaceTypeName === key) {
                     interfaces[key] = directivesUsed[i].remoteInterfaceTypeName;
-                    //entry[1] = directivesUsed[i].remoteInterfaceTypeName;
                 }
             }
         })
@@ -335,6 +347,9 @@ const traversePath = function(item, currNode, remoteSchema) {
 const validateAgainstRemoteSchema = function(item, node, argument) {
     let valid = true;
     let errorMessage = "";
+    let splitArgs;
+    let foundResolver = false;
+    let foundArg = false;
     switch(argument) {
         case "includeExclude":
             let foundFields = 0;
@@ -361,6 +376,57 @@ const validateAgainstRemoteSchema = function(item, node, argument) {
         case "field": 
             break;
 
+        case "singleQuery":
+            splitArgs = parseResolverArguments(item.resolvers);
+            node.definitions.forEach(ast => {
+                visit(ast, {
+                    ObjectTypeDefinition(obj) {
+                        if(obj.name.value === "Query") {
+                            obj.fields.forEach(field => {
+                                if(field.name.value === splitArgs.singleQuery.resolver) {
+                                    foundResolver = true;
+                                    field.arguments.forEach(arg => {
+                                        if(arg.name.value === splitArgs.singleQuery.left) {
+                                            if(arg.type.type.name.value === splitArgs.singleQuery.right) {
+                                                foundArg = true;
+                                            }
+                                        }
+                                    })
+                                }
+                            })
+                        }
+                    }
+                })
+            })
+            if(foundResolver === false) {
+                valid = false;
+                errorMessage = `Could not find resolver function named ${splitArgs.singleQuery.resolver} in remote schema.`
+            }
+            if(foundArg === false) {
+                valid = false;
+                errorMessage = `Could not find matching resolver argument named ${splitArgs.singleQuery.left} with value type ${splitArgs.singleQuery.right} in remote schema for resolver function ${splitArgs.singleQuery.resolver}.`
+            }
+            break;
+        case "listQuery":
+            splitArgs = parseResolverArguments(item.resolvers);
+            node.definitions.forEach(ast => {
+                visit(ast, {
+                    ObjectTypeDefinition(obj) {
+                        if(obj.name.value === "Query") {
+                            obj.fields.forEach(field => {
+                                if(field.name.value === splitArgs.listQuery.resolver) {
+                                    foundResolver = true;
+                                }
+                            })
+                        }
+                    }
+                })
+            })
+            if(foundResolver === false) {
+                valid = false;
+                errorMessage = `Could not find resolver function named ${splitArgs.listQuery.resolver} in remote schema.`
+            }
+            break;
         default: 
             valid = false;
             errorMessage
@@ -410,6 +476,7 @@ const appendFieldsToType = function(item, node) {
 const validateWrap = function(item, remoteSchema) {
     let found = false;
     let validType = true;
+    let errorMessage = "";
     if(item.argumentName === "type") { // Validation case 1   
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
@@ -421,15 +488,31 @@ const validateWrap = function(item, remoteSchema) {
                                 appendFieldsToType(item, node); //If the arguments were correctly used, append the fields to the wrapper type defs
                             } else {
                                 validType = false;
+                                errorMessage = checkIncludeExclude.errorMessage;
                             }
                         } else if(item.includeAllFields === false || item.includeAllFields === undefined) { // Validation case 4
                             if(item.excludeFields !== undefined) {
                                 validType = false;
                             }
                         }
+                        if(item.resolvers.singleQuery !== undefined) { // Validation case 7
+                            let checkResolver = validateAgainstRemoteSchema(item, remoteSchema, "singleQuery");
+                            if(checkResolver.valid !== true) {
+                                validType = false;
+                                errorMessage = checkResolver.errorMessage;
+                            }
+                        }
+                        if(item.resolvers.listQuery !== undefined) { // Validation case 7
+                            let checkResolver = validateAgainstRemoteSchema(item, remoteSchema, "listQuery");
+                            if(checkResolver.valid !== true) {
+                                validType = false;
+                                errorMessage = checkResolver.errorMessage;
+                            }
+                        }
+                        // If it passed all validation, then consider it 'found' and add it to the list of wrapped types 
                         if(validType === true) {
                             found = true;
-                            WrappedTypes.push(item.objectTypeName);
+                            WrappedTypes.push(item.objectTypeName); 
                         }
                     }
                 }
@@ -471,7 +554,10 @@ const validateWrap = function(item, remoteSchema) {
             });
         });   
     }
-    return found;
+    return { 
+        "valid": found,
+        "errorMessage": errorMessage
+    }
 }
 
 const validateConcatenate = function(item, remoteSchema) {
@@ -576,8 +662,10 @@ const validateDirectives = function(wsDef, remoteSchema) {
                 errorMessage = "Remote schemas from url's are not currently supported.";
                 directivesAreValid = false;
             } else {
-                if(!validateDirective(item, remoteSchema.schema[0].document)) {
+                let validate = validateDirective(item, remoteSchema.schema[0].document);
+                if(validate.valid === false) {
                     directivesAreValid = false;
+                    errorMessage = validate.errorMessage;
                 }
             }
         });
