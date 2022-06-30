@@ -217,6 +217,22 @@ const resolvers = {
                     									kind: Kind.FIELD,
                     									name: {
                     										kind: Kind.NAME,
+                    										value: "newEmail"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "contactInfo"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
                     										value: "age"
                     									}
                     								},
@@ -555,18 +571,54 @@ const resolvers = {
             							})
             						}
         
-        							if(selection.name.value === "publications") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "publications"
-                							}
-            
-        								})
-        							}
-    
+            						if(selection.name.value === "publications") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "publications"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "title"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "abstract"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "authors"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
@@ -827,6 +879,28 @@ const resolvers = {
             								}
             							})
             						}
+        
+        							if(selection.name.value === "contactInfo") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "telephone"
+                    							}
+                    						}
+                    					)
+                
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "emailAddress"
+                    							}
+                    						}
+                    					)
+                
+        							}
         
             						if(selection.name.value === "position") {
             							newSelectionSet.selections.push( {
@@ -1164,6 +1238,41 @@ const resolvers = {
             							})
             						}
         
+        							if(selection.name.value === "newEmail") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "emailAddress"
+                    							}
+                    						}
+                    					)
+                
+        							}
+        
+        							if(selection.name.value === "contactInfo") {
+        
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "telephone"
+                    							}
+                    						}
+                    					)
+                
+                    					newSelectionSet.selections.push( {
+                    						kind: Kind.FIELD,
+                    							name: {
+                    								kind: Kind.NAME,
+                    								value: "emailAddress"
+                    							}
+                    						}
+                    					)
+                
+        							}
+        
             						if(selection.name.value === "age") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
@@ -1278,18 +1387,110 @@ const resolvers = {
             							})
             						}
         
-        							if(selection.name.value === "advisor") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "advisor"
-                							}
-            
-        								})
-        							}
-    
+            						if(selection.name.value === "advisor") {
+            							newSelectionSet.selections.push( {
+            								kind: Kind.FIELD,
+            								name: {
+            									kind: Kind.NAME,
+            									value: "advisor"
+            								},
+            								selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "telephone"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "emailAddress"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "contactInfo"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "researchInterest"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "profType"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "undergraduateDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "masterDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "doctoralDegreeFrom"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "worksFor"
+                    									}
+                    								},
+                
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "publications"
+                    									}
+                    								},
+                
+            									]
+            								}
+            							})
+            						}
+        
         						})
         				return newSelectionSet;
         			},
@@ -1428,6 +1629,23 @@ const resolvers = {
 		emailAddress: (parent) => {
 			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
 		},
+
+        contactInfo: async(parent, _, _context, _info) => {
+    
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.telephone
+            else
+            	parent.contactInfo += parent.telephone
+            
+            parent.contactInfo += " " 
+
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.emailAddress
+            else
+            	parent.contactInfo += parent.emailAddress
+            
+        	return parent.contactInfo
+        },
 		researchInterest: (parent) => {
 			return (parent.researchInterest !== undefined) ? parent.researchInterest : null;
 		},
@@ -1460,6 +1678,23 @@ const resolvers = {
 		emailAddress: (parent) => {
 			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
 		},
+
+        contactInfo: async(parent, _, _context, _info) => {
+    
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.telephone
+            else
+            	parent.contactInfo += parent.telephone
+            
+            parent.contactInfo += " " 
+
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.emailAddress
+            else
+            	parent.contactInfo += parent.emailAddress
+            
+        	return parent.contactInfo
+        },
 		position: (parent) => {
 			return (parent.position !== undefined) ? parent.position : null;
 		},
@@ -1489,6 +1724,35 @@ const resolvers = {
 		emailAddress: (parent) => {
 			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
 		},
+
+        newEmail: async(parent, _, _context, _info) => {
+    
+            parent.newEmail += "cooler" 
+
+            if(parent.newEmail === undefined) 
+            	parent.newEmail = parent.emailAddress
+            else
+            	parent.newEmail += parent.emailAddress
+            
+        	return parent.newEmail
+        },
+
+        contactInfo: async(parent, _, _context, _info) => {
+    
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.telephone
+            else
+            	parent.contactInfo += parent.telephone
+            
+            parent.contactInfo += " " 
+
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = parent.emailAddress
+            else
+            	parent.contactInfo += parent.emailAddress
+            
+        	return parent.contactInfo
+        },
 		age: (parent) => {
 			return (parent.age !== undefined) ? parent.age : null;
 		},

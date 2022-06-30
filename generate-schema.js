@@ -352,7 +352,7 @@ const addConcatenateResolvers = function(directive, rsDef) {
     })
     text += `
         ${generateIndentation(1)}return parent.${concDirective[0]}
-        ${generateIndentation(0)}}\n`
+        ${generateIndentation(0)}},\n`
     return text
 }
 

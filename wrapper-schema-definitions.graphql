@@ -39,6 +39,7 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
+    contactInfo: String @concatenate(values: ["telephone", " ", "emailAddress"])
     researchInterest: String @wrap(field: "researchInterest")
     profType: String @wrap(field: "profType")
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
@@ -52,6 +53,7 @@ type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lect
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
+    contactInfo: String @concatenate(values: ["telephone", " ", "emailAddress"])
     position: String @wrap(field: "position")
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom") 
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom") 
@@ -60,15 +62,17 @@ type WrappedLecturer implements WrappedFaculty & WrappedAuthor @wrap(type: "Lect
     publications: [WrappedPublication] @wrap(field: "publications")
 } 
 
-type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") { 
+type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStudent", listQuery: "graduateStudents") {
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
+    newEmail: String @concatenate(values: ["cooler", "emailAddress"])
+    contactInfo: String @concatenate(values: ["telephone", " ", "emailAddress"])
     age: Int @wrap(field: "age")
     memberOf: WrappedDepartment @wrap(field: "memberOf")
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
     advisor: WrappedProfessor @wrap(field: "advisor")
-} 
+}
 
 type WrappedResearchGroup @wrap(type: "ResearchGroup", singleQuery: "researchGroup(nr: ID!)") { 
     id: ID! @wrap(path: ["id"])

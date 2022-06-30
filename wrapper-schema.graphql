@@ -33,6 +33,7 @@ type WrappedUniversity {
 	id: ID
 	telephone: String
 	emailAddress: String
+	contactInfo: String
 	researchInterest: String
 	profType: String
 	undergraduateDegreeFrom: WrappedUniversity
@@ -46,6 +47,7 @@ type WrappedUniversity {
 	id: ID
 	telephone: String
 	emailAddress: String
+	contactInfo: String
 	position: String
 	undergraduateDegreeFrom: WrappedUniversity
 	masterDegreeFrom: WrappedUniversity
@@ -58,6 +60,8 @@ type WrappedUniversity {
 	id: ID
 	telephone: String
 	emailAddress: String
+	newEmail: String
+	contactInfo: String
 	age: Int
 	memberOf: WrappedDepartment
 	undergraduateDegreeFrom: WrappedUniversity
