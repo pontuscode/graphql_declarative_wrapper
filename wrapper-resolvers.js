@@ -3,6 +3,7 @@ const { fetch } = require("cross-fetch");
 const { delegateToSchema } = require("@graphql-tools/delegate");
 const { print } = require("graphql/language");
 const { Kind } = require('graphql');
+const { result } = require('lodash');
 
 const executor = async ({ document, variables }) => {
     const query = print(document);
@@ -23,6 +24,34 @@ const remoteSchema = async () => {
         executor
     });
 };
+
+const extractNestedFields = (selection) => {
+	let result = {
+		kind: Kind.SELECTION_SET,
+		selections: []
+	}
+	selection.selectionSet.selections.forEach(nestedSelection => {
+		if(nestedSelection.selectionSet !== undefined) {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: nestedSelection.name.value
+				},
+				selectionSet: extractNestedFields(nestedSelection)
+			})
+		} else {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: nestedSelection.name.value
+				}
+			})
+		}
+	})
+	return result;
+}
 
 const resolvers = {
     Query: {
@@ -47,7 +76,6 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    
             						if(selection.name.value === "id") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
@@ -339,6 +367,7 @@ const resolvers = {
             						}
         
         						})
+								console.log("university: ", newSelectionSet);
         				return newSelectionSet;
         			},
     
@@ -372,7 +401,7 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    
+								if(selection.name !== undefined) {
             						if(selection.name.value === "id") {
             							newSelectionSet.selections.push( {
             								kind: Kind.FIELD,
@@ -618,6 +647,9 @@ const resolvers = {
             								}
             							})
             						}
+								} else if(context !== undefined) {
+									console.log(context);
+								}
         
         						})
         				return newSelectionSet;
@@ -646,6 +678,8 @@ const resolvers = {
         
         wrappedDepartment: async(_, args, context, info) => {
         	const schema = await remoteSchema();
+
+
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -663,159 +697,29 @@ const resolvers = {
         						kind: Kind.SELECTION_SET,
         						selections: [] 
         					}
+							
         					subtree.selections.forEach(selection => {
-    
-            						if(selection.name.value === "id") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "id"
-            								}
-            							})
-            						}
-        
-            						if(selection.name.value === "subOrganizationOf") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "subOrganizationOf"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "id"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "undergraduateDegreeObtainedByFaculty"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "departments"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "undergraduateDegreeObtainedBystudent"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "doctoralDegreeObtainers"
-                    									}
-                    								},
-                
-            									]
-            								}
-            							})
-            						}
-        
-            						if(selection.name.value === "faculties") {
-            							newSelectionSet.selections.push( {
-            								kind: Kind.FIELD,
-            								name: {
-            									kind: Kind.NAME,
-            									value: "faculties"
-            								},
-            								selectionSet: {
-            									kind: Kind.SELECTION_SET,
-            									selections: [
-        
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "id"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "telephone"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "emailAddress"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "undergraduateDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "masterDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "doctoralDegreeFrom"
-                    									}
-                    								},
-                
-                    								{
-                    									kind: Kind.FIELD,
-                    									name: {
-                    										kind: Kind.NAME,
-                    										value: "publications"
-                    									}
-                    								},
-                
-            									]
-            								}
-            							})
-            						}
-        
-        							if(selection.name.value === "head") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "head"
-                							}
-            
-        								})
-        							}
-    
-        						})
+
+								if(selection.selectionSet !== undefined) {
+									newSelectionSet.selections.push({
+										kind: Kind.FIELD,
+										name: {
+											kind: Kind.NAME, 
+											value: selection.name.value
+										},
+										selectionSet: extractNestedFields(selection)
+									})
+								} else {
+									newSelectionSet.selections.push({
+										kind: Kind.FIELD,
+										name: {
+											kind: Kind.NAME,
+											value: selection.name.value
+										}
+									})
+								}
+							})
+							
         				return newSelectionSet;
         			},
     
@@ -1502,6 +1406,7 @@ const resolvers = {
         		),
         	]
         	})
+			
         	return data;
         },
         
@@ -1545,7 +1450,19 @@ const resolvers = {
                 							name: {
                 								kind: Kind.NAME,
                 								value: "subOrganizationOf"
-                							}
+                							},
+											selectionSet: {
+            									kind: Kind.SELECTION_SET,
+            									selections: [
+        
+                    								{
+                    									kind: Kind.FIELD,
+                    									name: {
+                    										kind: Kind.NAME,
+                    										value: "id"
+                    									}
+                    								},
+												]}
             
         								})
         							}
@@ -1598,11 +1515,18 @@ const resolvers = {
 		},
 	},
 	WrappedDepartment: {
-		id: (parent) => {
+		id: (parent, _, context, info) => {
+
 			return (parent.id !== undefined) ? parent.id : null;
 		},
-		subOrganizationOf: (parent) => {
-			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
+		subOrganizationOf: (parent, args, context, info) => {
+			if(parent.subOrganizationOf === undefined) {
+				context.subOrganizationOf = parent.id;
+				const result = resolvers.Query.wrappedDepartment(parent, { "nr": parent.id }, context, info);
+				return result;
+			} else {
+				return parent.subOrganizationOf;
+			}
 		},
 		faculties: (parent) => {
 			parent.faculties.forEach(child => {
@@ -1615,8 +1539,15 @@ const resolvers = {
 			})
 			return (parent.faculties !== undefined) ? parent.faculties : null;
 		},
-		head: (parent) => {
-			return (parent.head !== undefined) ? parent.head : null;
+		head: (parent, _, context, info) => {
+			if(parent.head === undefined) {
+				context.head = parent.id;
+				const result = resolvers.Query.wrappedFaculty(parent, { "nr": parent.id }, context, info);
+				return result;
+			} else {
+				return parent.head;
+			}
+			//return (parent.head !== undefined) ? parent.head : null;
 		},
 	},
 	WrappedProfessor: {
@@ -1767,11 +1698,21 @@ const resolvers = {
 		},
 	},
 	WrappedResearchGroup: {
-		id: (parent) => {
+		id: (parent, args, context, info) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
-		subOrganizationOf: (parent) => {
-			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
+		subOrganizationOf: async (parent, args, context, info) => {
+			let result;
+			if(parent.subOrganizationOf === undefined) {
+
+				result = await resolvers.WrappedDepartment.subOrganizationOf(parent, parent.subOrganizationOf.id, context, info);
+				//console.log(result);
+			} else {
+				result = parent.subOrganizationOf;
+			}
+
+			return result;
+			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : resolvers.WrappedDepartment.subOrganizationOf(parent, id, context, info);
 		},
 	},
 	WrappedPublication: {
