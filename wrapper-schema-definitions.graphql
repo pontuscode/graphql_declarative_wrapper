@@ -5,7 +5,7 @@ directive @wrap(field: String!) on FIELD_DEFINITION
 directive @concatenate(values: [String]) on FIELD_DEFINITION
 
 type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID!)") {
-    id: ID! @wrap(field: "id")
+    idHaha: ID! @wrap(field: "id")
     undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
     departments: [WrappedDepartment] @wrap(field: "departments")
     undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")

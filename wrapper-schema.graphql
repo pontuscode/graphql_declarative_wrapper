@@ -1,5 +1,5 @@
 type WrappedUniversity {
-	id: ID
+	idHaha: ID
 	undergraduateDegreeObtainedByFaculty: [WrappedFaculty]
 	departments: [WrappedDepartment]
 	undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent]

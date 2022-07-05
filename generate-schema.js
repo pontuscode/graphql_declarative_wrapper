@@ -84,6 +84,8 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(1)}return result;\n`;
     fileContent += "}\n\n";
 
+    fileContent += writeNestedExtractFunctions(directivesUsed);
+
     fileContent += "const resolvers = {\n";
     fileContent += `${generateIndentation(1)}Query: {\n`;
     /* In this for-loop we write all the resolver functions with their respective wrapQuery transforms. */
@@ -397,6 +399,65 @@ const addToQueryType = function(objectTypeName, argument, isList) {
     return text;
 }
 
+const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName) {
+    let text = "";
+    for(let i = 0; i < directivesUsed.length; i++) {
+        if(directivesUsed[i].directive === "wrap") {
+            // If it's a field and its value type is not included in the list of built-in scalars, then again we need to call the correct nested function
+            if(directivesUsed[i].argumentName.includes("field") && directivesUsed[i].objectTypeName === objectTypeName && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+                text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
+                text += `${generateIndentation(4)}result.selections.push({\n`;
+                text += `${generateIndentation(5)}kind: Kind.FIELD,\n`;
+                text += `${generateIndentation(5)}name: {\n`;
+                text += `${generateIndentation(6)}kind: Kind.NAME,\n`;
+                text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
+                text += `${generateIndentation(5)}},\n`;
+                text += `${generateIndentation(4)}selectionSet: extractNested${directivesUsed[i].fieldValue}Fields(nestedSelection)\n`;
+                text += `${generateIndentation(4)}})\n`
+                text += `${generateIndentation(3)}}\n`
+            }
+            // If it's a field and its value type is included in the built-in scalars, then just map the field name to the remote schema
+            if(directivesUsed[i].argumentName.includes("field") && directivesUsed[i].objectTypeName === objectTypeName && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
+                text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
+                text += `${generateIndentation(4)}result.selections.push({\n`;
+                text += `${generateIndentation(5)}kind: Kind.FIELD, \n`;
+                text += `${generateIndentation(5)}name: {\n`;
+                text += `${generateIndentation(6)}kind: Kind.NAME, \n`;
+                text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
+                text += `${generateIndentation(5)}},\n`;
+                text += `${generateIndentation(4)}})\n`;
+                text += `${generateIndentation(3)}}\n`;
+            }
+
+            // If it's a path and its value type is included in the built-in scalars, then just map the field name to the remote schema
+            if(directivesUsed[i].argumentName.includes("path")) {
+
+            }
+        }
+    }
+    text += `${generateIndentation(2)}})\n`;
+    text += `${generateIndentation(1)}return result;\n`;
+    text += `}\n\n`;
+    return text;
+}
+
+const writeNestedExtractFunctions = function(directivesUsed) {
+    let text = "";
+    for(let i = 0; i < directivesUsed.length; i++) {
+        if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type") {
+            text += `const extractNested${directivesUsed[i].objectTypeName}Fields = (selection) => {\n`;
+            text += `${generateIndentation(1)}let result = {\n`;
+            text += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
+            text += `${generateIndentation(2)}selections: []\n`;
+            text += `${generateIndentation(1)}}\n`;
+            text += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
+            text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].objectTypeName);
+        }
+    }
+    text += "\n\n";
+    return text;
+}
+
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
     let concValues = [];
     let text = `    
@@ -420,6 +481,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
         ${generateIndentation(5)}subtree.selections.forEach(selection => {
+    `;/*        
         ${generateIndentation(6)}if(selection.selectionSet !== undefined) {
         ${generateIndentation(7)}newSelectionSet.selections.push({
         ${generateIndentation(8)}kind: Kind.FIELD,
@@ -428,8 +490,55 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(9)}value: selection.name.value
         ${generateIndentation(8)}},
         ${generateIndentation(8)}selectionSet: extractNestedFields(selection)
-        ${generateIndentation(7)}})
-        ${generateIndentation(6)}} else {
+        ${generateIndentation(7)}})*/
+
+
+    for(let i = 0; i < directivesUsed.length; i++){
+        if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
+            if(directivesUsed[i].directive === "wrap") {
+                // If the field has a built-in scalar value type, it means we just map the name of the wrapper to the name of the wrapped field
+                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue)) { 
+                    //text += generateWrapQueryField(directivesUsed[i], directivesUsed);
+
+                } 
+                // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
+                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+                    text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
+                    text += `${generateIndentation(7)}newSelectionSet.selections.push({\n`;
+                    text += `${generateIndentation(8)}kind: Kind.FIELD,\n`;
+                    text += `${generateIndentation(8)}name: {\n`;
+                    text += `${generateIndentation(9)}kind: Kind.NAME,\n`;
+                    text += `${generateIndentation(9)}value: "${directivesUsed[i].argumentValues}"\n`;
+                    text += `${generateIndentation(8)}},\n`;
+                    text += `${generateIndentation(8)}selectionSet: extractNested${directivesUsed[i].fieldValue}Fields(selection)\n`;
+                    text += `${generateIndentation(7)}})\n`
+                    text += `${generateIndentation(6)}}\n`
+                }
+                // If the field has a built-in scalar value type, we can just perform the field name mapping to the remote schema.
+                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
+                    text += `${generateIndentation(3)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`;
+                    text += `${generateIndentation(4)}newSelectionSet.selections.push({\n`;
+                    text += `${generateIndentation(5)}kind: Kind.FIELD, \n`;
+                    text += `${generateIndentation(5)}name: {\n`;
+                    text += `${generateIndentation(6)}kind: Kind.NAME, \n`;
+                    text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
+                    text += `${generateIndentation(5)}},\n`;
+                    text += `${generateIndentation(4)}})\n`;
+                    text += `${generateIndentation(3)}}\n`;
+                }
+                if(directivesUsed[i].argumentName.includes("path")) {
+                    //text += generateWrapQueryPath(directivesUsed[i]);
+                }
+            }
+            if(directivesUsed[i].directive === "concatenate") {
+                textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
+                text += textAndConcValues[0];
+                concValues.push(textAndConcValues[1]);
+            }
+        }
+    }
+/*
+    text +=`${generateIndentation(6)}} else {
         ${generateIndentation(7)}newSelectionSet.selections.push({
         ${generateIndentation(8)}kind: Kind.FIELD,
         ${generateIndentation(8)}name: {
@@ -439,10 +548,12 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(7)}})
         ${generateIndentation(6)}}
         ${generateIndentation(5)}})
+        */
+    text += `
+        ${generateIndentation(4)}})
         ${generateIndentation(4)}return newSelectionSet;
-        ${generateIndentation(4)}},
+        ${generateIndentation()}},
     `;
-
     if(typesImplementingInterface !== undefined) {
         text += `
             ${generateIndentation(2)}result => {
