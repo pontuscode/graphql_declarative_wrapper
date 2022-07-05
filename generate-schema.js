@@ -30,35 +30,62 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
 
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, typeDefFileName) {
     let typeDefFileContent = "";
-    let fileContent = `const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap');
-const { fetch } = require("cross-fetch");
-const { delegateToSchema } = require("@graphql-tools/delegate");
-const { print } = require("graphql/language");
-const { Kind } = require('graphql');
+    let fileContent = "const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap')\n";
+    fileContent += "const { fetch } = require('cross-fetch');\n";
+    fileContent += "const { delegateToSchema } = require('@graphql-tools/delegate')\n";
+    fileContent += "const { print } = require('graphql/language');\n";
+    fileContent += "const { Kind } = require('graphql');\n\n"
 
-const executor = async ({ document, variables }) => {
-    const query = print(document);
-    const fetchResult = await fetch("${remoteServerUrl}", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query, variables }),
-    });
-    return fetchResult.json();
-};
+    fileContent += "const executor = async ({ document, variables }) => {\n";
+    fileContent += `${generateIndentation(1)}const query = print(document);\n`;
+    fileContent += `${generateIndentation(1)}const fetchResult = await fetch("${remoteServerUrl}", {\n`;
+    fileContent += `${generateIndentation(2)}method: "POST",\n`;
+    fileContent += `${generateIndentation(2)}headers: {\n`;
+    fileContent += `${generateIndentation(3)}"Content-Type": "application/json",\n`;
+    fileContent += `${generateIndentation(2)}},\n`;
+    fileContent += `${generateIndentation(2)}body: JSON.stringify({ query, variables }),\n`;
+    fileContent += `${generateIndentation(1)}});\n`;
+    fileContent += `${generateIndentation(1)}return fetchResult.json();\n`;
+    fileContent += `};\n\n`;
 
-const remoteSchema = async () => {
-    const schema = await introspectSchema(executor);
-    return wrapSchema({
-        schema,
-        executor
-    });
-};
+    fileContent += "const remoteSchema = async () => {\n";
+    fileContent += `${generateIndentation(1)}const schema = await introspectSchema(executor);\n`;
+    fileContent += `${generateIndentation(1)}return wrapSchema({\n`;
+    fileContent += `${generateIndentation(2)}schema,\n`;
+    fileContent += `${generateIndentation(2)}executor\n`;
+    fileContent += `${generateIndentation(1)}});\n`;
+    fileContent += "};\n\n";
+    
+    fileContent += "const extractNestedFields = (selection) => {\n";
+    fileContent += `${generateIndentation(1)}let result = {\n`;
+    fileContent += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
+    fileContent += `${generateIndentation(2)}selections: []\n`;
+    fileContent += `${generateIndentation(1)}}\n`;
+    fileContent += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
+    fileContent += `${generateIndentation(2)}if(nestedSelection.selectionSet != undefined) {\n`;
+    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
+    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
+    fileContent += `${generateIndentation(4)}name: {\n`;
+    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
+    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
+    fileContent += `${generateIndentation(4)}},\n`;
+    fileContent += `${generateIndentation(4)}selectionSet: extractNestedFields(nestedSelection)\n`;
+    fileContent += `${generateIndentation(3)}})\n`;
+    fileContent += `${generateIndentation(2)}} else {\n`;
+    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
+    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
+    fileContent += `${generateIndentation(4)}name: {\n`;
+    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
+    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
+    fileContent += `${generateIndentation(4)}}\n`;
+    fileContent += `${generateIndentation(3)}})\n`;
+    fileContent += `${generateIndentation(2)}}\n`;
+    fileContent += `${generateIndentation(1)}})\n`;
+    fileContent += `${generateIndentation(1)}return result;\n`;
+    fileContent += "}\n\n";
 
-const resolvers = {
-    Query: {
-    `;
+    fileContent += "const resolvers = {\n";
+    fileContent += `${generateIndentation(1)}Query: {\n`;
     /* In this for-loop we write all the resolver functions with their respective wrapQuery transforms. */
     for(let i = 0; i < directivesUsed.length; i++){
         // If the user does not want to include all fields, make "custom" resolver for each field value
@@ -140,10 +167,9 @@ const resolvers = {
             fileContent += `${generateIndentation(1)}},\n`;
         }
     }
-    fileContent += `
-}
-module.exports = resolvers;    
-    `;
+    fileContent += "}\n";
+    fileContent += "module.exports = resolvers;\n";
+
     await fs.writeFile("wrapper-resolvers.js", fileContent);
     typeDefFileContent += "\n}";
     await fs.appendFile(typeDefFileName, typeDefFileContent);
@@ -394,29 +420,29 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
         ${generateIndentation(5)}subtree.selections.forEach(selection => {
-    `;
-    for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
-            if(directivesUsed[i].directive === "wrap") {
-                if(directivesUsed[i].argumentName.includes("field")) {
-                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
-                } 
-                if(directivesUsed[i].argumentName.includes("path")) {
-                    text += generateWrapQueryPath(directivesUsed[i]);
-                }
-            }
-            if(directivesUsed[i].directive === "concatenate") {
-                textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
-                text += textAndConcValues[0];
-                concValues.push(textAndConcValues[1]);
-            }
-        }
-    }
-    text += `
-        ${generateIndentation(6)}})
+        ${generateIndentation(6)}if(selection.selectionSet !== undefined) {
+        ${generateIndentation(7)}newSelectionSet.selections.push({
+        ${generateIndentation(8)}kind: Kind.FIELD,
+        ${generateIndentation(8)}name: {
+        ${generateIndentation(9)}kind: Kind.NAME,
+        ${generateIndentation(9)}value: selection.name.value
+        ${generateIndentation(8)}},
+        ${generateIndentation(8)}selectionSet: extractNestedFields(selection)
+        ${generateIndentation(7)}})
+        ${generateIndentation(6)}} else {
+        ${generateIndentation(7)}newSelectionSet.selections.push({
+        ${generateIndentation(8)}kind: Kind.FIELD,
+        ${generateIndentation(8)}name: {
+        ${generateIndentation(9)}kind: Kind.NAME,
+        ${generateIndentation(9)}value: selection.name.value
+        ${generateIndentation(8)}}
+        ${generateIndentation(7)}})
+        ${generateIndentation(6)}}
+        ${generateIndentation(5)}})
         ${generateIndentation(4)}return newSelectionSet;
-        ${generateIndentation(3)}},
+        ${generateIndentation(4)}},
     `;
+
     if(typesImplementingInterface !== undefined) {
         text += `
             ${generateIndentation(2)}result => {
@@ -531,29 +557,29 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
         ${generateIndentation(5)}subtree.selections.forEach(selection => {
-    `;
-    for(let i = 0; i < directivesUsed.length; i++){
-        if(directivesUsed[i].objectTypeName === objectTypeName){
-            if(directivesUsed[i].directive === "wrap") {
-                if(directivesUsed[i].argumentName.includes("field")) {
-                    text += generateWrapQueryField(directivesUsed[i], directivesUsed);
-                } 
-                if(directivesUsed[i].argumentName.includes("path")) {
-                    text += generateWrapQueryPath(directivesUsed[i]);
-                }
-            }
-            if(directivesUsed[i].directive === "concatenate") {             
-                textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
-                text += textAndConcValues[0];
-                concValues = textAndConcValues[1];
-            }
-        }
-    }
-    text += `
-        ${generateIndentation(6)}})
+        ${generateIndentation(6)}if(selection.selectionSet !== undefined) {
+        ${generateIndentation(7)}newSelectionSet.selections.push({
+        ${generateIndentation(8)}kind: Kind.FIELD,
+        ${generateIndentation(8)}name: {
+        ${generateIndentation(9)}kind: Kind.NAME,
+        ${generateIndentation(9)}value: selection.name.value
+        ${generateIndentation(8)}},
+        ${generateIndentation(8)}selectionSet: extractNestedFields(selection)
+        ${generateIndentation(7)}})
+        ${generateIndentation(6)}} else {
+        ${generateIndentation(7)}newSelectionSet.selections.push({
+        ${generateIndentation(8)}kind: Kind.FIELD,
+        ${generateIndentation(8)}name: {
+        ${generateIndentation(9)}kind: Kind.NAME,
+        ${generateIndentation(9)}value: selection.name.value
+        ${generateIndentation(8)}}
+        ${generateIndentation(7)}})
+        ${generateIndentation(6)}}
+        ${generateIndentation(5)}})
         ${generateIndentation(4)}return newSelectionSet;
-        ${generateIndentation(3)}},
+        ${generateIndentation(4)}},
     `;
+
     if(typesImplementingInterface !== undefined) {
         text += `
             ${generateIndentation(2)}result => {
