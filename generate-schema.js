@@ -58,10 +58,6 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(2)}executor\n`;
     fileContent += `${generateIndentation(1)}});\n`;
     fileContent += "};\n\n";
-    
-
-
-    fileContent += writeNestedExtractFunctions(directivesUsed);
 
     fileContent += "const resolvers = {\n";
     fileContent += `${generateIndentation(1)}Query: {\n`;
@@ -204,10 +200,13 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(1)}return result;\n`;
     fileContent += "}\n\n";
 
+    fileContent += writeNestedExtractFunctions(directivesUsed);
+
     fileContent += "module.exports = resolvers;\n";
 
     await fs.writeFile("wrapper-resolvers.js", fileContent);
     typeDefFileContent += "\n}";
+
     await fs.appendFile(typeDefFileName, typeDefFileContent);
     return fileContent;
 }
@@ -316,7 +315,7 @@ const generateWrapQueryPath = function(directivesUsed) {
                 ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
                 ${generateIndentation((i*2) + 7)}}
             `;
-            /* Loop to close out all brackets are square parenthesis */
+            /* Loop to close out all brackets and square parenthesis */
             for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
                 // Close selections object }, selections list ], selection set } 
                 text += `
@@ -371,13 +370,7 @@ const parseConcArgs = function(directive, rsDef) {
 
 const generateConcatenateField = function(directive, rsDef, remoteResolver) {
     const concValues = parseConcArgs(directive,rsDef);
-
-    // console.log(remoteResolver)
-    // console.log(directive)
-    // console.log(directive.remoteObjectTypeName);
-    // console.log(rsDef);
     let text = "";
-    // console.log(directive)
     let extractNestedFieldsTextOne = ""
     let extractNestedFieldsTextTwo = ""
     if(builtInScalars.includes(directive.fieldValue)) {
@@ -432,8 +425,6 @@ const generateConcatenateField = function(directive, rsDef, remoteResolver) {
         ${generateIndentation(1)}}
         `;
     }
-    // return [text, concValues];    
-    // console.log(extractNestedFieldsTextOne)
     return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo]
 }
 
@@ -441,7 +432,7 @@ const addConcatenateResolvers = function(directive, rsDef) {
     const concDirective = [directive.fieldName, directive.objectTypeName, parseConcArgs(directive,rsDef)];
     let text = "";
     text += `
-        ${generateIndentation(0)}${concDirective[0]}: async(parent, _, _context, _info) => {
+        ${generateIndentation(0)}${concDirective[0]}: async(parent) => {
     `;
     concDirective[2].forEach(value => {    
 
@@ -488,7 +479,11 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
     for(let i = 0; i < directivesUsed.length; i++) {
         if(directivesUsed[i].directive === "wrap") {
             // If it's a field and its value type is not included in the list of built-in scalars, then again we need to call the correct nested function
-            if(directivesUsed[i].argumentName.includes("field") && directivesUsed[i].objectTypeName === objectTypeName && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+            if(
+                directivesUsed[i].argumentName.includes("field") && 
+                (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
+                builtInScalars.includes(directivesUsed[i].fieldValue) === false
+            ) {
                 text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                 text += `${generateIndentation(4)}result.selections.push({\n`;
                 text += `${generateIndentation(5)}kind: Kind.FIELD,\n`;
@@ -501,7 +496,11 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 text += `${generateIndentation(3)}}\n`
             }
             // If it's a field and its value type is included in the built-in scalars, then just map the field name to the remote schema
-            if(directivesUsed[i].argumentName.includes("field") && directivesUsed[i].objectTypeName === objectTypeName && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
+            if(
+                directivesUsed[i].argumentName.includes("field") && 
+                (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
+                builtInScalars.includes(directivesUsed[i].fieldValue) === true
+            ) {
                 text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
                 text += `${generateIndentation(4)}result.selections.push({\n`;
                 text += `${generateIndentation(5)}kind: Kind.FIELD, \n`;
@@ -513,9 +512,12 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 text += `${generateIndentation(3)}}\n`;
             }
 
-            // If it's a path and its value type is included in the built-in scalars, then just map the field name to the remote schema
-            if(directivesUsed[i].argumentName.includes("path")) {
-
+            // If it's a path, then just map the field name to the correct path in the remote schema
+            if(
+                directivesUsed[i].argumentName.includes("path") && 
+                (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)
+            ) {
+                text += generateWrapQueryPath(directivesUsed[i]);
             }
         }
     }
@@ -528,14 +530,22 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
 const writeNestedExtractFunctions = function(directivesUsed) {
     let text = "";
     for(let i = 0; i < directivesUsed.length; i++) {
-        if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type") {
-            text += `const extractNested${directivesUsed[i].objectTypeName}Fields = (selection) => {\n`;
+        if(directivesUsed[i].directive === "wrap" && (directivesUsed[i].argumentName === "type" || directivesUsed[i].argumentName === "interface")) {
+            if(directivesUsed[i].argumentName === "type") {
+                text += `const extractNested${directivesUsed[i].objectTypeName}Fields = (selection) => {\n`;
+            } else if(directivesUsed[i].argumentName === "interface") {
+                text += `const extractNested${directivesUsed[i].interfaceTypeName}Fields = (selection) => {\n`;
+            }
             text += `${generateIndentation(1)}let result = {\n`;
             text += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
             text += `${generateIndentation(2)}selections: []\n`;
             text += `${generateIndentation(1)}}\n`;
             text += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
-            text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].objectTypeName);
+            if(directivesUsed[i].argumentName === "type") {
+                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].objectTypeName);
+            } else if(directivesUsed[i].argumentName === "interface") {
+                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].interfaceTypeName);
+            }
         }
     }
     text += "\n\n";
