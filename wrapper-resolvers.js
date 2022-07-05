@@ -24,34 +24,6 @@ const remoteSchema = async () => {
 	});
 };
 
-const extractNestedFields = (selection) => {
-	let result = {
-		kind: Kind.SELECTION_SET, 
-		selections: []
-	}
-	selection.selectionSet.selections.forEach(nestedSelection => {
-		if(nestedSelection.selectionSet != undefined) {
-			result.selections.push({
-				kind: Kind.FIELD,
-				name: {
-					kind: Kind.NAME,
-					value: nestedSelection.name.value
-				},
-				selectionSet: extractNestedFields(nestedSelection)
-			})
-		} else {
-			result.selections.push({
-				kind: Kind.FIELD,
-				name: {
-					kind: Kind.NAME,
-					value: nestedSelection.name.value
-				}
-			})
-		}
-	})
-	return result;
-}
-
 const resolvers = {
 	Query: {
     
@@ -82,7 +54,7 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["University"])
         							})
         						} else {
         							newSelectionSet.selections.push({
@@ -134,7 +106,7 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["Faculty"])
         							})
         						} else {
         							newSelectionSet.selections.push({
@@ -197,7 +169,7 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["Department"])
         							})
         						} else {
         							newSelectionSet.selections.push({
@@ -249,7 +221,7 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["Lecturer"])
         							})
         						} else {
         							newSelectionSet.selections.push({
@@ -298,9 +270,10 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["GraduateStudents"])
         							})
-        						} else {
+        						}
+        						 else {
         							newSelectionSet.selections.push({
         								kind: Kind.FIELD,
         								name: {
@@ -309,6 +282,42 @@ const resolvers = {
         								}
         							})
         						}
+        
+        						if(selection.name.value === "newEmail") {
+        
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "emailAddress"
+                    						}
+                    					}
+                    				)
+                
+        						}
+        
+        						if(selection.name.value === "contactInfo") {
+        
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "telephone"
+                    						}
+                    					}
+                    				)
+                
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "emailAddress"
+                    						}
+                    					}
+                    				)
+                
+        						}
+        
         					})
         				return newSelectionSet;
         				},
@@ -350,7 +359,7 @@ const resolvers = {
         									kind: Kind.NAME,
         									value: selection.name.value
         								},
-        								selectionSet: extractNestedFields(selection)
+        								selectionSet: extractNestedFields(selection, schema._typeMap["ResearchGroup"])
         							})
         						} else {
         							newSelectionSet.selections.push({
@@ -448,8 +457,11 @@ const resolvers = {
             else
             	parent.contactInfo += parent.telephone
             
-            parent.contactInfo += " " 
-
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = " " 
+            else
+            	parent.contactInfo += " "
+            
             if(parent.contactInfo === undefined) 
             	parent.contactInfo = parent.emailAddress
             else
@@ -497,8 +509,11 @@ const resolvers = {
             else
             	parent.contactInfo += parent.telephone
             
-            parent.contactInfo += " " 
-
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = " " 
+            else
+            	parent.contactInfo += " "
+            
             if(parent.contactInfo === undefined) 
             	parent.contactInfo = parent.emailAddress
             else
@@ -538,8 +553,11 @@ const resolvers = {
 
         newEmail: async(parent, _, _context, _info) => {
     
-            parent.newEmail += "cooler" 
-
+            if(parent.newEmail === undefined) 
+            	parent.newEmail = "cooler" 
+            else
+            	parent.newEmail += "cooler"
+            
             if(parent.newEmail === undefined) 
             	parent.newEmail = parent.emailAddress
             else
@@ -555,8 +573,11 @@ const resolvers = {
             else
             	parent.contactInfo += parent.telephone
             
-            parent.contactInfo += " " 
-
+            if(parent.contactInfo === undefined) 
+            	parent.contactInfo = " " 
+            else
+            	parent.contactInfo += " "
+            
             if(parent.contactInfo === undefined) 
             	parent.contactInfo = parent.emailAddress
             else
@@ -611,4 +632,104 @@ const resolvers = {
 		},
 	},
 }
+const extractNestedFields = (selection,selectionType) => {
+	let result = {
+		kind: Kind.SELECTION_SET, 
+		selections: []
+	}
+	let remoteResolver
+	if(selectionType !== undefined){
+		if(selectionType._fields){
+			remoteResolver = selectionType._fields[selection.name.value].type
+		}
+		else{
+			remoteResolver = selectionType.ofType._fields[selection.name.value].type
+		}
+	}
+	selection.selectionSet.selections.forEach(nestedSelection => {
+		if(nestedSelection.selectionSet != undefined) {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: nestedSelection.name.value
+				},
+				selectionSet: extractNestedFields(nestedSelection, remoteResolver)
+			})
+		} else {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: nestedSelection.name.value
+				}
+			})
+		}
+		if(remoteResolver._fields){
+        	if(remoteResolver.name.value === "GraduateStudent"){
+        		if(nestedSelection.name.value === "newEmail"){
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "emailAddress"
+                    	}
+                    })
+        		}
+        	}
+        
+        	if(remoteResolver.name.value === "GraduateStudent"){
+        		if(nestedSelection.name.value === "contactInfo"){
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "telephone"
+                    	}
+                    })
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "emailAddress"
+                    	}
+                    })
+        		}
+        	}
+        	}else{
+        	if(remoteResolver.ofType.name === "GraduateStudent"){
+        		if(nestedSelection.name.value === "newEmail"){
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "emailAddress"
+                    	}
+                    })
+        		}
+        	}
+        
+        	if(remoteResolver.ofType.name === "GraduateStudent"){
+        		if(nestedSelection.name.value === "contactInfo"){
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "telephone"
+                    	}
+                    })
+                    result.selections.push( {
+                    	kind: Kind.FIELD,
+                    	name: {
+                    		kind: Kind.NAME,
+                    		value: "emailAddress"
+                    	}
+                    })
+        		}
+        	}
+        }
+	})
+	return result;
+}
+
 module.exports = resolvers;

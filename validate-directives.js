@@ -232,6 +232,8 @@ const parseSchemaDirectives = function(schema) {
                             directivesUsed.push(temp); 
                             remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
                         }
+
+
                     }
                 }
             }
@@ -289,11 +291,14 @@ const parseSchemaDirectives = function(schema) {
                                 errorMessage = `Expected List or String for argument ${node.directives[i].arguments[0].name.value.toUpperCase()} on field ${node.name.value.toUpperCase()}, got ${argumentType}.`;
                         }
                         let remote;
-                        if(remoteInterfaceTypeName !== undefined) {
-                            remote = remoteInterfaceTypeName;
-                        } else if(remoteObjectTypeName !== undefined) {
+                        
+                        
+                        if(remoteObjectTypeName !== undefined) {
                             remote = remoteObjectTypeName;
                         }
+                        else if(remoteInterfaceTypeName !== undefined) {
+                            remote = remoteInterfaceTypeName;
+                        } 
                         let temp = {
                             "remoteObjectTypeName": remote,
                             "objectTypeName": ast.name.value,
