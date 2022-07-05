@@ -30,6 +30,9 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
 
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, typeDefFileName) {
     let typeDefFileContent = "";
+    let extractNestedFieldsTextOne = "";
+    let extractNestedFieldsTextTwo = "";
+
     let fileContent = "const { wrapSchema, WrapQuery, introspectSchema, RenameObjectFields } = require('@graphql-tools/wrap')\n";
     fileContent += "const { fetch } = require('cross-fetch');\n";
     fileContent += "const { delegateToSchema } = require('@graphql-tools/delegate')\n";
@@ -56,33 +59,7 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(1)}});\n`;
     fileContent += "};\n\n";
     
-    fileContent += "const extractNestedFields = (selection) => {\n";
-    fileContent += `${generateIndentation(1)}let result = {\n`;
-    fileContent += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
-    fileContent += `${generateIndentation(2)}selections: []\n`;
-    fileContent += `${generateIndentation(1)}}\n`;
-    fileContent += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
-    fileContent += `${generateIndentation(2)}if(nestedSelection.selectionSet != undefined) {\n`;
-    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
-    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
-    fileContent += `${generateIndentation(4)}name: {\n`;
-    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
-    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
-    fileContent += `${generateIndentation(4)}},\n`;
-    fileContent += `${generateIndentation(4)}selectionSet: extractNestedFields(nestedSelection)\n`;
-    fileContent += `${generateIndentation(3)}})\n`;
-    fileContent += `${generateIndentation(2)}} else {\n`;
-    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
-    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
-    fileContent += `${generateIndentation(4)}name: {\n`;
-    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
-    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
-    fileContent += `${generateIndentation(4)}}\n`;
-    fileContent += `${generateIndentation(3)}})\n`;
-    fileContent += `${generateIndentation(2)}}\n`;
-    fileContent += `${generateIndentation(1)}})\n`;
-    fileContent += `${generateIndentation(1)}return result;\n`;
-    fileContent += "}\n\n";
+
 
     fileContent += writeNestedExtractFunctions(directivesUsed);
 
@@ -100,7 +77,12 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
                     typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.singleQuery, isList = false);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
-                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
+                    let temp = writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
+                    // fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
+                    fileContent += temp[0]
+                    extractNestedFieldsTextOne += temp[1];
+                    extractNestedFieldsTextTwo += temp[2];
+
                     typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.listQuery, isList = true);
                 }
             }
@@ -140,7 +122,12 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
                 typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.singleQuery, isList = false);
             } 
             if(parsedArgument.listQuery !== undefined) {
-                fileContent += writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
+                // fileContent += writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
+                let temp = writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
+                fileContent += temp[0]
+                extractNestedFieldsTextOne += temp[1]
+                extractNestedFieldsTextTwo += temp[2]
+
                 typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.listQuery, isList = true);
             }
         }
@@ -170,6 +157,53 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
         }
     }
     fileContent += "}\n";
+
+    fileContent += "const extractNestedFields = (selection,selectionType) => {\n";
+    fileContent += `${generateIndentation(1)}let result = {\n`;
+    fileContent += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
+    fileContent += `${generateIndentation(2)}selections: []\n`;
+    fileContent += `${generateIndentation(1)}}\n`;
+
+
+    fileContent += `${generateIndentation(1)}let remoteResolver\n`;
+    fileContent += `${generateIndentation(1)}if(selectionType !== undefined){\n`;
+    fileContent += `${generateIndentation(2)}if(selectionType._fields){\n`;
+    fileContent += `${generateIndentation(3)}remoteResolver = selectionType._fields[selection.name.value].type\n`;
+    fileContent += `${generateIndentation(2)}}\n`;
+    fileContent += `${generateIndentation(2)}else{\n`;
+    fileContent += `${generateIndentation(3)}remoteResolver = selectionType.ofType._fields[selection.name.value].type\n`;
+    fileContent += `${generateIndentation(2)}}\n`;
+    fileContent += `${generateIndentation(1)}}\n`;
+    fileContent += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
+    fileContent += `${generateIndentation(2)}if(nestedSelection.selectionSet != undefined) {\n`;
+    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
+    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
+    fileContent += `${generateIndentation(4)}name: {\n`;
+    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
+    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
+    fileContent += `${generateIndentation(4)}},\n`;
+    fileContent += `${generateIndentation(4)}selectionSet: extractNestedFields(nestedSelection, remoteResolver)\n`;
+    fileContent += `${generateIndentation(3)}})\n`;
+    fileContent += `${generateIndentation(2)}} else {\n`;
+    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
+    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
+    fileContent += `${generateIndentation(4)}name: {\n`;
+    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
+    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
+    fileContent += `${generateIndentation(4)}}\n`;
+    fileContent += `${generateIndentation(3)}})\n`;
+    fileContent += `${generateIndentation(2)}}\n`;
+
+    fileContent += `${generateIndentation(2)}if(remoteResolver._fields){`
+    fileContent += extractNestedFieldsTextOne;
+    fileContent += `${generateIndentation(1)}}else{`;
+    fileContent += extractNestedFieldsTextTwo;
+    fileContent += `${generateIndentation(0)}}\n`;
+
+    fileContent += `${generateIndentation(1)}})\n`;
+    fileContent += `${generateIndentation(1)}return result;\n`;
+    fileContent += "}\n\n";
+
     fileContent += "module.exports = resolvers;\n";
 
     await fs.writeFile("wrapper-resolvers.js", fileContent);
@@ -182,6 +216,12 @@ const camelCase = function(input) {
     let temp = input;
     let camelCased = temp[0].toLowerCase() + temp.slice(1);
     return camelCased;
+}
+
+const upperCase = function(input) {
+    let temp = input;
+    let capitalCased = temp[0].toUpperCase() + temp.slice(1);
+    return capitalCased;
 }
 
 const parseArgument = function(input) {
@@ -329,32 +369,72 @@ const parseConcArgs = function(directive, rsDef) {
     return returnList;
 }
 
-const generateConcatenateField = function(directive, rsDef) {
+const generateConcatenateField = function(directive, rsDef, remoteResolver) {
     const concValues = parseConcArgs(directive,rsDef);
+
+    // console.log(remoteResolver)
+    // console.log(directive)
+    // console.log(directive.remoteObjectTypeName);
+    // console.log(rsDef);
     let text = "";
+    // console.log(directive)
+    let extractNestedFieldsTextOne = ""
+    let extractNestedFieldsTextTwo = ""
     if(builtInScalars.includes(directive.fieldValue)) {
         text += `
-        ${generateIndentation(7)}if(selection.name.value === "${directive.fieldName}") {
-        `
+        ${generateIndentation(6)}if(selection.name.value === "${directive.fieldName}") {
+        `;
+        extractNestedFieldsTextOne += `
+        ${generateIndentation(1)}if(remoteResolver.name.value === "${directive.remoteObjectTypeName}"){
+        ${generateIndentation(2)}if(nestedSelection.name.value === "${directive.fieldName}"){`;
+        extractNestedFieldsTextTwo += `
+        ${generateIndentation(1)}if(remoteResolver.ofType.name === "${directive.remoteObjectTypeName}"){
+        ${generateIndentation(2)}if(nestedSelection.name.value === "${directive.fieldName}"){`;
         concValues.forEach(field => {
             if(field[1]){
                 text += `
-                    ${generateIndentation(5)}newSelectionSet.selections.push( {
-                    ${generateIndentation(6)}kind: Kind.FIELD,
-                    ${generateIndentation(7)}name: {
-                    ${generateIndentation(8)}kind: Kind.NAME,
-                    ${generateIndentation(8)}value: "${field[0]}"
-                    ${generateIndentation(7)}}
+                    ${generateIndentation(4)}newSelectionSet.selections.push( {
+                    ${generateIndentation(5)}kind: Kind.FIELD,
+                    ${generateIndentation(6)}name: {
+                    ${generateIndentation(7)}kind: Kind.NAME,
+                    ${generateIndentation(7)}value: "${field[0]}"
                     ${generateIndentation(6)}}
-                    ${generateIndentation(5)})
+                    ${generateIndentation(5)}}
+                    ${generateIndentation(4)})
                 `;
+                extractNestedFieldsTextOne += `
+                    ${generateIndentation(0)}result.selections.push( {
+                    ${generateIndentation(1)}kind: Kind.FIELD,
+                    ${generateIndentation(1)}name: {
+                    ${generateIndentation(2)}kind: Kind.NAME,
+                    ${generateIndentation(2)}value: "${field[0]}"
+                    ${generateIndentation(1)}}
+                    ${generateIndentation(0)}})`;
+                extractNestedFieldsTextTwo += `
+                    ${generateIndentation(0)}result.selections.push( {
+                    ${generateIndentation(1)}kind: Kind.FIELD,
+                    ${generateIndentation(1)}name: {
+                    ${generateIndentation(2)}kind: Kind.NAME,
+                    ${generateIndentation(2)}value: "${field[0]}"
+                    ${generateIndentation(1)}}
+                    ${generateIndentation(0)}})`;
             }
         })
         text += `
-        ${generateIndentation(7)}}
+        ${generateIndentation(6)}}
+        `;
+        extractNestedFieldsTextOne += `
+        ${generateIndentation(2)}}
+        ${generateIndentation(1)}}
+        `;
+        extractNestedFieldsTextTwo += `
+        ${generateIndentation(2)}}
+        ${generateIndentation(1)}}
         `;
     }
-    return [text, concValues];    
+    // return [text, concValues];    
+    // console.log(extractNestedFieldsTextOne)
+    return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo]
 }
 
 const addConcatenateResolvers = function(directive, rsDef) {
@@ -375,7 +455,11 @@ const addConcatenateResolvers = function(directive, rsDef) {
         }
         else{
             text += `
-            ${generateIndentation(0)}parent.${concDirective[0]} += "${value[0]}" \n`;
+            ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined) 
+            ${generateIndentation(1)}parent.${concDirective[0]} = "${value[0]}" 
+            ${generateIndentation(0)}else
+            ${generateIndentation(1)}parent.${concDirective[0]} += "${value[0]}"
+            `;
         }
     })
     text += `
@@ -460,6 +544,7 @@ const writeNestedExtractFunctions = function(directivesUsed) {
 
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
     let concValues = [];
+    let upperCaseResolver = upperCase(remoteResolver.resolver)
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -481,17 +566,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(6)}selections: [] 
         ${generateIndentation(5)}}
         ${generateIndentation(5)}subtree.selections.forEach(selection => {
-    `;/*        
-        ${generateIndentation(6)}if(selection.selectionSet !== undefined) {
-        ${generateIndentation(7)}newSelectionSet.selections.push({
-        ${generateIndentation(8)}kind: Kind.FIELD,
-        ${generateIndentation(8)}name: {
-        ${generateIndentation(9)}kind: Kind.NAME,
-        ${generateIndentation(9)}value: selection.name.value
-        ${generateIndentation(8)}},
-        ${generateIndentation(8)}selectionSet: extractNestedFields(selection)
-        ${generateIndentation(7)}})*/
-
+    `;
 
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
@@ -537,18 +612,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             }
         }
     }
-/*
-    text +=`${generateIndentation(6)}} else {
-        ${generateIndentation(7)}newSelectionSet.selections.push({
-        ${generateIndentation(8)}kind: Kind.FIELD,
-        ${generateIndentation(8)}name: {
-        ${generateIndentation(9)}kind: Kind.NAME,
-        ${generateIndentation(9)}value: selection.name.value
-        ${generateIndentation(8)}}
-        ${generateIndentation(7)}})
-        ${generateIndentation(6)}}
-        ${generateIndentation(5)}})
-        */
     text += `
         ${generateIndentation(4)}})
         ${generateIndentation(4)}return newSelectionSet;
@@ -600,6 +663,7 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
                 if(directivesUsed[j].interfaces !== undefined) {
                     Object.keys(directivesUsed[j].interfaces).forEach(key => {
                         if(key === directivesUsed[i].interfaceTypeName) {
+
                             interfaceTypeResolvers[directivesUsed[j].remoteObjectTypeName] = directivesUsed[j].objectTypeName;
                         }
                     })
@@ -650,6 +714,9 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
 }
 
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema, typesImplementingInterface){
+    let upperCaseResolver = upperCase(remoteResolver.resolver)
+    let extractNestedFieldsTextOne = ""
+    let extractNestedFieldsTextTwo = ""
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
         ${generateIndentation(1)}const schema = await remoteSchema();
@@ -675,9 +742,10 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(9)}kind: Kind.NAME,
         ${generateIndentation(9)}value: selection.name.value
         ${generateIndentation(8)}},
-        ${generateIndentation(8)}selectionSet: extractNestedFields(selection)
+        ${generateIndentation(8)}selectionSet: extractNestedFields(selection, schema._typeMap["${upperCaseResolver}"])
         ${generateIndentation(7)}})
-        ${generateIndentation(6)}} else {
+        ${generateIndentation(6)}}
+        ${generateIndentation(6)} else {
         ${generateIndentation(7)}newSelectionSet.selections.push({
         ${generateIndentation(8)}kind: Kind.FIELD,
         ${generateIndentation(8)}name: {
@@ -686,6 +754,20 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(8)}}
         ${generateIndentation(7)}})
         ${generateIndentation(6)}}
+        `;
+        for(let i = 0; i < directivesUsed.length; i++){
+            if(directivesUsed[i].objectTypeName === objectTypeName){
+                if(directivesUsed[i].directive === "concatenate") {            
+                    textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions, upperCaseResolver);
+                    text += textAndConcValues[0];
+                    extractNestedFieldsTextOne += textAndConcValues[1];
+                    extractNestedFieldsTextTwo += textAndConcValues[2];
+
+                    // concValues = textAndConcValues[1];
+                }
+            }
+        }
+        text += `
         ${generateIndentation(5)}})
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(4)}},
@@ -724,7 +806,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(1)}return data;
         },
     `;
-    return text;
+    return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo];
 }
 
 const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, remoteResolver) {
