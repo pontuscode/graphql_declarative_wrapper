@@ -47,15 +47,15 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    			if(selection.name.value === "idHaha") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
+    							if(selection.name.value === "idHaha"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "id"
+									},
+								})
+							}
 						if(selection.name.value === "undergraduateDegreeObtainedByFaculty") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
@@ -131,33 +131,33 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    			if(selection.name.value === "id") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(selection.name.value === "telephone") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(selection.name.value === "emailAddress") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
+    							if(selection.name.value === "id"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "id"
+									},
+								})
+							}
+							if(selection.name.value === "telephone"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "telephone"
+									},
+								})
+							}
+							if(selection.name.value === "emailAddress"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "emailAddress"
+									},
+								})
+							}
 						if(selection.name.value === "undergraduateDegreeFrom") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
@@ -244,15 +244,15 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    			if(selection.name.value === "id") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
+    							if(selection.name.value === "id"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "id"
+									},
+								})
+							}
 						if(selection.name.value === "subOrganizationOf") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
@@ -274,6 +274,42 @@ const resolvers = {
 							})
 						}
 
+        						if(selection.name.value === "head") {
+        							newSelectionSet.selections.push( {
+    
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "head"
+                						}
+            
+        							})
+        						}
+    
+        						if(selection.name.value === "headEmailAddress") {
+        							newSelectionSet.selections.push( {
+    
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "head"
+                						}, 
+                						selectionSet: {
+                							kind: Kind.SELECTION_SET,
+                							selections: [{
+            
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "emailAddress"
+                								}
+            
+                    						}]
+                    					}
+                
+        							})
+        						}
+    
         				})
         				return newSelectionSet;
         },
@@ -308,33 +344,33 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    			if(selection.name.value === "id") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(selection.name.value === "telephone") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(selection.name.value === "emailAddress") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
+    							if(selection.name.value === "id"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "id"
+									},
+								})
+							}
+							if(selection.name.value === "telephone"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "telephone"
+									},
+								})
+							}
+							if(selection.name.value === "emailAddress"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "emailAddress"
+									},
+								})
+							}
 
         						if(selection.name.value === "contactInfo") {
         
@@ -357,15 +393,15 @@ const resolvers = {
                     				)
                 
         						}
-        			if(selection.name.value === "position") {
-				newSelectionSet.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "position"
-					},
-				})
-			}
+        							if(selection.name.value === "position"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "position"
+									},
+								})
+							}
 						if(selection.name.value === "undergraduateDegreeFrom") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
@@ -538,6 +574,28 @@ const resolvers = {
         					}
         					subtree.selections.forEach(selection => {
     
+        						if(selection.name.value === "id") {
+        							newSelectionSet.selections.push( {
+    
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+            
+        							})
+        						}
+    						if(selection.name.value === "subOrganizationOf") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "subOrganizationOf"
+								},
+								selectionSet: extractNestedWrappedDepartmentFields(selection)
+							})
+						}
+
         				})
         				return newSelectionSet;
         },
@@ -605,6 +663,9 @@ const resolvers = {
 		},
 		head: (parent) => {
 			return (parent.head !== undefined) ? parent.head : null;
+		},
+		headEmailAddress: (parent) => {
+			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
 		},
 	},
 	WrappedProfessor: {
@@ -906,56 +967,56 @@ const extractNestedWrappedUniversityFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "idHaha") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeObtainedByFaculty") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeObtainedByFaculty"
-					},
-				selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "departments") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "departments"
-					},
-				selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeObtainedBystudent") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeObtainedBystudent"
-					},
-				selectionSet: extractNestedWrappedGraduateStudentFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "doctoralDegreeObtainers") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "doctoralDegreeObtainers"
-					},
-				selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "idHaha") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeObtainedByFaculty") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeObtainedByFaculty"
+				},
+			selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "departments") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "departments"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeObtainedBystudent") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeObtainedBystudent"
+				},
+			selectionSet: extractNestedWrappedGraduateStudentFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "doctoralDegreeObtainers") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "doctoralDegreeObtainers"
+				},
+			selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -965,74 +1026,74 @@ const extractNestedWrappedFacultyFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "telephone") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "emailAddress") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "masterDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "masterDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "doctoralDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "doctoralDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "publications") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "publications"
-					},
-				selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "telephone") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "telephone"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "emailAddress") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "emailAddress"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "masterDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "masterDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "doctoralDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "doctoralDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "publications") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "publications"
+				},
+			selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -1042,48 +1103,72 @@ const extractNestedWrappedDepartmentFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "subOrganizationOf") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "subOrganizationOf"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "faculties") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "faculties"
-					},
-				selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
-				})
-			}
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "subOrganizationOf") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "subOrganizationOf"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "faculties") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "faculties"
+				},
+			selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
+			})
+		}
 
-        							if(selection.name.value === "head") {
-        								newSelectionSet.selections.push( {
+        if(nestedSelection.name.value === "head") {
+        	result.selections.push( {
     
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "head"
-                							}
+                kind: Kind.FIELD,
+                name: {
+                	kind: Kind.NAME,
+                	value: "head"
+                }
             
-        								})
-        							}
-    		})
+        	})
+        }
+    
+        if(nestedSelection.name.value === "headEmailAddress") {
+        	result.selections.push( {
+    
+                kind: Kind.FIELD,
+                name: {
+                	kind: Kind.NAME,
+                	value: "head"
+                }, 
+                selectionSet: {
+                	kind: Kind.SELECTION_SET,
+                	selections: [{
+            
+                		kind: Kind.FIELD,
+                		name: {
+                			kind: Kind.NAME,
+                			value: "emailAddress"
+                		}
+            
+                    }]
+                    }
+                
+        	})
+        }
+    	})
 	return result;
 }
 
@@ -1093,34 +1178,34 @@ const extractNestedWrappedAuthorFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "telephone") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "emailAddress") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "telephone") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "telephone"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "emailAddress") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "emailAddress"
+				},
+			})
+		}
+	})
 	return result;
 }
 
@@ -1130,102 +1215,102 @@ const extractNestedWrappedProfessorFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "telephone") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "emailAddress") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "researchInterest") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "researchInterest"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "profType") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "profType"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "masterDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "masterDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "doctoralDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "doctoralDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "worksFor") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "worksFor"
-					},
-				selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "publications") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "publications"
-					},
-				selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "telephone") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "telephone"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "emailAddress") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "emailAddress"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "researchInterest") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "researchInterest"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "profType") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "profType"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "masterDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "masterDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "doctoralDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "doctoralDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "worksFor") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "worksFor"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "publications") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "publications"
+				},
+			selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -1235,93 +1320,93 @@ const extractNestedWrappedLecturerFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "telephone") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "emailAddress") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "position") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "position"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "masterDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "masterDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "doctoralDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "doctoralDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "worksFor") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "worksFor"
-					},
-				selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "publications") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "publications"
-					},
-				selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "telephone") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "telephone"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "emailAddress") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "emailAddress"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "position") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "position"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "masterDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "masterDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "doctoralDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "doctoralDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "worksFor") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "worksFor"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "publications") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "publications"
+				},
+			selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -1331,73 +1416,73 @@ const extractNestedWrappedGraduateStudentFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "telephone") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "telephone"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "emailAddress") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "emailAddress"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "age") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "age"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "memberOf") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "memberOf"
-					},
-				selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "undergraduateDegreeFrom") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "undergraduateDegreeFrom"
-					},
-				selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
-				})
-			}
-			if(nestedSelection.name.value === "advisor") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "advisor"
-					},
-				selectionSet: extractNestedWrappedProfessorFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "telephone") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "telephone"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "emailAddress") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "emailAddress"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "age") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "age"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "memberOf") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "memberOf"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "undergraduateDegreeFrom"
+				},
+			selectionSet: extractNestedWrappedUniversityFields(nestedSelection)
+			})
+		}
+		if(nestedSelection.name.value === "advisor") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "advisor"
+				},
+			selectionSet: extractNestedWrappedProfessorFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -1408,30 +1493,28 @@ const extractNestedWrappedResearchGroupFields = (selection) => {
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
 
-        							if(selection.name.value === "id") {
-        								newSelectionSet.selections.push( {
+        if(nestedSelection.name.value === "id") {
+        	result.selections.push( {
     
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "id"
-                							}
+                kind: Kind.FIELD,
+                name: {
+                	kind: Kind.NAME,
+                	value: "id"
+                }
             
-        								})
-        							}
-    
-        							if(selection.name.value === "subOrganizationOf") {
-        								newSelectionSet.selections.push( {
-    
-                							kind: Kind.FIELD,
-                							name: {
-                								kind: Kind.NAME,
-                								value: "subOrganizationOf"
-                							}
-            
-        								})
-        							}
-    		})
+        	})
+        }
+    		if(nestedSelection.name.value === "subOrganizationOf") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "subOrganizationOf"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 
@@ -1441,44 +1524,44 @@ const extractNestedWrappedPublicationFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-			if(nestedSelection.name.value === "id") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "id"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "title") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "title"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "abstract") {
-				result.selections.push({
-					kind: Kind.FIELD, 
-					name: {
-						kind: Kind.NAME, 
-						value: "abstract"
-					},
-				})
-			}
-			if(nestedSelection.name.value === "authors") {
-				result.selections.push({
-					kind: Kind.FIELD,
-					name: {
-						kind: Kind.NAME,
-						value: "authors"
-					},
-				selectionSet: extractNestedWrappedAuthorFields(nestedSelection)
-				})
-			}
-		})
+		if(nestedSelection.name.value === "id") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "id"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "title") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "title"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "abstract") {
+			result.selections.push({
+				kind: Kind.FIELD, 
+				name: {
+					kind: Kind.NAME, 
+					value: "abstract"
+				},
+			})
+		}
+		if(nestedSelection.name.value === "authors") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "authors"
+				},
+			selectionSet: extractNestedWrappedAuthorFields(nestedSelection)
+			})
+		}
+	})
 	return result;
 }
 

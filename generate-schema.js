@@ -301,44 +301,44 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
     return text;
 }
 
-const generateWrapQueryPath = function(directivesUsed) {
+const generateWrapQueryPath = function(directivesUsed, selectionName, selectionSetName, indentationOffset) {
     let text =`
-        ${generateIndentation(7)}if(selection.name.value === "${directivesUsed.fieldName}") {
-        ${generateIndentation(8)}newSelectionSet.selections.push( {
+        ${generateIndentation(indentationOffset)}if(${selectionName}.name.value === "${directivesUsed.fieldName}") {
+        ${generateIndentation(indentationOffset + 1)}${selectionSetName}.selections.push( {
     `;
     for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
         if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
             text += `
-                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
-                ${generateIndentation((i*2) + 7)}name: {
-                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
-                ${generateIndentation((i*2) + 7)}}
+                ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + indentationOffset)}name: {
+                ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + indentationOffset)}}
             `;
             /* Loop to close out all brackets and square parenthesis */
             for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
                 // Close selections object }, selections list ], selection set } 
                 text += `
-                    ${generateIndentation(i - (j*2) + 7)}}]
-                    ${generateIndentation(i - (j*2) + 6)}}
+                    ${generateIndentation(i - (j*2) + indentationOffset - 1)}}]
+                    ${generateIndentation(i - (j*2) + indentationOffset - 2)}}
                 `;
             }
         } else {
             text += `
-                ${generateIndentation((i*2) + 7)}kind: Kind.FIELD,
-                ${generateIndentation((i*2) + 7)}name: {
-                ${generateIndentation((i*2) + 8)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + 8)}value: "${directivesUsed.argumentValues[i].value}"
-                ${generateIndentation((i*2) + 7)}}, 
-                ${generateIndentation((i*2) + 7)}selectionSet: {
-                ${generateIndentation((i*2) + 8)}kind: Kind.SELECTION_SET,
-                ${generateIndentation((i*2) + 8)}selections: [{
+                ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
+                ${generateIndentation((i*2) + indentationOffset)}name: {
+                ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + indentationOffset)}}, 
+                ${generateIndentation((i*2) + indentationOffset)}selectionSet: {
+                ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.SELECTION_SET,
+                ${generateIndentation((i*2) + indentationOffset + 1)}selections: [{
             `;
         }
     }
     text += `
-        ${generateIndentation(8)}})
-        ${generateIndentation(7)}}
+        ${generateIndentation(indentationOffset + 1)}})
+        ${generateIndentation(indentationOffset)}}
     `;
     return text;
 }
@@ -484,16 +484,16 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === false
             ) {
-                text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
-                text += `${generateIndentation(4)}result.selections.push({\n`;
-                text += `${generateIndentation(5)}kind: Kind.FIELD,\n`;
-                text += `${generateIndentation(5)}name: {\n`;
-                text += `${generateIndentation(6)}kind: Kind.NAME,\n`;
-                text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
-                text += `${generateIndentation(5)}},\n`;
-                text += `${generateIndentation(4)}selectionSet: extractNested${directivesUsed[i].fieldValue}Fields(nestedSelection)\n`;
-                text += `${generateIndentation(4)}})\n`
-                text += `${generateIndentation(3)}}\n`
+                text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
+                text += `${generateIndentation(3)}result.selections.push({\n`;
+                text += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
+                text += `${generateIndentation(4)}name: {\n`;
+                text += `${generateIndentation(5)}kind: Kind.NAME,\n`;
+                text += `${generateIndentation(5)}value: "${directivesUsed[i].argumentValues}"\n`;
+                text += `${generateIndentation(4)}},\n`;
+                text += `${generateIndentation(3)}selectionSet: extractNested${directivesUsed[i].fieldValue}Fields(nestedSelection)\n`;
+                text += `${generateIndentation(3)}})\n`
+                text += `${generateIndentation(2)}}\n`
             }
             // If it's a field and its value type is included in the built-in scalars, then just map the field name to the remote schema
             if(
@@ -501,15 +501,15 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === true
             ) {
-                text += `${generateIndentation(3)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
-                text += `${generateIndentation(4)}result.selections.push({\n`;
-                text += `${generateIndentation(5)}kind: Kind.FIELD, \n`;
-                text += `${generateIndentation(5)}name: {\n`;
-                text += `${generateIndentation(6)}kind: Kind.NAME, \n`;
-                text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
-                text += `${generateIndentation(5)}},\n`;
-                text += `${generateIndentation(4)}})\n`;
-                text += `${generateIndentation(3)}}\n`;
+                text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
+                text += `${generateIndentation(3)}result.selections.push({\n`;
+                text += `${generateIndentation(4)}kind: Kind.FIELD, \n`;
+                text += `${generateIndentation(4)}name: {\n`;
+                text += `${generateIndentation(5)}kind: Kind.NAME, \n`;
+                text += `${generateIndentation(5)}value: "${directivesUsed[i].argumentValues}"\n`;
+                text += `${generateIndentation(4)}},\n`;
+                text += `${generateIndentation(3)}})\n`;
+                text += `${generateIndentation(2)}}\n`;
             }
 
             // If it's a path, then just map the field name to the correct path in the remote schema
@@ -517,11 +517,11 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 directivesUsed[i].argumentName.includes("path") && 
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)
             ) {
-                text += generateWrapQueryPath(directivesUsed[i]);
+                text += generateWrapQueryPath(directivesUsed[i], selectionName = "nestedSelection", selectionSetName = "result", indentationOffset = 0);
             }
         }
     }
-    text += `${generateIndentation(2)}})\n`;
+    text += `${generateIndentation(1)}})\n`;
     text += `${generateIndentation(1)}return result;\n`;
     text += `}\n\n`;
     return text;
@@ -581,11 +581,6 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     for(let i = 0; i < directivesUsed.length; i++){
         if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
-                // If the field has a built-in scalar value type, it means we just map the name of the wrapper to the name of the wrapped field
-                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue)) { 
-                    //text += generateWrapQueryField(directivesUsed[i], directivesUsed);
-
-                } 
                 // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
                 if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
                     text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
@@ -601,18 +596,18 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                 }
                 // If the field has a built-in scalar value type, we can just perform the field name mapping to the remote schema.
                 if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
-                    text += `${generateIndentation(3)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`;
-                    text += `${generateIndentation(4)}newSelectionSet.selections.push({\n`;
-                    text += `${generateIndentation(5)}kind: Kind.FIELD, \n`;
-                    text += `${generateIndentation(5)}name: {\n`;
-                    text += `${generateIndentation(6)}kind: Kind.NAME, \n`;
-                    text += `${generateIndentation(6)}value: "${directivesUsed[i].argumentValues}"\n`;
-                    text += `${generateIndentation(5)}},\n`;
-                    text += `${generateIndentation(4)}})\n`;
-                    text += `${generateIndentation(3)}}\n`;
+                    text += `${generateIndentation(7)}if(selection.name.value === "${directivesUsed[i].fieldName}"){\n`;
+                    text += `${generateIndentation(8)}newSelectionSet.selections.push({\n`;
+                    text += `${generateIndentation(9)}kind: Kind.FIELD, \n`;
+                    text += `${generateIndentation(9)}name: {\n`;
+                    text += `${generateIndentation(10)}kind: Kind.NAME, \n`;
+                    text += `${generateIndentation(10)}value: "${directivesUsed[i].argumentValues}"\n`;
+                    text += `${generateIndentation(9)}},\n`;
+                    text += `${generateIndentation(8)}})\n`;
+                    text += `${generateIndentation(7)}}\n`;
                 }
                 if(directivesUsed[i].argumentName.includes("path")) {
-                    //text += generateWrapQueryPath(directivesUsed[i]);
+                    text += generateWrapQueryPath(directivesUsed[i], selectionName = "selection", selectionSetName = "newSelectionSet", indentationOffset = 6);
                 }
             }
             if(directivesUsed[i].directive === "concatenate") {

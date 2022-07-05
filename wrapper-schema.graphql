@@ -21,6 +21,7 @@ type WrappedUniversity {
 	subOrganizationOf: WrappedUniversity
 	faculties: [WrappedFaculty]
 	head: WrappedProfessor
+	headEmailAddress: String
 }
 
  interface WrappedAuthor {
