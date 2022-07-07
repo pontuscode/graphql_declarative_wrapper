@@ -59,6 +59,53 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(1)}});\n`;
     fileContent += "};\n\n";
 
+    fileContent += "let schema;\n\n";
+    
+    fileContent += "const getRemoteSchema = async() => {\n";
+    fileContent += `${generateIndentation(1)}schema = await remoteSchema();\n`;
+    fileContent += "}\n\n";
+
+    fileContent += "getRemoteSchema();\n\n";
+
+    /* The following is used to measure and log time. */
+    fileContent += "const fs = require('fs').promises;";
+    fileContent += `
+process.on('SIGINT', async() => {
+    console.log("Caught interrupt signal");
+    let sumBuildQuery = 0;
+    timers.buildQueryTime.forEach(value => {
+        sumBuildQuery += value;
+    })
+    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
+    let sumResultTime = 0;
+    timers.awaitResultTime.forEach(value => {
+        sumResultTime += value;
+    })
+    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
+`;
+    fileContent += "    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);\n";
+    fileContent += "    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);\n";
+    fileContent += "    process.exit();\n";
+    fileContent += "});\n";
+
+    fileContent += `
+const startTimer = () => {
+    const start = new Date().getTime();
+    return start;
+}
+
+const endTimer = (start) => {
+    const end = new Date().getTime();
+    return end - start;
+}
+
+timers = {
+    'buildQueryTime': [],
+    'awaitResultTime': []
+}    
+
+`;
+
     fileContent += "const resolvers = {\n";
     fileContent += `${generateIndentation(1)}Query: {\n`;
     /* In this for-loop we write all the resolver functions with their respective wrapQuery transforms. */
@@ -250,7 +297,7 @@ const generateIndentation = function(factor) {
     }
     return text;
 }
-
+/*
 const generateWrapQueryField = function(directivesUsed, wsDef) {
     let text = "";
     if(builtInScalars.includes(directivesUsed.fieldValue)) {
@@ -300,7 +347,7 @@ const generateWrapQueryField = function(directivesUsed, wsDef) {
     }
     return text;
 }
-
+*/
 const generateWrapQueryPath = function(directivesUsed, selectionName, selectionSetName, indentationOffset) {
     let text =`
         ${generateIndentation(indentationOffset)}if(${selectionName}.name.value === "${directivesUsed.fieldName}") {
@@ -557,7 +604,10 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     let upperCaseResolver = upperCase(remoteResolver.resolver)
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
-        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const awaitResultTime = startTimer();
+        ${generateIndentation(1)}const buildQueryTime = startTimer();
+        ${generateIndentation(1)}let buildQueryDiff;
+        ${generateIndentation(1)}let awaitResultDiff;
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -618,7 +668,8 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         }
     }
     text += `
-        ${generateIndentation(4)}})
+        ${generateIndentation(4)}})\n
+        ${generateIndentation(4)}buildQueryDiff = endTimer(buildQueryTime);
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation()}},
     `;
@@ -637,12 +688,14 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         })
         text += `
             ${generateIndentation(3)}}
+            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     } else {
         text += `
             ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
@@ -652,6 +705,8 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
+        ${generateIndentation(1)}timers.buildQueryTime.push(buildQueryDiff);
+        ${generateIndentation(1)}timers.awaitResultTime.push(awaitResultDiff);
         ${generateIndentation(1)}return data;
         },
     `;
@@ -724,7 +779,10 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
     let extractNestedFieldsTextTwo = ""
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
-        ${generateIndentation(1)}const schema = await remoteSchema();
+        ${generateIndentation(1)}const awaitResultTime = startTimer();
+        ${generateIndentation(1)}const buildQueryTime = startTimer();
+        ${generateIndentation(1)}let buildQueryDiff;
+        ${generateIndentation(1)}let awaitResultDiff;
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -773,7 +831,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
             }
         }
         text += `
-        ${generateIndentation(5)}})
+        ${generateIndentation(5)}})\n
+        ${generateIndentation(4)}buildQueryDiff = endTimer(buildQueryTime);
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(4)}},
     `;
@@ -793,12 +852,14 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         })
         text += `
             ${generateIndentation(3)}}
+            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     } else {
         text += `
             ${generateIndentation(2)}result => {
+            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
@@ -808,6 +869,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
+        ${generateIndentation(1)}timers.buildQueryTime.push(buildQueryDiff);
+        ${generateIndentation(1)}timers.awaitResultTime.push(awaitResultDiff);
         ${generateIndentation(1)}return data;
         },
     `;
@@ -817,7 +880,6 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
 const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, remoteResolver) {
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
-        ${generateIndentation(1)}const schema = await remoteSchema();
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -872,7 +934,6 @@ const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, 
 const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveItem, remoteResolver) {
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
-        ${generateIndentation(1)}const schema = await remoteSchema();
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',

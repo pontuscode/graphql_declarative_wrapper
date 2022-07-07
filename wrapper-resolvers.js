@@ -24,11 +24,55 @@ const remoteSchema = async () => {
 	});
 };
 
+let schema;
+
+const getRemoteSchema = async() => {
+	schema = await remoteSchema();
+}
+
+getRemoteSchema();
+
+const fs = require('fs').promises;
+process.on('SIGINT', async() => {
+    console.log("Caught interrupt signal");
+    let sumBuildQuery = 0;
+    timers.buildQueryTime.forEach(value => {
+        sumBuildQuery += value;
+    })
+    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
+    let sumResultTime = 0;
+    timers.awaitResultTime.forEach(value => {
+        sumResultTime += value;
+    })
+    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
+    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);
+    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);
+    process.exit();
+});
+
+const startTimer = () => {
+    const start = new Date().getTime();
+    return start;
+}
+
+const endTimer = (start) => {
+    const end = new Date().getTime();
+    return end - start;
+}
+
+timers = {
+    'buildQueryTime': [],
+    'awaitResultTime': []
+}    
+
 const resolvers = {
 	Query: {
     
         wrappedUniversity: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -98,21 +142,29 @@ const resolvers = {
 						}
 
         				})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedFaculty: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -200,6 +252,8 @@ const resolvers = {
 						}
 
         				})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
@@ -215,17 +269,23 @@ const resolvers = {
                 			}
             
             			}
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedDepartment: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -311,21 +371,29 @@ const resolvers = {
         						}
     
         				})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedLecturer: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -454,21 +522,29 @@ const resolvers = {
 						}
 
         				})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedGraduateStudents: async(_, __, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -540,21 +616,29 @@ const resolvers = {
         						}
         
         					})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         				},
     
             		result => {
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedResearchGroup: async(_, args, context, info) => {
-        	const schema = await remoteSchema();
+        	const awaitResultTime = startTimer();
+        	const buildQueryTime = startTimer();
+        	let buildQueryDiff;
+        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -597,16 +681,21 @@ const resolvers = {
 						}
 
         				})
+
+        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
+            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
+        	timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
     },
