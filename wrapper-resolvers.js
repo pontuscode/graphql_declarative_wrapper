@@ -32,21 +32,50 @@ const getRemoteSchema = async() => {
 
 getRemoteSchema();
 
-const fs = require('fs').promises;
+const fs = require('fs');
 process.on('SIGINT', async() => {
     console.log("Caught interrupt signal");
     let sumBuildQuery = 0;
-    timers.buildQueryTime.forEach(value => {
-        sumBuildQuery += value;
+	let sumResultTime = 0;
+    Object.keys(timers).forEach(key => {
+		sumBuildQuery = 0;
+		if(timers[key] !== undefined) {
+			if(key !== "wrappedUniversity") {
+				timers[key].buildQueryTime.forEach(value => {
+					sumBuildQuery += value;
+				})
+				timers[key].averageBuildTime = (sumBuildQuery / timers[key].buildQueryTime.length).toFixed(2);
+				timers[key].awaitResultTime.forEach(value => {
+					sumResultTime += value;
+				})	
+				timers[key].averageResultTime = (sumResultTime / timers[key].awaitResultTime.length).toFixed(2);
+			} else {
+				Object.keys(timers[key]).forEach(nestedKey => {
+					timers[key][nestedKey].buildQueryTime.forEach(nestedValue => {
+						sumBuildQuery += nestedValue;
+					})
+					timers[key][nestedKey].averageBuildTime = (sumBuildQuery / timers[key][nestedKey].buildQueryTime.length).toFixed(2);
+					timers[key][nestedKey].awaitResultTime.forEach(nestedValue => {
+						sumResultTime += nestedValue;
+					})	
+					timers[key][nestedKey].averageResultTime = (sumResultTime / timers[key][nestedKey].awaitResultTime.length).toFixed(2);
+				})
+			}
+		}
     })
-    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
-    let sumResultTime = 0;
-    timers.awaitResultTime.forEach(value => {
-        sumResultTime += value;
-    })
-    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
-    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);
-    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);
+	Object.keys(timers).forEach(key => {
+		if(timers[key] !== undefined) {
+			if(key !== "wrappedUniversity") {
+				fs.appendFileSync('benchmark-stats.txt', `${key} build query: ${timers[key].averageBuildTime} ms\n`);
+				fs.appendFileSync('benchmark-stats.txt', `${key} result time: ${timers[key].averageResultTime} ms\n`);
+			} else {
+				Object.keys(timers[key]).forEach(nestedKey => {
+					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } build query: ${timers[key][nestedKey].averageBuildTime} ms\n`)
+					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } result time: ${timers[key][nestedKey].averageResultTime} ms\n`)
+				})
+			}
+		}
+	})
     process.exit();
 });
 
@@ -61,14 +90,51 @@ const endTimer = (start) => {
 }
 
 timers = {
-    'buildQueryTime': [],
-    'awaitResultTime': []
+	"wrappedFaculty": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedUniversity": {
+		"doctoralDegreeObtainers": {
+			'buildQueryTime': [],
+			'awaitResultTime': [],
+			"averageBuildTime": 0.0,
+			"averageResultTime": 0.0
+		},
+		"undergraduateDegreeObtainedBystudent": {
+			"buildQueryTime": [],
+			"awaitResultTime": [],
+			"averageBuildTime": 0.0,
+			"averageResultTime": 0.0
+		}
+	},
+	"wrappedResearchGroup": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedDepartment": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedLecturer": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
 }    
 
 const resolvers = {
 	Query: {
     
         wrappedUniversity: async(_, args, context, info) => {
+			let ugStudent = false;
         	const awaitResultTime = startTimer();
         	const buildQueryTime = startTimer();
         	let buildQueryDiff;
@@ -91,7 +157,7 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-    							if(selection.name.value === "idHaha"){
+    							if(selection.name.value === "id"){
 								newSelectionSet.selections.push({
 									kind: Kind.FIELD, 
 									name: {
@@ -121,6 +187,7 @@ const resolvers = {
 							})
 						}
 						if(selection.name.value === "undergraduateDegreeObtainedBystudent") {
+							ugStudent = true;
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -155,8 +222,15 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+			if(ugStudent === true) {
+				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.buildQueryTime.push(buildQueryDiff);
+				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.awaitResultTime.push(awaitResultDiff);
+			} else {
+				timers.wrappedUniversity.doctoralDegreeObtainers.buildQueryTime.push(buildQueryDiff);
+				timers.wrappedUniversity.doctoralDegreeObtainers.awaitResultTime.push(buildQueryDiff);
+			}
+        	/*timers.buildQueryTime.push(buildQueryDiff);
+        	timers.awaitResultTime.push(awaitResultDiff);*/
         	return data;
         },
         
@@ -276,8 +350,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+        	timers.wrappedFaculty.buildQueryTime.push(buildQueryDiff);
+        	timers.wrappedFaculty.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -333,19 +407,17 @@ const resolvers = {
 								selectionSet: extractNestedWrappedFacultyFields(selection)
 							})
 						}
+						if(selection.name.value === "head") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "head"
+								},
+								selectionSet: extractNestedWrappedProfessorFields(selection)
+							})
+						}
 
-        						if(selection.name.value === "head") {
-        							newSelectionSet.selections.push( {
-    
-                						kind: Kind.FIELD,
-                						name: {
-                							kind: Kind.NAME,
-                							value: "head"
-                						}
-            
-        							})
-        						}
-    
         						if(selection.name.value === "headEmailAddress") {
         							newSelectionSet.selections.push( {
     
@@ -384,8 +456,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+        	timers.wrappedDepartment.buildQueryTime.push(buildQueryDiff);
+        	timers.wrappedDepartment.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -535,8 +607,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+        	timers.wrappedLecturer.buildQueryTime.push(buildQueryDiff);
+        	timers.wrappedLecturer.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -560,26 +632,34 @@ const resolvers = {
         						selections: [] 
         					}
         					subtree.selections.forEach(selection => {
-        						if(selection.selectionSet !== undefined) {
-        							newSelectionSet.selections.push({
-        								kind: Kind.FIELD,
-        								name: {
-        									kind: Kind.NAME,
-        									value: selection.name.value
-        								},
-        								selectionSet: extractNestedFields(selection, schema._typeMap["GraduateStudents"])
-        							})
-        						}
-        						 else {
-        							newSelectionSet.selections.push({
-        								kind: Kind.FIELD,
-        								name: {
-        									kind: Kind.NAME,
-        									value: selection.name.value
-        								}
-        							})
-        						}
-        
+							if(selection.name.value === "id"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "id"
+									},
+								})
+							}
+							if(selection.name.value === "telephone"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "telephone"
+									},
+								})
+							}
+							if(selection.name.value === "emailAddress"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "emailAddress"
+									},
+								})
+							}
+
         						if(selection.name.value === "newEmail") {
         
                     				newSelectionSet.selections.push( {
@@ -614,7 +694,46 @@ const resolvers = {
                     				)
                 
         						}
-        
+        							if(selection.name.value === "age"){
+								newSelectionSet.selections.push({
+									kind: Kind.FIELD, 
+									name: {
+										kind: Kind.NAME, 
+										value: "age"
+									},
+								})
+							}
+						if(selection.name.value === "memberOf") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "memberOf"
+								},
+								selectionSet: extractNestedWrappedDepartmentFields(selection)
+							})
+						}
+						if(selection.name.value === "undergraduateDegreeFrom") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "undergraduateDegreeFrom"
+								},
+								selectionSet: extractNestedWrappedUniversityFields(selection)
+							})
+						}
+						if(selection.name.value === "advisor") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "advisor"
+								},
+								selectionSet: extractNestedWrappedProfessorFields(selection)
+							})
+						}
+
         					})
 
         				buildQueryDiff = endTimer(buildQueryTime);
@@ -694,13 +813,13 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+        	timers.wrappedResearchGroup.buildQueryTime.push(buildQueryDiff);
+        	timers.wrappedResearchGroup.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
     },
 	WrappedUniversity: {
-		idHaha: (parent) => {
+		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
 		undergraduateDegreeObtainedByFaculty: (parent) => {
@@ -1056,7 +1175,7 @@ const extractNestedWrappedUniversityFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-		if(nestedSelection.name.value === "idHaha") {
+		if(nestedSelection.name.value === "id") {
 			result.selections.push({
 				kind: Kind.FIELD, 
 				name: {
@@ -1221,19 +1340,17 @@ const extractNestedWrappedDepartmentFields = (selection) => {
 			selectionSet: extractNestedWrappedFacultyFields(nestedSelection)
 			})
 		}
+		if(nestedSelection.name.value === "head") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "head"
+				},
+			selectionSet: extractNestedWrappedProfessorFields(nestedSelection)
+			})
+		}
 
-        if(nestedSelection.name.value === "head") {
-        	result.selections.push( {
-    
-                kind: Kind.FIELD,
-                name: {
-                	kind: Kind.NAME,
-                	value: "head"
-                }
-            
-        	})
-        }
-    
         if(nestedSelection.name.value === "headEmailAddress") {
         	result.selections.push( {
     

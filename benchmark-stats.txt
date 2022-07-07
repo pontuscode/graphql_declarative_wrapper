@@ -1,0 +1,12 @@
+wrappedFaculty build query: NaN
+wrappedFaculty result time: NaN
+wrappedUniversity{ doctoralDegreeObtainers } build query: NaN
+wrappedUniversity{ doctoralDegreeObtainers } result time: NaN
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: 1.00
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: 14.60
+wrappedResearchGroup build query: NaN
+wrappedResearchGroup result time: Infinity
+wrappedDepartment build query: NaN
+wrappedDepartment result time: Infinity
+wrappedLecturer build query: NaN
+wrappedLecturer result time: Infinity
