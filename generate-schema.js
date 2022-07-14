@@ -100,9 +100,45 @@ const endTimer = (start) => {
 }
 
 timers = {
-    'buildQueryTime': [],
-    'awaitResultTime': []
-}    
+	"wrappedFaculty": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedUniversity": {
+		"doctoralDegreeObtainers": {
+			'buildQueryTime': [],
+			'awaitResultTime': [],
+			"averageBuildTime": 0.0,
+			"averageResultTime": 0.0
+		},
+		"undergraduateDegreeObtainedBystudent": {
+			"buildQueryTime": [],
+			"awaitResultTime": [],
+			"averageBuildTime": 0.0,
+			"averageResultTime": 0.0
+		}
+	},
+	"wrappedResearchGroup": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedDepartment": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+	"wrappedLecturer": {
+    	'buildQueryTime': [],
+    	'awaitResultTime': [],
+		"averageBuildTime": 0.0,
+		"averageResultTime": 0.0
+	},
+}      
 
 `;
 /* Timing and logging output ends here. */
@@ -247,7 +283,8 @@ timers = {
     fileContent += `${generateIndentation(1)}return result;\n`;
     fileContent += "}\n\n";
 
-    fileContent += writeNestedExtractFunctions(directivesUsed);
+
+    fileContent += writeNestedExtractFunctions(directivesUsed, remoteSchema.document.definitions);
 
     fileContent += "module.exports = resolvers;\n";
 
@@ -435,9 +472,9 @@ const addConcatenateResolvers = function(directive, rsDef) {
 
         if(value[1]){
             text += `
-            ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined) 
+            ${generateIndentation(0)}if(parent.${concDirective[0]} === undefined && parent.${value[0]} !== undefined) 
             ${generateIndentation(1)}parent.${concDirective[0]} = parent.${value[0]}
-            ${generateIndentation(0)}else
+            ${generateIndentation(0)}else if(parent.${value[0]} !== undefined)
             ${generateIndentation(1)}parent.${concDirective[0]} += parent.${value[0]}
             `;
         }
@@ -471,8 +508,9 @@ const addToQueryType = function(objectTypeName, argument, isList) {
     return text;
 }
 
-const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName) {
+const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName, rsDef) {
     let text = "";
+    
     for(let i = 0; i < directivesUsed.length; i++) {
         if(directivesUsed[i].directive === "wrap") {
             // If it's a field and its value type is not included in the list of built-in scalars, then again we need to call the correct nested function
@@ -517,6 +555,36 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 text += generateWrapQueryPath(directivesUsed[i], selectionName = "nestedSelection", selectionSetName = "result", indentationOffset = 0);
             }
         }
+        if(directivesUsed[i].directive === "concatenate" && (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)) {
+            let concValues = parseConcArgs(directivesUsed[i], rsDef);
+            console.log(concValues)
+            text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
+            concValues.forEach(field => {
+                if(field[1]){
+                    text += `
+            ${generateIndentation(0)}result.selections.push( {
+            ${generateIndentation(1)}kind: Kind.FIELD,
+            ${generateIndentation(2)}name: {
+            ${generateIndentation(3)}kind: Kind.NAME,
+            ${generateIndentation(3)}value: "${field[0]}"
+            ${generateIndentation(2)}}
+            ${generateIndentation(1)}}
+            ${generateIndentation(0)})
+                
+            `;
+                }
+            });
+            text += `
+        }\n`;
+            // text += `${generateIndentation(3)}result.selections.push({\n`;
+            // text += `${generateIndentation(4)}kind: Kind.FIELD, \n`;
+            // text += `${generateIndentation(4)}name: {\n`;
+            // text += `${generateIndentation(5)}kind: Kind.NAME, \n`;
+            // text += `${generateIndentation(5)}value: "${directivesUsed[i].argumentValues}"\n`;
+            // text += `${generateIndentation(4)}},\n`;
+            // text += `${generateIndentation(3)}})\n`;
+            // text += `${generateIndentation(2)}}\n`;
+        }
     }
     text += `${generateIndentation(1)}})\n`;
     text += `${generateIndentation(1)}return result;\n`;
@@ -524,7 +592,7 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
     return text;
 }
 
-const writeNestedExtractFunctions = function(directivesUsed) {
+const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
     let text = "";
     for(let i = 0; i < directivesUsed.length; i++) {
         if(directivesUsed[i].directive === "wrap" && (directivesUsed[i].argumentName === "type" || directivesUsed[i].argumentName === "interface")) {
@@ -539,9 +607,9 @@ const writeNestedExtractFunctions = function(directivesUsed) {
             text += `${generateIndentation(1)}}\n`;
             text += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
             if(directivesUsed[i].argumentName === "type") {
-                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].objectTypeName);
+                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].objectTypeName, rsDef);
             } else if(directivesUsed[i].argumentName === "interface") {
-                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].interfaceTypeName);
+                text += writeTypeSpecificExtractFunction(directivesUsed, directivesUsed[i].interfaceTypeName, rsDef);
             }
         }
     }

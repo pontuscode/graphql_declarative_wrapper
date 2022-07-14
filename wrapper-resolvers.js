@@ -32,50 +32,21 @@ const getRemoteSchema = async() => {
 
 getRemoteSchema();
 
-const fs = require('fs');
+const fs = require('fs').promises;
 process.on('SIGINT', async() => {
     console.log("Caught interrupt signal");
     let sumBuildQuery = 0;
-	let sumResultTime = 0;
-    Object.keys(timers).forEach(key => {
-		sumBuildQuery = 0;
-		if(timers[key] !== undefined) {
-			if(key !== "wrappedUniversity") {
-				timers[key].buildQueryTime.forEach(value => {
-					sumBuildQuery += value;
-				})
-				timers[key].averageBuildTime = (sumBuildQuery / timers[key].buildQueryTime.length).toFixed(2);
-				timers[key].awaitResultTime.forEach(value => {
-					sumResultTime += value;
-				})	
-				timers[key].averageResultTime = (sumResultTime / timers[key].awaitResultTime.length).toFixed(2);
-			} else {
-				Object.keys(timers[key]).forEach(nestedKey => {
-					timers[key][nestedKey].buildQueryTime.forEach(nestedValue => {
-						sumBuildQuery += nestedValue;
-					})
-					timers[key][nestedKey].averageBuildTime = (sumBuildQuery / timers[key][nestedKey].buildQueryTime.length).toFixed(2);
-					timers[key][nestedKey].awaitResultTime.forEach(nestedValue => {
-						sumResultTime += nestedValue;
-					})	
-					timers[key][nestedKey].averageResultTime = (sumResultTime / timers[key][nestedKey].awaitResultTime.length).toFixed(2);
-				})
-			}
-		}
+    timers.buildQueryTime.forEach(value => {
+        sumBuildQuery += value;
     })
-	Object.keys(timers).forEach(key => {
-		if(timers[key] !== undefined) {
-			if(key !== "wrappedUniversity") {
-				fs.appendFileSync('benchmark-stats.txt', `${key} build query: ${timers[key].averageBuildTime} ms\n`);
-				fs.appendFileSync('benchmark-stats.txt', `${key} result time: ${timers[key].averageResultTime} ms\n`);
-			} else {
-				Object.keys(timers[key]).forEach(nestedKey => {
-					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } build query: ${timers[key][nestedKey].averageBuildTime} ms\n`)
-					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } result time: ${timers[key][nestedKey].averageResultTime} ms\n`)
-				})
-			}
-		}
-	})
+    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
+    let sumResultTime = 0;
+    timers.awaitResultTime.forEach(value => {
+        sumResultTime += value;
+    })
+    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
+    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);
+    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);
     process.exit();
 });
 
@@ -128,13 +99,12 @@ timers = {
 		"averageBuildTime": 0.0,
 		"averageResultTime": 0.0
 	},
-}    
+}      
 
 const resolvers = {
 	Query: {
     
         wrappedUniversity: async(_, args, context, info) => {
-			let ugStudent = false;
         	const awaitResultTime = startTimer();
         	const buildQueryTime = startTimer();
         	let buildQueryDiff;
@@ -187,7 +157,6 @@ const resolvers = {
 							})
 						}
 						if(selection.name.value === "undergraduateDegreeObtainedBystudent") {
-							ugStudent = true;
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -222,15 +191,8 @@ const resolvers = {
         		),
         	]
         	})
-			if(ugStudent === true) {
-				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.buildQueryTime.push(buildQueryDiff);
-				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.awaitResultTime.push(awaitResultDiff);
-			} else {
-				timers.wrappedUniversity.doctoralDegreeObtainers.buildQueryTime.push(buildQueryDiff);
-				timers.wrappedUniversity.doctoralDegreeObtainers.awaitResultTime.push(buildQueryDiff);
-			}
-        	/*timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);*/
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -324,6 +286,16 @@ const resolvers = {
 								selectionSet: extractNestedWrappedPublicationFields(selection)
 							})
 						}
+						if(selection.name.value === "worksFor") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "worksFor"
+								},
+								selectionSet: extractNestedWrappedDepartmentFields(selection)
+							})
+						}
 
         				})
 
@@ -350,8 +322,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.wrappedFaculty.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedFaculty.awaitResultTime.push(awaitResultDiff);
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -456,8 +428,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.wrappedDepartment.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedDepartment.awaitResultTime.push(awaitResultDiff);
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -607,8 +579,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.wrappedLecturer.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedLecturer.awaitResultTime.push(awaitResultDiff);
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -748,8 +720,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
@@ -813,8 +785,8 @@ const resolvers = {
         		),
         	]
         	})
-        	timers.wrappedResearchGroup.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedResearchGroup.awaitResultTime.push(awaitResultDiff);
+        	// timers.buildQueryTime.push(buildQueryDiff);
+        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
     },
@@ -886,6 +858,27 @@ const resolvers = {
 		emailAddress: (parent) => {
 			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
 		},
+		researchInterest: (parent) => {
+			return (parent.researchInterest !== undefined) ? parent.researchInterest : null;
+		},
+		profType: (parent) => {
+			return (parent.profType !== undefined) ? parent.profType : null;
+		},
+
+        newEmail: async(parent) => {
+    
+            if(parent.newEmail === undefined) 
+            	parent.newEmail = "new" 
+            else
+            	parent.newEmail += "new"
+            
+            if(parent.newEmail === undefined) 
+            	parent.newEmail = parent.emailAddress
+            else
+            	parent.newEmail += parent.emailAddress
+            
+        	return parent.newEmail
+        },
 
         contactInfo: async(parent) => {
     
@@ -895,23 +888,37 @@ const resolvers = {
             	parent.contactInfo += parent.telephone
             
             if(parent.contactInfo === undefined) 
-            	parent.contactInfo = " " 
-            else
-            	parent.contactInfo += " "
-            
-            if(parent.contactInfo === undefined) 
             	parent.contactInfo = parent.emailAddress
             else
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
         },
-		researchInterest: (parent) => {
-			return (parent.researchInterest !== undefined) ? parent.researchInterest : null;
-		},
-		profType: (parent) => {
-			return (parent.profType !== undefined) ? parent.profType : null;
-		},
+
+        concatFour: async(parent) => {
+    
+            if(parent.concatFour === undefined) 
+            	parent.concatFour = parent.telephone
+            else
+            	parent.concatFour += parent.telephone
+            
+            if(parent.concatFour === undefined) 
+            	parent.concatFour = parent.emailAddress
+            else
+            	parent.concatFour += parent.emailAddress
+            
+            if(parent.concatFour === undefined) 
+            	parent.concatFour = parent.researchInterest
+            else
+            	parent.concatFour += parent.researchInterest
+            
+            if(parent.concatFour === undefined) 
+            	parent.concatFour = parent.profType
+            else
+            	parent.concatFour += parent.profType
+            
+        	return parent.concatFour
+        },
 		undergraduateDegreeFrom: (parent) => {
 			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;
 		},
@@ -1301,6 +1308,16 @@ const extractNestedWrappedFacultyFields = (selection) => {
 			selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
 			})
 		}
+		if(nestedSelection.name.value === "worksFor") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "worksFor"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
 	})
 	return result;
 }
@@ -1466,6 +1483,85 @@ const extractNestedWrappedProfessorFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "newEmail") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "concatFour") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "researchInterest"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "profType"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
 			result.selections.push({
 				kind: Kind.FIELD,
@@ -1553,6 +1649,29 @@ const extractNestedWrappedLecturerFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "position") {
 			result.selections.push({
 				kind: Kind.FIELD, 
@@ -1649,6 +1768,42 @@ const extractNestedWrappedGraduateStudentFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "newEmail") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "age") {
 			result.selections.push({
 				kind: Kind.FIELD, 

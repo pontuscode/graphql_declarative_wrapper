@@ -1,12 +1,24 @@
-wrappedFaculty build query: NaN
-wrappedFaculty result time: NaN
-wrappedUniversity{ doctoralDegreeObtainers } build query: NaN
-wrappedUniversity{ doctoralDegreeObtainers } result time: NaN
-wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: 1.00
-wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: 14.60
-wrappedResearchGroup build query: NaN
-wrappedResearchGroup result time: Infinity
-wrappedDepartment build query: NaN
-wrappedDepartment result time: Infinity
-wrappedLecturer build query: NaN
-wrappedLecturer result time: Infinity
+wrappedFaculty build query: NaN ms
+wrappedFaculty result time: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } build query: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } result time: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: NaN ms
+wrappedResearchGroup build query: NaN ms
+wrappedResearchGroup result time: NaN ms
+wrappedDepartment build query: NaN ms
+wrappedDepartment result time: NaN ms
+wrappedLecturer build query: NaN ms
+wrappedLecturer result time: NaN ms
+wrappedFaculty build query: 0.21 ms
+wrappedFaculty result time: 10.44 ms
+wrappedUniversity{ doctoralDegreeObtainers } build query: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } result time: Infinity ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: Infinity ms
+wrappedResearchGroup build query: NaN ms
+wrappedResearchGroup result time: Infinity ms
+wrappedDepartment build query: NaN ms
+wrappedDepartment result time: Infinity ms
+wrappedLecturer build query: NaN ms
+wrappedLecturer result time: Infinity ms
