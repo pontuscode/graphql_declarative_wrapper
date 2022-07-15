@@ -6,6 +6,8 @@
 
 ## Implement/finish wrap validation conditions 3, 4, 6, 7 - done
 
+## Implement/finish wrap validation for field definitions
+
 ## Add proper error messages to everything, both validation and generation errors
 
 ## Add checks before overwriting files during schema generation (check if file exists)
