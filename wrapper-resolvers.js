@@ -30,115 +30,12 @@ const getRemoteSchema = async() => {
 	schema = await remoteSchema();
 }
 
-getRemoteSchema();
-
-const fs = require('fs');
-process.on('SIGINT', async() => {
-    console.log("Caught interrupt signal");
-    let sumBuildQuery = 0;
-	let sumResultTime = 0;
-    Object.keys(timers).forEach(key => {
-		sumBuildQuery = 0;
-		if(timers[key] !== undefined) {
-			if(key !== "wrappedUniversity") {
-				timers[key].buildQueryTime.forEach(value => {
-					sumBuildQuery += value;
-				})
-				timers[key].averageBuildTime = (sumBuildQuery / timers[key].buildQueryTime.length).toFixed(2);
-				timers[key].awaitResultTime.forEach(value => {
-					sumResultTime += value;
-				})	
-				timers[key].averageResultTime = (sumResultTime / timers[key].awaitResultTime.length).toFixed(2);
-			} else {
-				Object.keys(timers[key]).forEach(nestedKey => {
-					timers[key][nestedKey].buildQueryTime.forEach(nestedValue => {
-						sumBuildQuery += nestedValue;
-					})
-					timers[key][nestedKey].averageBuildTime = (sumBuildQuery / timers[key][nestedKey].buildQueryTime.length).toFixed(2);
-					timers[key][nestedKey].awaitResultTime.forEach(nestedValue => {
-						sumResultTime += nestedValue;
-					})	
-					timers[key][nestedKey].averageResultTime = (sumResultTime / timers[key][nestedKey].awaitResultTime.length).toFixed(2);
-				})
-			}
-		}
-    })
-	Object.keys(timers).forEach(key => {
-		if(timers[key] !== undefined) {
-			if(key !== "wrappedUniversity") {
-				fs.appendFileSync('benchmark-stats.txt', `${key} build query: ${timers[key].averageBuildTime} ms\n`);
-				fs.appendFileSync('benchmark-stats.txt', `${key} result time: ${timers[key].averageResultTime} ms\n`);
-			} else {
-				Object.keys(timers[key]).forEach(nestedKey => {
-					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } build query: ${timers[key][nestedKey].averageBuildTime} ms\n`)
-					fs.appendFileSync('benchmark-stats.txt', `${key}{ ${nestedKey} } result time: ${timers[key][nestedKey].averageResultTime} ms\n`)
-				})
-			}
-		}
-	})
-    process.exit();
-});
-
-const startTimer = () => {
-    const start = new Date().getTime();
-    return start;
-}
-
-const endTimer = (start) => {
-    const end = new Date().getTime();
-    return end - start;
-}
-
-timers = {
-	"wrappedFaculty": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedUniversity": {
-		"doctoralDegreeObtainers": {
-			'buildQueryTime': [],
-			'awaitResultTime': [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		},
-		"undergraduateDegreeObtainedBystudent": {
-			"buildQueryTime": [],
-			"awaitResultTime": [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		}
-	},
-	"wrappedResearchGroup": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedDepartment": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedLecturer": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-}    
+getRemoteSchema()
 
 const resolvers = {
 	Query: {
     
         wrappedUniversity: async(_, args, context, info) => {
-			let ugStudent = false;
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -187,7 +84,6 @@ const resolvers = {
 							})
 						}
 						if(selection.name.value === "undergraduateDegreeObtainedBystudent") {
-							ugStudent = true;
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -210,35 +106,20 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-			if(ugStudent === true) {
-				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.buildQueryTime.push(buildQueryDiff);
-				timers.wrappedUniversity.undergraduateDegreeObtainedBystudent.awaitResultTime.push(awaitResultDiff);
-			} else {
-				timers.wrappedUniversity.doctoralDegreeObtainers.buildQueryTime.push(buildQueryDiff);
-				timers.wrappedUniversity.doctoralDegreeObtainers.awaitResultTime.push(buildQueryDiff);
-			}
-        	/*timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);*/
         	return data;
         },
         
         wrappedFaculty: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -327,7 +208,6 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
@@ -343,23 +223,16 @@ const resolvers = {
                 			}
             
             			}
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	timers.wrappedFaculty.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedFaculty.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedDepartment: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -444,28 +317,20 @@ const resolvers = {
     
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	timers.wrappedDepartment.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedDepartment.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedLecturer: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -595,28 +460,20 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	timers.wrappedLecturer.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedLecturer.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedGraduateStudents: async(_, __, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -736,28 +593,20 @@ const resolvers = {
 
         					})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         				},
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	timers.buildQueryTime.push(buildQueryDiff);
-        	timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedResearchGroup: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -801,20 +650,16 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	timers.wrappedResearchGroup.buildQueryTime.push(buildQueryDiff);
-        	timers.wrappedResearchGroup.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
     },

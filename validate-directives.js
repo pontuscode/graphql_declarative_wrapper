@@ -305,11 +305,11 @@ const parseSchemaDirectives = function(schema) {
                             "fieldName": node.name.value,
                             "fieldValue": fieldValue,
                             "directive": node.directives[0].name.value,
-                            "argumentName": [node.directives[i].arguments[0].name.value],
-                            "argumentValues": argumentValue
+                            "argumentName": node.directives[i].arguments[0].name.value,
+                            "argumentValues": [argumentValue]
                         };
                         for (var j = 1; j < node.directives[i].arguments.length; j++) {
-                            temp["argumentName"].push(node.directives[i].arguments[j].name.value);
+                            //temp["argumentName"].push(node.directives[i].arguments[j].name.value);
                             temp["argumentValues"].push(node.directives[i].arguments[j].value.values);        
                         }
                         directivesUsed.push(temp);
@@ -324,6 +324,10 @@ const parseSchemaDirectives = function(schema) {
         "valid": valid,
         "errorMessage": errorMessage
     }
+}
+
+const validateField = function() {
+
 }
 
 const traversePath = function(item, currNode, remoteSchema) {
@@ -523,13 +527,21 @@ const validateWrap = function(item, remoteSchema) {
                 }
             });
         });
-    } else if(item.argumentName == "field" || item.argumentName == "path"){ // Validation case 
+
+        /*
+            The required argument field is used, and its value type is a non-null String.
+            The field specified in the argument exists in the wrapped object or interface type in the remote schema.
+            The value type of the field in the wrapper schema definitions matches the value type of the field in the remote schema (specified in the field argument). 
+        */
+    } else if(item.argumentName === "field" || item.argumentName === "path"){ // Validation case 
         remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
                 visit(ast, {
-                    FieldDefinition(node) {
-                        switch(item.argumentName[0]) {
-                            case "field":
+                    FieldDefinition(node) { // If it's a field definition
+                        let validFieldDefinition = true;
+                        switch(item.argumentName) {
+                            case "field": // The required argument "field" is used
+                                console.log(item);
                                 found = true;
                                 break;
                             case "path":
@@ -541,7 +553,7 @@ const validateWrap = function(item, remoteSchema) {
                 });
             }
         });
-    } else if(item.argumentName == "interface") {
+    } else if(item.argumentName === "interface") {
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 InterfaceTypeDefinition(node) {
@@ -572,9 +584,9 @@ const validateConcatenate = function(item, remoteSchema) {
         console.log("error here");
         console.log(item.argumentName);
         console.log(item.argumentName.length);
-        return false;
+        //return false;
     }
-    if(item.argumentName == "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
+    if(item.argumentName === "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
     //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
       // commonType = item.fieldValue
 
