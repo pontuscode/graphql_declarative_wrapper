@@ -359,7 +359,7 @@ const traversePath = function(item, currNode, remoteSchema) {
     });
 }
 
-const validateAgainstRemoteSchema = function(item, node, argument) {
+const validateAgainstRemoteSchema = function(item, node, argument, directivesUsed) {
     let valid = true;
     let errorMessage;
     let splitArgs;
@@ -391,27 +391,69 @@ const validateAgainstRemoteSchema = function(item, node, argument) {
             /*
                 The field specified in the argument exists in the wrapped object or interface type in the remote schema.
                 The value type of the field in the wrapper schema definitions matches the value type of the field in the remote schema (specified in the field argument). 
-                    This is only valid for built-in scalar value types, since assumptions on wrapped types would need to be made otherwise.  
             */
         case "field":
-            if(node.name.value === item.argumentValues[0]) { // The field exists in the wrapped object or interface type in the remote schema. 
+            // If the field exists in the wrapped object or interface type in the remote schema. 
+            if(node.name.value === item.argumentValues[0]) { 
                 if(node.type.kind !== "ListType") {
                     if(node.type.kind === "NamedType") {
+                        // If it is a built-in scalar, just make sure the value types match
                         if(builtInScalars.includes(node.type.name.value)) {
                             if(node.type.name.value !== item.fieldValue) { // If the value types do not match 
                                 valid = false;
                                 errorMessage = `Value types for field definition '${item.fieldName}' in object '${item.objectTypeName}' did not match remote schema.\n`; 
                                 errorMessage += `Value type in remote schema: '${node.type.name.value}'.\n`;
                             }
+                        } else {
+                            // If it is not a built-in scalar, then we must ensure that the wrapped and remote value types match
+                            for(let i = 0; i < directivesUsed.length; i++) {
+                                if(directivesUsed[i].directive === "wrap") {
+                                    if(directivesUsed[i].argumentName === "type") {
+                                        // If the value type of the field matches an object type in the wrapper schema definition, AND this wrapper schema definition wraps 
+                                        // an object type in the remote schema, AND the value type in the remote schema is the object type that is being wrapped, then...
+                                        if(directivesUsed[i].objectTypeName === item.fieldValue) {
+                                            if(node.type.name.value === directivesUsed[i].remoteObjectTypeName) {
+                                                valid = true;
+                                                errorMessage = "";
+                                                break;
+                                            } else {
+                                                valid = false;
+                                                errorMessage = `The value type '${item.fieldValue}' in the wrapper schema definitions does not match the wrapped type in the remote schema.\n`;
+                                                errorMessage += `Value type remote schema: '${node.type.name.value}'.\n`; 
+                                            }
+                                        } else {
+                                            valid = false;
+                                            errorMessage = `Could not find object type '${item.fieldValue}' in wrapper schema definitions.\n`;
+                                        }
+                                    } else if(directivesUsed[i].argumentName === "interface") {
+                                        if(directivesUsed[i].interfaceTypeName === item.fieldValue) {
+                                            if(node.type.name.value === directivesUsed[i].remoteInterfaceTypeName) {
+                                                valid = true;
+                                                errorMessage = "";
+                                                break;
+                                            } else {
+                                                valid = false;
+                                                errorMessage = `The value type '${item.fieldValue}' in the wrapper schema definitions does not match the wrapped type remote schema.\n`;
+                                                errorMessage += `Value type remote schema: '${node.type.name.value}'.\n`; 
+                                            }
+                                        } else {
+                                            valid = false;
+                                            errorMessage = `Could not find object type '${item.fieldValue}' in wrapper schema definitions.\n`;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     } else if(node.type.kind === "NonNullType") {
                         let type = node.type.type.name.value + "!";
+                        if(builtInScalars.includes(type)) {
+                            if(type !== item.fieldValue) {
+                                valid = false;
+                                errorMessage = `Value type for field definition '${item.fieldName}' in object '${item.objectTypeName}' did not match remote schema.\n`; 
+                                errorMessage += `Value type in remote schema: '${node.type.type.name.value}'.\n`;
+                            }
+                        } else {
 
-                        if(type !== item.fieldValue) {
-                            console.log(type, item.fieldName);
-                            valid = false;
-                            errorMessage = `Value type for field definition '${item.fieldName}' in object '${item.objectTypeName}' did not match remote schema.\n`; 
-                            errorMessage += `Value type in remote schema: '${node.type.type.name.value}'.\n`;
                         }
                     }
                 } else if(node.type.kind === "ListType") {
@@ -423,6 +465,8 @@ const validateAgainstRemoteSchema = function(item, node, argument) {
                                 errorMessage = `Value type for field definition ${item.fieldName} in object '${item.objectTypeName}' did not match remote schema.\n`; 
                                 errorMessage += `Value type in remote schema: '${node.type.type.name.value}'.\n`;
                             }
+                        } else {
+
                         }
                     } else {
                         valid = false;
@@ -430,12 +474,45 @@ const validateAgainstRemoteSchema = function(item, node, argument) {
                         errorMessage += `Value type in remote schema is ${node.type.kind}.\n`;
                     }
                 }
-            } else {
+            } else { // If the current node's name did not equal the item to be validated
                 valid = false;
-                if(item.remoteInterfaceTypeName !== undefined) {
-                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in interface type '${item.remoteInterfaceTypeName}' in remote schema.\n`;
-                } else if(item.remoteObjectTypeName !== undefined) {
-                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in object type '${item.remoteObjectTypeName}' in remote schema.\n`;
+                let typeNotFound = true; // If the value type of the item does not exist in the wrapper schema definition, this will be true after the loop. 
+
+                /*// Loop to find out why validation failed
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    // We only care about types and interfaces at this point
+                    if(directivesUsed[i].argumentName === "type" || directivesUsed[i].argumentName === "interface"){
+                        // If the item's value type matches either the objectType or interfaceType of the current wrap directive, then...
+                        if(directivesUsed[i].objectTypeName === item.fieldValue || directivesUsed[i].interfaceTypeName === item.fieldValue) {
+                            if(node.type.kind === "NonNullType" || node.type.kind === "ListType") {
+                                // If the value type of the node does not match the value type of the wrapper schema definitions.
+                                // Could be that the object/interface type is not wrapped, or there is a wrapped type mismatch for example.
+                                if(node.type.type.name.value !== item.remoteObjectTypeName) {
+                                    console.log(node.type.type.name.value, item);
+                                }
+                            } else if(node.type.kind === "NamedType") {
+
+                            }
+                            if(item.remoteInterfaceTypeName !== undefined) {
+                                if(node.name.value !== item.argumentValues[0]) {
+
+                                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in interface type '${item.remoteInterfaceTypeName}' in remote schema.\n`;
+                                } else if(node.name.value !== item.fieldValue) {
+                                    
+                                }
+                            } else if(item.remoteObjectTypeName !== undefined) {
+                                if(node.name.value !== item.fieldValue && node.name.value) {
+                                } else if(node.name.value !== item.argumentValues[0]) {
+                                    typeNotFound = false;
+                                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in object type '${item.remoteObjectTypeName}' in remote schema.\n`;
+                                }
+                            }
+                        }
+                    }
+                }*/
+                if(typeNotFound === true) {
+                    errorMessage = `Failed to validate field with name '${item.fieldName}' in object '${item.objectTypeName}' in wrapper schema definitions.\n`;
+                    errorMessage += `Are you sure the wrapping definitions are correct?`
                 }
             }
             break;
@@ -493,7 +570,7 @@ const validateAgainstRemoteSchema = function(item, node, argument) {
             break;
         default: 
             valid = false;
-            errorMessage
+            errorMessage = "Uncaught validation error, please ensure wrapper schema definitions are correct.\n";
             break;
     }
 
@@ -537,7 +614,7 @@ const appendFieldsToType = function(item, node) {
  *  4/ One or more of the fields in the 'field' or 'path' argument does not exist in the remote schema. 
  */
 
-const validateWrap = function(item, remoteSchema) {
+const validateWrap = function(item, remoteSchema, directivesUsed) {
     let found = false;
     let validType = true;
     let errorMessage = "";
@@ -590,7 +667,7 @@ const validateWrap = function(item, remoteSchema) {
                     FieldDefinition(node) { // If it's a field definition
                         switch(item.argumentName) {
                             case "field": // The required argument "field" is used
-                                validFieldDefinition = validateAgainstRemoteSchema(item, node, "field");
+                                validFieldDefinition = validateAgainstRemoteSchema(item, node, "field", directivesUsed);
                                 if(validFieldDefinition.valid === false) { // Count how many fields in the object/interface type that does not match
                                     checkedFields++;
                                 }
@@ -603,9 +680,7 @@ const validateWrap = function(item, remoteSchema) {
                     }
                 });
                 // If the number of non-matching fields is equal to the number of fields in the remote schema, then we did not find the field.
-
                 if(checkedFields >= ast.fields.length && item.argumentName === "field") { 
-                    console.log(item);
                     errorMessage = validFieldDefinition.errorMessage;
                 } else if(item.argumentName === "field") {
                     found = true;
@@ -707,18 +782,12 @@ const validateConcatenate = function(item, remoteSchema) {
     return valid;
 }
 
-const validateSubstring = function(item, remoteSchema) {
-    return true;
-}
-
-const validateDirective = function(item, remoteSchema) {
+const validateDirective = function(item, remoteSchema, directivesUsed) {
     switch(item.directive){
         case "wrap":
-            return validateWrap(item, remoteSchema);
+            return validateWrap(item, remoteSchema, directivesUsed);
         case "concatenate":
             return validateConcatenate(item, remoteSchema);
-        case "substring": 
-            return validateSubstring(item, remoteSchema);
     }
     return false;
 }
@@ -733,7 +802,7 @@ const validateDirectives = function(wsDef, remoteSchema) {
                 errorMessage = "Remote schemas from url's are not currently supported.";
                 directivesAreValid = false;
             } else {
-                let validate = validateDirective(item, remoteSchema.schema[0].document);
+                let validate = validateDirective(item, remoteSchema.schema[0].document, directivesUsed);
                 if(validate.valid === false) {
                     directivesAreValid = false;
                     errorMessage = validate.errorMessage;
