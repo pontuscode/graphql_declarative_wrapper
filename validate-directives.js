@@ -568,11 +568,13 @@ const validateWrap = function(item, remoteSchema) {
 const validateConcatenate = function(item, remoteSchema) {
     let valid = true;
     let nonNullable = false;
+    let errorMessage;
     if(item.argumentName.length > 1){
-        console.log("error here");
-        console.log(item.argumentName);
-        console.log(item.argumentName.length);
-        return false;
+        errorMessage = "concatenate only accepts one argument"
+        return { 
+            "valid": false,
+            "errorMessage": errorMessage
+        }
     }
     if(item.argumentName == "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
     //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
@@ -582,7 +584,13 @@ const validateConcatenate = function(item, remoteSchema) {
       // directly copied from the remote schema. If the remote schema does not have the field, then the
       // validation algorithm should hallt.
 
-      if(item.remoteObjectTypeName == undefined) 
+      if(item.remoteObjectTypeName == undefined) {
+        errorMessage = "The object which concatenate resides in is not wrapped";
+        return { 
+            "valid": false,
+            "errorMessage": errorMessage
+        }
+      }
         item.remoteObjectTypeName = item.objectTypeName;
       
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
@@ -593,48 +601,67 @@ const validateConcatenate = function(item, remoteSchema) {
       
       let found = false;
       remoteSchema.definitions.forEach(ast => {
-        if(ast.name.value === item.remoteObjectTypeName && !found){
-          item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
-            let CorrectargType = false;
-            let argFound = false;
-            ast.fields.forEach(field => {
-              if(field.name.value == arg.value){
-                argFound = false;
-                
-                CorrectargType = false;
-                if(field.type.kind === "NamedType"){
-                  if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
-                    argFound = true;
-                    CorrectargType = true;
-                  }
-                  else valid=false;
-                }
-                else if(field.type.kind === "ListType"){
-                  if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
-                    argFound = true;
-                    CorrectargType = true;
-                  }
-                  else valid = false;
-                }
-                else if(field.type.kind === "NonNullType"){
-                    if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
-                      argFound = true;
-                      CorrectargType = true;
+        if(ast.name.value === item.remoteObjectTypeName && !found) {
+            visit(ast, {
+                FieldDefinition(node) {
+                    switch(item.argumentName[0]) {
+                        case "field":
+                            found = true;
+                            break;
+                        case "path":
+                            traversePath(item, node, remoteSchema);
+                            found = true;
+                            break;
                     }
-                    else valid = false;
-                  }
-              }
+                }
             });
-            if(argFound){
-              if(!CorrectargType) valid = false;
-            }
-            else{
-              if(typeof(item.fieldValue) !== "string") valid = false;
-            }
-            
-          });
-          found = true;
         }
+
+
+
+
+        // if(ast.name.value === item.remoteObjectTypeName && !found){
+        //   item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
+        //     let CorrectargType = false;
+        //     let argFound = false;
+        //     ast.fields.forEach(field => {
+        //       if(field.name.value == arg.value){
+        //         argFound = false;
+                
+        //         CorrectargType = false;
+        //         if(field.type.kind === "NamedType"){
+        //           if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
+        //             argFound = true;
+        //             CorrectargType = true;
+        //           }
+        //           else valid=false;
+        //         }
+        //         else if(field.type.kind === "ListType"){
+        //           if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
+        //             argFound = true;
+        //             CorrectargType = true;
+        //           }
+        //           else valid = false;
+        //         }
+        //         else if(field.type.kind === "NonNullType"){
+        //             if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
+        //               argFound = true;
+        //               CorrectargType = true;
+        //             }
+        //             else valid = false;
+        //           }
+        //       }
+        //     });
+        //     if(argFound){
+        //       if(!CorrectargType) valid = false;
+        //     }
+        //     else{
+        //       if(typeof(item.fieldValue) !== "string") valid = false;
+        //     }
+            
+        //   });
+        //   found = true;
+        // }
       });
     }
     else valid = false;
