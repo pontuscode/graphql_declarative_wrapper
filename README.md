@@ -16,15 +16,12 @@
 
 
 
-## Add checks before overwriting files during schema generation (check if file exists)
+### Add checks before overwriting files during schema generation (check if file exists)
 
+### Add typesImplementingInterface to resolver without arguments - done
 
+### Implement/finish wrap validation conditions 3, 4, 6, 7 - done
 
-
-## Add typesImplementingInterface to resolver without arguments - done
-
-## Implement/finish wrap validation conditions 3, 4, 6, 7 - done
-
-## Change concatenate resolver generation, the if-else part should be present for simple strings (not only for delegated fields) - done
+### Change concatenate resolver generation, the if-else part should be present for simple strings (not only for delegated fields) - done
 
 
