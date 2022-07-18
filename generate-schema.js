@@ -67,81 +67,6 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
 
     fileContent += "getRemoteSchema();\n\n";
 
-    /* The following is used to measure and log time. */
-    fileContent += "const fs = require('fs').promises;";
-    fileContent += `
-process.on('SIGINT', async() => {
-    console.log("Caught interrupt signal");
-    let sumBuildQuery = 0;
-    timers.buildQueryTime.forEach(value => {
-        sumBuildQuery += value;
-    })
-    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
-    let sumResultTime = 0;
-    timers.awaitResultTime.forEach(value => {
-        sumResultTime += value;
-    })
-    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
-`;
-    fileContent += "    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);\n";
-    fileContent += "    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);\n";
-    fileContent += "    process.exit();\n";
-    fileContent += "});\n";
-
-    fileContent += `
-const startTimer = () => {
-    const start = new Date().getTime();
-    return start;
-}
-
-const endTimer = (start) => {
-    const end = new Date().getTime();
-    return end - start;
-}
-
-timers = {
-	"wrappedFaculty": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedUniversity": {
-		"doctoralDegreeObtainers": {
-			'buildQueryTime': [],
-			'awaitResultTime': [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		},
-		"undergraduateDegreeObtainedBystudent": {
-			"buildQueryTime": [],
-			"awaitResultTime": [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		}
-	},
-	"wrappedResearchGroup": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedDepartment": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedLecturer": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-}      
-
-`;
-/* Timing and logging output ends here. */
     fileContent += "const resolvers = {\n";
     fileContent += `${generateIndentation(1)}Query: {\n`;
     /* In this for-loop we write all the resolver functions with their respective wrapQuery transforms. */
@@ -223,11 +148,11 @@ timers = {
             for(let j = 0; j < directivesUsed.length; j++) {
                 // If it's the same type and we are using some other directive argument than 'type'
                 if(directivesUsed[j].objectTypeName === directivesUsed[i].objectTypeName) {
-                    if(directivesUsed[j].argumentName[0] === "field" || directivesUsed[j].argumentName[0] === "path") {
+                    if(directivesUsed[j].argumentName === "field" || directivesUsed[j].argumentName === "path") {
                         fileContent += generateTypeSpecificResolver(directivesUsed[j], directivesUsed);
                     }
                     // If the argumentName is 'values', the directive is concatenate
-                    if(directivesUsed[j].argumentName[0] === "values") {
+                    if(directivesUsed[j].argumentName === "values") {
                         fileContent += addConcatenateResolvers(directivesUsed[j], remoteSchema.document.definitions);
                     }
                 }
@@ -340,17 +265,18 @@ const generateWrapQueryPath = function(directivesUsed, selectionName, selectionS
         ${generateIndentation(indentationOffset)}if(${selectionName}.name.value === "${directivesUsed.fieldName}") {
         ${generateIndentation(indentationOffset + 1)}${selectionSetName}.selections.push( {
     `;
-    for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
-        if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
+    
+    for(let i = 0; i < directivesUsed.argumentValues[0].length; i++) {
+        if(i === directivesUsed.argumentValues[0].length - 1) { // If we are at the last element in the list
             text += `
                 ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
                 ${generateIndentation((i*2) + indentationOffset)}name: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[0][i].value}"
                 ${generateIndentation((i*2) + indentationOffset)}}
             `;
             /* Loop to close out all brackets and square parenthesis */
-            for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
+            for(let j = 0; j < directivesUsed.argumentValues[0].length - 1; j++) { 
                 // Close selections object }, selections list ], selection set } 
                 text += `
                     ${generateIndentation(i - (j*2) + indentationOffset - 1)}}]
@@ -358,11 +284,12 @@ const generateWrapQueryPath = function(directivesUsed, selectionName, selectionS
                 `;
             }
         } else {
+
             text += `
                 ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
                 ${generateIndentation((i*2) + indentationOffset)}name: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[0][i].value}"
                 ${generateIndentation((i*2) + indentationOffset)}}, 
                 ${generateIndentation((i*2) + indentationOffset)}selectionSet: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.SELECTION_SET,
@@ -387,7 +314,7 @@ const parseConcArgs = function(directive, rsDef) {
             remoteFields = definition.fields;
     })
     let nameFound;
-    directive.argumentValues.forEach(value => {
+    directive.argumentValues[0].forEach(value => {
         nameFound = false;
         remoteFields.forEach(field => {
             if(value.value === field.name.value) {
@@ -515,7 +442,7 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
         if(directivesUsed[i].directive === "wrap") {
             // If it's a field and its value type is not included in the list of built-in scalars, then again we need to call the correct nested function
             if(
-                directivesUsed[i].argumentName.includes("field") && 
+                directivesUsed[i].argumentName === "field" && 
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === false
             ) {
@@ -532,7 +459,7 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
             }
             // If it's a field and its value type is included in the built-in scalars, then just map the field name to the remote schema
             if(
-                directivesUsed[i].argumentName.includes("field") && 
+                directivesUsed[i].argumentName === "field" && 
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === true
             ) {
@@ -549,7 +476,7 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
 
             // If it's a path, then just map the field name to the correct path in the remote schema
             if(
-                directivesUsed[i].argumentName.includes("path") && 
+                directivesUsed[i].argumentName === "path" && 
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)
             ) {
                 text += generateWrapQueryPath(directivesUsed[i], selectionName = "nestedSelection", selectionSetName = "result", indentationOffset = 0);
@@ -576,14 +503,6 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
             });
             text += `
         }\n`;
-            // text += `${generateIndentation(3)}result.selections.push({\n`;
-            // text += `${generateIndentation(4)}kind: Kind.FIELD, \n`;
-            // text += `${generateIndentation(4)}name: {\n`;
-            // text += `${generateIndentation(5)}kind: Kind.NAME, \n`;
-            // text += `${generateIndentation(5)}value: "${directivesUsed[i].argumentValues}"\n`;
-            // text += `${generateIndentation(4)}},\n`;
-            // text += `${generateIndentation(3)}})\n`;
-            // text += `${generateIndentation(2)}}\n`;
         }
     }
     text += `${generateIndentation(1)}})\n`;
@@ -620,13 +539,8 @@ const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
     let concValues = [];
     let upperCaseResolver = upperCase(remoteResolver.resolver)
-    /* Lines 2-4 are used for timing and logging. */
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
-        ${generateIndentation(1)}const awaitResultTime = startTimer();
-        ${generateIndentation(1)}const buildQueryTime = startTimer();
-        ${generateIndentation(1)}let buildQueryDiff;
-        ${generateIndentation(1)}let awaitResultDiff;
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -651,7 +565,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
         if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
             if(directivesUsed[i].directive === "wrap") {
                 // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
-                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+                if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
                     text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                     text += `${generateIndentation(7)}newSelectionSet.selections.push({\n`;
                     text += `${generateIndentation(8)}kind: Kind.FIELD,\n`;
@@ -664,7 +578,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                     text += `${generateIndentation(6)}}\n`
                 }
                 // If the field has a built-in scalar value type, we can just perform the field name mapping to the remote schema.
-                if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
+                if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
                     text += `${generateIndentation(7)}if(selection.name.value === "${directivesUsed[i].fieldName}"){\n`;
                     text += `${generateIndentation(8)}newSelectionSet.selections.push({\n`;
                     text += `${generateIndentation(9)}kind: Kind.FIELD, \n`;
@@ -675,7 +589,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                     text += `${generateIndentation(8)}})\n`;
                     text += `${generateIndentation(7)}}\n`;
                 }
-                if(directivesUsed[i].argumentName.includes("path")) {
+                if(directivesUsed[i].argumentName === "path") {
                     text += generateWrapQueryPath(directivesUsed[i], selectionName = "selection", selectionSetName = "newSelectionSet", indentationOffset = 6);
                 }
             }
@@ -686,10 +600,8 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             }
         }
     }
-    /* Line 2 is used for timing and logging. */
     text += `
         ${generateIndentation(4)}})\n
-        ${generateIndentation(4)}buildQueryDiff = endTimer(buildQueryTime);
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation()}},
     `;
@@ -709,26 +621,20 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
 
         text += `
             ${generateIndentation(3)}}
-            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     } else {
-        /* Line 2 is used for timing and logging. */
         text += `
             ${generateIndentation(2)}result => {
-            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     }
-    /* Line 4-5 are used for timing and logging. */
     text += `
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
-        ${generateIndentation(1)}timers.buildQueryTime.push(buildQueryDiff);
-        ${generateIndentation(1)}timers.awaitResultTime.push(awaitResultDiff);
         ${generateIndentation(1)}return data;
         },
     `;
@@ -752,7 +658,7 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
             }
         }
     }
-    if(currentDirective.argumentName.includes("field")){
+    if(currentDirective.argumentName === "field"){
         text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
         if(Object.keys(interfaceTypeResolvers).length > 0) {
             text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
@@ -766,7 +672,7 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
         }
         text += `${generateIndentation(3)}return (parent.${currentDirective.argumentValues} !== undefined) ? parent.${currentDirective.argumentValues} : null;\n`;
         text += `${generateIndentation(2)}},\n`;
-    } else if(currentDirective.argumentName.includes("path")) {
+    } else if(currentDirective.argumentName === "path") {
         text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
         if(Object.keys(interfaceTypeResolvers).length > 0) {
             text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
@@ -788,7 +694,7 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
         }
         text += `${generateIndentation(3)}return (${path} !== undefined) ? ${path} : null;\n`;
         text += `${generateIndentation(2)}},\n`;
-    } else if(currentDirective.argumentName.includes("concatenate")) {
+    } else if(currentDirective.argumentName === "concatenate") {
         console.log("hey!");
     }
     return text;
@@ -798,13 +704,8 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
     let upperCaseResolver = upperCase(remoteResolver.resolver)
     let extractNestedFieldsTextOne = ""
     let extractNestedFieldsTextTwo = ""
-    /* Lines 2-4 are used for timing and logging. */
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
-        ${generateIndentation(1)}const awaitResultTime = startTimer();
-        ${generateIndentation(1)}const buildQueryTime = startTimer();
-        ${generateIndentation(1)}let buildQueryDiff;
-        ${generateIndentation(1)}let awaitResultDiff;
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -825,7 +726,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
             if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
                 if(directivesUsed[i].directive === "wrap") {
                     // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
-                    if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+                    if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
                         text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                         text += `${generateIndentation(7)}newSelectionSet.selections.push({\n`;
                         text += `${generateIndentation(8)}kind: Kind.FIELD,\n`;
@@ -838,7 +739,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                         text += `${generateIndentation(6)}}\n`
                     }
                     // If the field has a built-in scalar value type, we can just perform the field name mapping to the remote schema.
-                    if(directivesUsed[i].argumentName.includes("field") && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
+                    if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === true) {
                         text += `${generateIndentation(7)}if(selection.name.value === "${directivesUsed[i].fieldName}"){\n`;
                         text += `${generateIndentation(8)}newSelectionSet.selections.push({\n`;
                         text += `${generateIndentation(9)}kind: Kind.FIELD, \n`;
@@ -849,7 +750,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                         text += `${generateIndentation(8)}})\n`;
                         text += `${generateIndentation(7)}}\n`;
                     }
-                    if(directivesUsed[i].argumentName.includes("path")) {
+                    if(directivesUsed[i].argumentName === "path") {
                         text += generateWrapQueryPath(directivesUsed[i], selectionName = "selection", selectionSetName = "newSelectionSet", indentationOffset = 6);
                     }
                 }
@@ -861,41 +762,9 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                 }
             }
         }
-/*
-        ${generateIndentation(6)}if(selection.selectionSet !== undefined) {
-        ${generateIndentation(7)}newSelectionSet.selections.push({
-        ${generateIndentation(8)}kind: Kind.FIELD,
-        ${generateIndentation(8)}name: {
-        ${generateIndentation(9)}kind: Kind.NAME,
-        ${generateIndentation(9)}value: selection.name.value
-        ${generateIndentation(8)}},
-        ${generateIndentation(8)}selectionSet: extractNestedFields(selection, schema._typeMap["${upperCaseResolver}"])
-        ${generateIndentation(7)}})
-        ${generateIndentation(6)}}
-        ${generateIndentation(6)} else {
-        ${generateIndentation(7)}newSelectionSet.selections.push({
-        ${generateIndentation(8)}kind: Kind.FIELD,
-        ${generateIndentation(8)}name: {
-        ${generateIndentation(9)}kind: Kind.NAME,
-        ${generateIndentation(9)}value: selection.name.value
-        ${generateIndentation(8)}}
-        ${generateIndentation(7)}})
-        ${generateIndentation(6)}}
-        `;
-        for(let i = 0; i < directivesUsed.length; i++){
-            if(directivesUsed[i].objectTypeName === objectTypeName){
-                if(directivesUsed[i].directive === "concatenate") {            
-                    textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions, upperCaseResolver);
-                    text += textAndConcValues[0];
-                    extractNestedFieldsTextOne += textAndConcValues[1];
-                    extractNestedFieldsTextTwo += textAndConcValues[2];
-                }
-            }
-        }*/
-        /* Line 2 is used for timing and logging. */
+
         text += `
         ${generateIndentation(5)}})\n
-        ${generateIndentation(4)}buildQueryDiff = endTimer(buildQueryTime);
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(4)}},
     `;
@@ -913,29 +782,23 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                 ${generateIndentation(3)}}
             `;
         })
-        /* Line 2 is used for timing and logging. */
         text += `
             ${generateIndentation(3)}}
-            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     } else {
-        /* Line 2 is used for timing and logging. */
         text += `
             ${generateIndentation(2)}result => {
-            ${generateIndentation(3)}awaitResultDiff = endTimer(awaitResultTime);
             ${generateIndentation(3)}return result;
             ${generateIndentation(2)}}
         `;
     }
-    /* Lines 4-5 are used for timing and logging. */
+
     text += `
         ${generateIndentation(2)}),
         ${generateIndentation(1)}]
         ${generateIndentation(1)}})
-        ${generateIndentation(1)}timers.buildQueryTime.push(buildQueryDiff);
-        ${generateIndentation(1)}timers.awaitResultTime.push(awaitResultDiff);
         ${generateIndentation(1)}return data;
         },
     `;

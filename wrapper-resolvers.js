@@ -32,83 +32,10 @@ const getRemoteSchema = async() => {
 
 getRemoteSchema();
 
-const fs = require('fs').promises;
-process.on('SIGINT', async() => {
-    console.log("Caught interrupt signal");
-    let sumBuildQuery = 0;
-    timers.buildQueryTime.forEach(value => {
-        sumBuildQuery += value;
-    })
-    const avgBuildQuery = (sumBuildQuery / timers.buildQueryTime.length).toFixed(2);
-    let sumResultTime = 0;
-    timers.awaitResultTime.forEach(value => {
-        sumResultTime += value;
-    })
-    const avgResultTime = (sumResultTime / timers.awaitResultTime.length).toFixed(2);
-    await fs.appendFile('benchmark-stats.txt', `Average time to build query: ${avgBuildQuery}`);
-    await fs.appendFile('benchmark-stats.txt', `Average time to get results from remote: ${avgResultTime}`);
-    process.exit();
-});
-
-const startTimer = () => {
-    const start = new Date().getTime();
-    return start;
-}
-
-const endTimer = (start) => {
-    const end = new Date().getTime();
-    return end - start;
-}
-
-timers = {
-	"wrappedFaculty": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedUniversity": {
-		"doctoralDegreeObtainers": {
-			'buildQueryTime': [],
-			'awaitResultTime': [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		},
-		"undergraduateDegreeObtainedBystudent": {
-			"buildQueryTime": [],
-			"awaitResultTime": [],
-			"averageBuildTime": 0.0,
-			"averageResultTime": 0.0
-		}
-	},
-	"wrappedResearchGroup": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedDepartment": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-	"wrappedLecturer": {
-    	'buildQueryTime': [],
-    	'awaitResultTime': [],
-		"averageBuildTime": 0.0,
-		"averageResultTime": 0.0
-	},
-}      
-
 const resolvers = {
 	Query: {
     
         wrappedUniversity: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -179,28 +106,20 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedFaculty: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -299,7 +218,6 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
@@ -315,23 +233,16 @@ const resolvers = {
                 			}
             
             			}
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedDepartment: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -416,28 +327,20 @@ const resolvers = {
     
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedLecturer: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -567,28 +470,20 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedGraduateStudents: async(_, __, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -708,28 +603,20 @@ const resolvers = {
 
         					})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         				},
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
         
         wrappedResearchGroup: async(_, args, context, info) => {
-        	const awaitResultTime = startTimer();
-        	const buildQueryTime = startTimer();
-        	let buildQueryDiff;
-        	let awaitResultDiff;
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',
@@ -773,20 +660,16 @@ const resolvers = {
 
         				})
 
-        				buildQueryDiff = endTimer(buildQueryTime);
         				return newSelectionSet;
         },
     
             		result => {
-            			awaitResultDiff = endTimer(awaitResultTime);
             			return result;
             		}
         
         		),
         	]
         	})
-        	// timers.buildQueryTime.push(buildQueryDiff);
-        	// timers.awaitResultTime.push(awaitResultDiff);
         	return data;
         },
     },
@@ -845,7 +728,7 @@ const resolvers = {
 			return (parent.head !== undefined) ? parent.head : null;
 		},
 		headEmailAddress: (parent) => {
-			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
+			return (parent.undefined !== undefined) ? parent.undefined : null;
 		},
 	},
 	WrappedProfessor: {
@@ -872,9 +755,9 @@ const resolvers = {
             else
             	parent.newEmail += "new"
             
-            if(parent.newEmail === undefined) 
+            if(parent.newEmail === undefined && parent.emailAddress !== undefined) 
             	parent.newEmail = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.newEmail += parent.emailAddress
             
         	return parent.newEmail
@@ -882,14 +765,14 @@ const resolvers = {
 
         contactInfo: async(parent) => {
     
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
             	parent.contactInfo = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.contactInfo += parent.telephone
             
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
             	parent.contactInfo = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
@@ -897,24 +780,24 @@ const resolvers = {
 
         concatFour: async(parent) => {
     
-            if(parent.concatFour === undefined) 
+            if(parent.concatFour === undefined && parent.telephone !== undefined) 
             	parent.concatFour = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.concatFour += parent.telephone
             
-            if(parent.concatFour === undefined) 
+            if(parent.concatFour === undefined && parent.emailAddress !== undefined) 
             	parent.concatFour = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.concatFour += parent.emailAddress
             
-            if(parent.concatFour === undefined) 
+            if(parent.concatFour === undefined && parent.researchInterest !== undefined) 
             	parent.concatFour = parent.researchInterest
-            else
+            else if(parent.researchInterest !== undefined)
             	parent.concatFour += parent.researchInterest
             
-            if(parent.concatFour === undefined) 
+            if(parent.concatFour === undefined && parent.profType !== undefined) 
             	parent.concatFour = parent.profType
-            else
+            else if(parent.profType !== undefined)
             	parent.concatFour += parent.profType
             
         	return parent.concatFour
@@ -948,9 +831,9 @@ const resolvers = {
 
         contactInfo: async(parent) => {
     
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
             	parent.contactInfo = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.contactInfo += parent.telephone
             
             if(parent.contactInfo === undefined) 
@@ -958,9 +841,9 @@ const resolvers = {
             else
             	parent.contactInfo += " "
             
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
             	parent.contactInfo = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
@@ -1002,9 +885,9 @@ const resolvers = {
             else
             	parent.newEmail += "cooler"
             
-            if(parent.newEmail === undefined) 
+            if(parent.newEmail === undefined && parent.emailAddress !== undefined) 
             	parent.newEmail = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.newEmail += parent.emailAddress
             
         	return parent.newEmail
@@ -1012,9 +895,9 @@ const resolvers = {
 
         contactInfo: async(parent) => {
     
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
             	parent.contactInfo = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.contactInfo += parent.telephone
             
             if(parent.contactInfo === undefined) 
@@ -1022,9 +905,9 @@ const resolvers = {
             else
             	parent.contactInfo += " "
             
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
             	parent.contactInfo = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
@@ -1044,7 +927,7 @@ const resolvers = {
 	},
 	WrappedResearchGroup: {
 		id: (parent) => {
-			return (parent.id !== undefined) ? parent.id : null;
+			return (parent.undefined !== undefined) ? parent.undefined : null;
 		},
 		subOrganizationOf: (parent) => {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
