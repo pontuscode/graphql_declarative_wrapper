@@ -25,3 +25,27 @@ wrappedDepartment build query: 0.42 ms
 wrappedDepartment result time: 42.84 ms
 wrappedLecturer build query: 0.38 ms
 wrappedLecturer result time: 53.88 ms
+wrappedFaculty build query: NaN ms
+wrappedFaculty result time: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } build query: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } result time: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: NaN ms
+wrappedResearchGroup build query: NaN ms
+wrappedResearchGroup result time: NaN ms
+wrappedDepartment build query: NaN ms
+wrappedDepartment result time: NaN ms
+wrappedLecturer build query: NaN ms
+wrappedLecturer result time: NaN ms
+wrappedFaculty build query: 0.21 ms
+wrappedFaculty result time: 10.44 ms
+wrappedUniversity{ doctoralDegreeObtainers } build query: NaN ms
+wrappedUniversity{ doctoralDegreeObtainers } result time: Infinity ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } build query: NaN ms
+wrappedUniversity{ undergraduateDegreeObtainedBystudent } result time: Infinity ms
+wrappedResearchGroup build query: NaN ms
+wrappedResearchGroup result time: Infinity ms
+wrappedDepartment build query: NaN ms
+wrappedDepartment result time: Infinity ms
+wrappedLecturer build query: NaN ms
+wrappedLecturer result time: Infinity ms

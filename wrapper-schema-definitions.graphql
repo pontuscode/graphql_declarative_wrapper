@@ -20,6 +20,7 @@ interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: I
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
     doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
     publications: [WrappedPublication] @wrap(field: "publications")
+    worksFor: WrappedDepartment @wrap(field: "worksFor")
 }
 
 type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
@@ -40,9 +41,11 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
-    contactInfo: String @concatenate(values: ["telephone", " ", "emailAddress"])
     researchInterest: String @wrap(field: "researchInterest")
     profType: String @wrap(field: "profType")
+    newEmail:  String @concatenate(values: ["new", "emailAddress"])
+    contactInfo: String @concatenate(values: ["telephone", "emailAddress"])
+    concatFour: String @concatenate(values: ["telephone", "emailAddress", "researchInterest", "profType"])
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
     doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")

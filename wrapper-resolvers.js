@@ -30,7 +30,7 @@ const getRemoteSchema = async() => {
 	schema = await remoteSchema();
 }
 
-getRemoteSchema()
+getRemoteSchema();
 
 const resolvers = {
 	Query: {
@@ -203,6 +203,16 @@ const resolvers = {
 									value: "publications"
 								},
 								selectionSet: extractNestedWrappedPublicationFields(selection)
+							})
+						}
+						if(selection.name.value === "worksFor") {
+							newSelectionSet.selections.push({
+								kind: Kind.FIELD,
+								name: {
+									kind: Kind.NAME,
+									value: "worksFor"
+								},
+								selectionSet: extractNestedWrappedDepartmentFields(selection)
 							})
 						}
 
@@ -718,7 +728,7 @@ const resolvers = {
 			return (parent.head !== undefined) ? parent.head : null;
 		},
 		headEmailAddress: (parent) => {
-			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
+			return (parent.undefined !== undefined) ? parent.undefined : null;
 		},
 	},
 	WrappedProfessor: {
@@ -731,32 +741,67 @@ const resolvers = {
 		emailAddress: (parent) => {
 			return (parent.emailAddress !== undefined) ? parent.emailAddress : null;
 		},
-
-        contactInfo: async(parent) => {
-    
-            if(parent.contactInfo === undefined) 
-            	parent.contactInfo = parent.telephone
-            else
-            	parent.contactInfo += parent.telephone
-            
-            if(parent.contactInfo === undefined) 
-            	parent.contactInfo = " " 
-            else
-            	parent.contactInfo += " "
-            
-            if(parent.contactInfo === undefined) 
-            	parent.contactInfo = parent.emailAddress
-            else
-            	parent.contactInfo += parent.emailAddress
-            
-        	return parent.contactInfo
-        },
 		researchInterest: (parent) => {
 			return (parent.researchInterest !== undefined) ? parent.researchInterest : null;
 		},
 		profType: (parent) => {
 			return (parent.profType !== undefined) ? parent.profType : null;
 		},
+
+        newEmail: async(parent) => {
+    
+            if(parent.newEmail === undefined) 
+            	parent.newEmail = "new" 
+            else
+            	parent.newEmail += "new"
+            
+            if(parent.newEmail === undefined && parent.emailAddress !== undefined) 
+            	parent.newEmail = parent.emailAddress
+            else if(parent.emailAddress !== undefined)
+            	parent.newEmail += parent.emailAddress
+            
+        	return parent.newEmail
+        },
+
+        contactInfo: async(parent) => {
+    
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
+            	parent.contactInfo = parent.telephone
+            else if(parent.telephone !== undefined)
+            	parent.contactInfo += parent.telephone
+            
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
+            	parent.contactInfo = parent.emailAddress
+            else if(parent.emailAddress !== undefined)
+            	parent.contactInfo += parent.emailAddress
+            
+        	return parent.contactInfo
+        },
+
+        concatFour: async(parent) => {
+    
+            if(parent.concatFour === undefined && parent.telephone !== undefined) 
+            	parent.concatFour = parent.telephone
+            else if(parent.telephone !== undefined)
+            	parent.concatFour += parent.telephone
+            
+            if(parent.concatFour === undefined && parent.emailAddress !== undefined) 
+            	parent.concatFour = parent.emailAddress
+            else if(parent.emailAddress !== undefined)
+            	parent.concatFour += parent.emailAddress
+            
+            if(parent.concatFour === undefined && parent.researchInterest !== undefined) 
+            	parent.concatFour = parent.researchInterest
+            else if(parent.researchInterest !== undefined)
+            	parent.concatFour += parent.researchInterest
+            
+            if(parent.concatFour === undefined && parent.profType !== undefined) 
+            	parent.concatFour = parent.profType
+            else if(parent.profType !== undefined)
+            	parent.concatFour += parent.profType
+            
+        	return parent.concatFour
+        },
 		undergraduateDegreeFrom: (parent) => {
 			return (parent.undergraduateDegreeFrom !== undefined) ? parent.undergraduateDegreeFrom : null;
 		},
@@ -786,9 +831,9 @@ const resolvers = {
 
         contactInfo: async(parent) => {
     
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
             	parent.contactInfo = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.contactInfo += parent.telephone
             
             if(parent.contactInfo === undefined) 
@@ -796,9 +841,9 @@ const resolvers = {
             else
             	parent.contactInfo += " "
             
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
             	parent.contactInfo = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
@@ -840,9 +885,9 @@ const resolvers = {
             else
             	parent.newEmail += "cooler"
             
-            if(parent.newEmail === undefined) 
+            if(parent.newEmail === undefined && parent.emailAddress !== undefined) 
             	parent.newEmail = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.newEmail += parent.emailAddress
             
         	return parent.newEmail
@@ -850,9 +895,9 @@ const resolvers = {
 
         contactInfo: async(parent) => {
     
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.telephone !== undefined) 
             	parent.contactInfo = parent.telephone
-            else
+            else if(parent.telephone !== undefined)
             	parent.contactInfo += parent.telephone
             
             if(parent.contactInfo === undefined) 
@@ -860,9 +905,9 @@ const resolvers = {
             else
             	parent.contactInfo += " "
             
-            if(parent.contactInfo === undefined) 
+            if(parent.contactInfo === undefined && parent.emailAddress !== undefined) 
             	parent.contactInfo = parent.emailAddress
-            else
+            else if(parent.emailAddress !== undefined)
             	parent.contactInfo += parent.emailAddress
             
         	return parent.contactInfo
@@ -882,7 +927,7 @@ const resolvers = {
 	},
 	WrappedResearchGroup: {
 		id: (parent) => {
-			return (parent.id !== undefined) ? parent.id : null;
+			return (parent.undefined !== undefined) ? parent.undefined : null;
 		},
 		subOrganizationOf: (parent) => {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
@@ -1146,6 +1191,16 @@ const extractNestedWrappedFacultyFields = (selection) => {
 			selectionSet: extractNestedWrappedPublicationFields(nestedSelection)
 			})
 		}
+		if(nestedSelection.name.value === "worksFor") {
+			result.selections.push({
+				kind: Kind.FIELD,
+				name: {
+					kind: Kind.NAME,
+					value: "worksFor"
+				},
+			selectionSet: extractNestedWrappedDepartmentFields(nestedSelection)
+			})
+		}
 	})
 	return result;
 }
@@ -1311,6 +1366,85 @@ const extractNestedWrappedProfessorFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "newEmail") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "concatFour") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "researchInterest"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "profType"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
 			result.selections.push({
 				kind: Kind.FIELD,
@@ -1398,6 +1532,29 @@ const extractNestedWrappedLecturerFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "position") {
 			result.selections.push({
 				kind: Kind.FIELD, 
@@ -1494,6 +1651,42 @@ const extractNestedWrappedGraduateStudentFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "newEmail") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "age") {
 			result.selections.push({
 				kind: Kind.FIELD, 

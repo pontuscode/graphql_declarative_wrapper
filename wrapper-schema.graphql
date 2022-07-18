@@ -14,6 +14,7 @@ type WrappedUniversity {
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity
 	publications: [WrappedPublication]
+	worksFor: WrappedDepartment
 }
 
  type WrappedDepartment {
@@ -34,9 +35,11 @@ type WrappedUniversity {
 	id: ID
 	telephone: String
 	emailAddress: String
-	contactInfo: String
 	researchInterest: String
 	profType: String
+	newEmail: String
+	contactInfo: String
+	concatFour: String
 	undergraduateDegreeFrom: WrappedUniversity
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity

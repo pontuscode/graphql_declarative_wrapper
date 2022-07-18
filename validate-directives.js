@@ -541,7 +541,7 @@ const validateWrap = function(item, remoteSchema) {
                         let validFieldDefinition = true;
                         switch(item.argumentName) {
                             case "field": // The required argument "field" is used
-                                console.log(item);
+                                //console.log(item);
                                 found = true;
                                 break;
                             case "path":
