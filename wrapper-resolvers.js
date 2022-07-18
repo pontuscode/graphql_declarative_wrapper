@@ -678,14 +678,6 @@ const resolvers = {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
 		undergraduateDegreeObtainedByFaculty: (parent) => {
-			parent.undergraduateDegreeObtainedByFaculty.forEach(child => {
-				if(child.__typename === "Professor") {
-					child.__typename = "WrappedProfessor"
-				}
-				if(child.__typename === "Lecturer") {
-					child.__typename = "WrappedLecturer"
-				}
-			})
 			return (parent.undergraduateDegreeObtainedByFaculty !== undefined) ? parent.undergraduateDegreeObtainedByFaculty : null;
 		},
 		departments: (parent) => {
@@ -695,14 +687,6 @@ const resolvers = {
 			return (parent.undergraduateDegreeObtainedBystudent !== undefined) ? parent.undergraduateDegreeObtainedBystudent : null;
 		},
 		doctoralDegreeObtainers: (parent) => {
-			parent.doctoralDegreeObtainers.forEach(child => {
-				if(child.__typename === "Professor") {
-					child.__typename = "WrappedProfessor"
-				}
-				if(child.__typename === "Lecturer") {
-					child.__typename = "WrappedLecturer"
-				}
-			})
 			return (parent.doctoralDegreeObtainers !== undefined) ? parent.doctoralDegreeObtainers : null;
 		},
 	},
@@ -714,21 +698,13 @@ const resolvers = {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
 		},
 		faculties: (parent) => {
-			parent.faculties.forEach(child => {
-				if(child.__typename === "Professor") {
-					child.__typename = "WrappedProfessor"
-				}
-				if(child.__typename === "Lecturer") {
-					child.__typename = "WrappedLecturer"
-				}
-			})
 			return (parent.faculties !== undefined) ? parent.faculties : null;
 		},
 		head: (parent) => {
 			return (parent.head !== undefined) ? parent.head : null;
 		},
 		headEmailAddress: (parent) => {
-			return (parent.undefined !== undefined) ? parent.undefined : null;
+			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
 		},
 	},
 	WrappedProfessor: {
@@ -927,7 +903,7 @@ const resolvers = {
 	},
 	WrappedResearchGroup: {
 		id: (parent) => {
-			return (parent.undefined !== undefined) ? parent.undefined : null;
+			return (parent.id !== undefined) ? parent.id : null;
 		},
 		subOrganizationOf: (parent) => {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
@@ -944,17 +920,6 @@ const resolvers = {
 			return (parent.abstract !== undefined) ? parent.abstract : null;
 		},
 		authors: (parent) => {
-			parent.authors.forEach(child => {
-				if(child.__typename === "Professor") {
-					child.__typename = "WrappedProfessor"
-				}
-				if(child.__typename === "Lecturer") {
-					child.__typename = "WrappedLecturer"
-				}
-				if(child.__typename === "GraduateStudent") {
-					child.__typename = "WrappedGraduateStudent"
-				}
-			})
 			return (parent.authors !== undefined) ? parent.authors : null;
 		},
 	},
