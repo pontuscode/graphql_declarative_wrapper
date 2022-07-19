@@ -15,7 +15,8 @@ const builtInScalars = [
     "['Int!']!", "['Float!']!", "['String!']!", "['Boolean!']!", "['ID!']!"
 ]
 
-/**
+//-----------------------------------------------------------------------------------//
+/** This function is used to parse the value type of a node in an AST
  * @param {*} node: The node from which we want to extract the value
  * @returns the value type of the node. Returns a list of the type if it is a list. 
  */
@@ -52,6 +53,12 @@ const parseValue = function(node) {
     return returnValue;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to determine if the user wants to include all fields in the wrapper type. 
+ * @param {*} args: an AST node containing the "parent node's" arguments 
+ * @returns an object with a boolean indicating the includeAllFields argument was true/false and which fields the user wants to exclude
+ */
 const parseIncludeExclude = function(args) {
     let includeAllFields = false;
     let excludeFields;
@@ -69,33 +76,41 @@ const parseIncludeExclude = function(args) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to validate the includeAllFields and excludeFields arguments 
+ * @param {*} includeExcludeFields: object with a boolean indicating if the includeAllFields argument was true/false and which fields the user wants to exclude
+ * @returns a boolean indicating if the include/exclude usage was valid, and an error message if it was not valid
+ */
 const validateIncludeExclude = function(includeExcludeFields) {
     let valid = true;
     let errorMessage = "";
     let parsedExcludeFields = [];
     if(includeExcludeFields.includeAllFields === true) { 
+        // If the includeAllFields argument was set to true, check if they also want to exclude any fields
         if(includeExcludeFields.excludeFields !== undefined) {
-            if(includeExcludeFields.excludeFields.value.kind === "ListValue") { // Must be a list of Strings
-                for(let i = 0; i < includeExcludeFields.excludeFields.value.values.length; i++) {
+            if(includeExcludeFields.excludeFields.value.kind === "ListValue") { // Must be a list 
+                for(let i = 0; i < includeExcludeFields.excludeFields.value.values.length; i++) { // The list must consist only of Strings
                     if(includeExcludeFields.excludeFields.value.values[i].kind === "StringValue"){
+                        // If all validation was successful, save the name of the field that the user wants to exclude
                         parsedExcludeFields.push(includeExcludeFields.excludeFields.value.values[i].value);
-                    } else {
-                        errorMessage = `Each element in excludeFields must be a String, got ${includeExcludeFields.excludeFields.value.values[i].kind}.`;
+                    } else if(includeExcludeFields.excludeFields.value.values[i].kind !== "StringValue") {
+                        errorMessage = `Each element in 'excludeFields' must be a 'String', got '${includeExcludeFields.excludeFields.value.values[i].kind}'.`;
                         valid = false;
                     }
                 }
-            } else {
-                errorMessage = "The value of excludeFields must be a list.";
+            } else if(includeExcludeFields.excludeFields.value.kind !== "ListValue") {
+                errorMessage = "The value of 'excludeFields' must be a 'List'.\n";
                 valid = false;
             }
         }
-    } else {
+    } else if(includeExcludeFields.includeAllFields === false) {
         if(includeExcludeFields.excludeFields !== undefined) {
-            errorMessage = `excludeFields argument can only be used when includeAllFields argument is set to true.`;
+            errorMessage = `'excludeFields' argument can only be used when the 'includeAllFields' argument is set to true.`;
             valid = false;
         }
     }
-    // If the input is valid and the user wants to exclude some fields, save the parsed values instead of the AST values for easier processing later. 
+    // If the input is valid and the user wants to exclude some fields, save the parsed values instead of the AST nodes for easier processing later. 
     if(valid === true && parsedExcludeFields.length > 0) { 
         includeExcludeFields.excludeFields = parsedExcludeFields;
     }
@@ -105,6 +120,12 @@ const validateIncludeExclude = function(includeExcludeFields) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to parse the names of the resolver functions that the user specified in the arguments "singleQuery" and "listQuery"
+ * @param {*} args: an AST node containing the "parent node's" arguments 
+ * @returns: an object with the names of the resolver functions
+ */
 const parseResolvers = function(args) {
     let singleQuery;
     let listQuery;
@@ -121,6 +142,12 @@ const parseResolvers = function(args) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to parse the name and value types of the arguments in the resolver functions
+ * @param {*} input: an AST node containing the "parent node's" arguments 
+ * @returns an object with the name of the resolver function, and the functions argument names and value types
+ */
 const parseResolverArguments = function(input) {
     let regex = /[\W]/;
     let parsedValues = {};
@@ -141,6 +168,12 @@ const parseResolverArguments = function(input) {
     return parsedValues;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} node: an AST node in the wrapper schema definitions
+ * @returns an object with key-value pairs of the implemented interface names, and the value is blank. The values are added in the function validateInterfaces below.
+ */
 const parseInterfaces = function(node) {
     let interfaces = {};
     if(node.interfaces !== undefined) {
@@ -153,6 +186,13 @@ const parseInterfaces = function(node) {
     return (Object.entries(interfaces).length > 0) ? interfaces : undefined;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directivesUsed: the list of all directives found during parsing
+ * @param {*} interfaces: object that is non-null if the current object/interface type has implemented any interfaces
+ * @returns an object with key-value pairs of the implemented interface names and their names in the remote schema
+ */
 const validateInterfaces = function(directivesUsed, interfaces) {
     let valid = true;
     let errorMessage = "";
@@ -178,6 +218,7 @@ const validateInterfaces = function(directivesUsed, interfaces) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
 /**
  * 
  * @param {*} schema: the wrapper schema definitions
@@ -189,7 +230,6 @@ const validateInterfaces = function(directivesUsed, interfaces) {
  *   Ensure the arguments are of the expected data types
  *   Ensure the arguments are used correctly 
  */
-
 const parseSchemaDirectives = function(schema) { 
     directivesUsed = [];
     let remoteObjectTypeName;
@@ -198,6 +238,7 @@ const parseSchemaDirectives = function(schema) {
     let valid = true;
     let errorMessage = "";
     schema.definitions.forEach(ast => {
+        //---------------------------OBJECT TYPES--------------------------------------//
         visit(ast, {
             ObjectTypeDefinition(node) {
                 if(node.directives.length > 0) {
@@ -208,10 +249,13 @@ const parseSchemaDirectives = function(schema) {
                         let resolvers = parseResolvers(node.directives[0].arguments);
                         let includeExcludeFields = parseIncludeExclude(node.directives[0].arguments);
                         // If the user has indicated that they want to include all or exclude fields, then validate it
-                        let validateInclude = validateIncludeExclude(includeExcludeFields);
-                        if(validateInclude.valid === false) {
-                            valid = false;
-                            errorMessage = validateInclude.errorMessage;
+                        if(includeExcludeFields.includeAllFields === true) {
+                            let validateInclude = validateIncludeExclude(includeExcludeFields);
+                            if(validateInclude.valid === false) {
+                                valid = false;
+                                errorMessage = validateInclude.errorMessage;
+                                return;
+                            }
                         }
                         let interfaces = parseInterfaces(node);
                         let validateInter = validateInterfaces(directivesUsed, interfaces);
@@ -242,6 +286,7 @@ const parseSchemaDirectives = function(schema) {
                 }
             }
         });
+        //---------------------------INTERFACE TYPES--------------------------------------//
         visit(ast, {
             InterfaceTypeDefinition(node) {
                 if(node.directives.length > 0) {
@@ -252,11 +297,14 @@ const parseSchemaDirectives = function(schema) {
                         let resolvers = parseResolvers(node.directives[0].arguments);
                         let includeExcludeFields = parseIncludeExclude(node.directives[0].arguments);
                         // If the user has indicated that they want to include all or exclude fields, then validate it
-                        let validateInclude = validateIncludeExclude(includeExcludeFields);
-                        if(validateInclude.valid === false) {
-                            valid = false;
-                            errorMessage = validateInclude.errorMessage;
-                        } 
+                        if(includeExcludeFields.includeAllFields === true) {
+                            let validateInclude = validateIncludeExclude(includeExcludeFields);
+                            if(validateInclude.valid === false) {
+                                valid = false;
+                                errorMessage = validateInclude.errorMessage;
+                                return;
+                            }
+                        }
                         let temp = {
                             "remoteInterfaceTypeName": node.directives[0].arguments[0].value.value,
                             "interfaceTypeName": node.name.value,
@@ -277,6 +325,7 @@ const parseSchemaDirectives = function(schema) {
                 }
             }
         });
+        //---------------------------FIELD DEFINITIONS--------------------------------------//
         visit(ast, {
             FieldDefinition(node) {
                 if(node.directives.length > 0) {
@@ -284,10 +333,15 @@ const parseSchemaDirectives = function(schema) {
                         const fieldValue = parseValue(node);
                         let argumentType = node.directives[i].arguments[0].value.kind;
                         let argumentValue;
-                        // This switch-statement along with line 276 covers field+path validation step 1.
+                        // This switch-statement covers field+path validation step 1.
                         switch(argumentType) {
                             case "StringValue":
-                                argumentValue = [node.directives[i].arguments[0].value.value];
+                                if(node.directives[i].arguments[0].name.value === "field") {
+                                    argumentValue = [node.directives[i].arguments[0].value.value];
+                                } else if(node.directives[i].arguments[0].name.value === "path"){
+                                    valid = false;
+                                    errorMessage = `Expected List of Strings for argument '${node.directives[i].arguments[0].name.value}' on field '${node.name.value}', got '${argumentType}'.\n`; 
+                                }
                                 break;
                             case "ListValue":
                                 node.directives[i].arguments[0].value.values.forEach(value => {
@@ -336,12 +390,19 @@ const parseSchemaDirectives = function(schema) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} currentType: the name of the type to be found in the remote schema
+ * @param {*} directivesUsed: the list of all directives found during parsing
+ * @param {*} inRemoteSchema: boolean value that tells us if we're looking in the wrapper schema definitions or in the remote schema
+ * @returns: object with the name of the type in the remote schema and a boolean indicating if it's an object type or interface type
+ */
 const findNameOfRemoteType = function(currentType, directivesUsed, inRemoteSchema = false) {
     let remoteType = {};
-
     directivesUsed.forEach(directive => {
         if(directive.directive === "wrap") {
-            if(inRemoteSchema === false) {
+            if(inRemoteSchema === false) { // Are we looking in the wrapper schema definitions or in the remote schema? 
                 if(directive.objectTypeName !== undefined) { // If the field's value type is an object type
                     if(directive.argumentName === "type") {
                         if(directive.objectTypeName === currentType) {
@@ -361,7 +422,7 @@ const findNameOfRemoteType = function(currentType, directivesUsed, inRemoteSchem
                         }
                     }
                 }
-            } else if(inRemoteSchema === true) {
+            } else if(inRemoteSchema === true) { // Are we looking in the wrapper schema definitions or in the remote schema? 
                 if(directive.remoteObjectTypeName !== undefined) { // If the field's value type is an object type
                     if(directive.argumentName === "type") {  
                         if(directive.remoteObjectTypeName === currentType) {
@@ -387,11 +448,20 @@ const findNameOfRemoteType = function(currentType, directivesUsed, inRemoteSchem
     return (remoteType.name !== "") ? remoteType : undefined;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used when the user has wrapped a field using the 'path' argument. It traverses the path and validates it each step of the way. 
+ * @param {*} item: the field definition that is wrapping a field using the 'path' argument
+ * @param {*} remoteSchema: the remote schema to be wrapped
+ * @param {*} directivesUsed: the list of all directives found during parsing
+ * @returns an object with a boolean indicating the path was valid, and an error message if it was invalid
+ */
 const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
     let remoteType;
     let nextType;
     let valid = true;
     let mustBeListType = false;
+    let leafNodeScalarType;
     let errorMessage = "";
     for(let i = 0; i < item.argumentValues.length; i++) {
         if(valid === true) {
@@ -424,7 +494,8 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                 return;
                                             } else {
                                                 foundField = true;
-                                                nextType = directive.fieldValue;
+                                                //nextType = directive.fieldValue;
+                                                leafNodeScalarType = directive.fieldValue;
                                                 return;
                                             }
                                         } else { // save the value type of that field as the next step in the path (if it is not a built-in scalar)
@@ -457,7 +528,8 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                     return;
                                                 } else {
                                                     foundField = true;
-                                                    nextType = directive.fieldValue;
+                                                    //nextType = directive.fieldValue;
+                                                    leafNodeScalarType = directive.fieldValue;
                                                     return;
                                                 }
                                             } else { // save the value type of that field as the next step in the path (if it is not a built-in scalar)
@@ -484,10 +556,11 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                     errorMessage += `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
                     break;
                 }
-            } else if(i > 0) { // Further iterations we check the fields of the remote object/interface type 
-
-                // We only need to 'figure out' the name of the object/interface type in the remote schema if we are on the first iteration.
-                // This is because all further field values will be taken directly from the remote schema, not from the wrapper schema definitions.
+            // After the first iteration, we need to check the value types of the fields in the remote object/interface types
+            } else if(i > 0) { 
+                // We only need to deduce the name of the object/interface type in the remote schema if we are on the second iteration. 
+                // This is because the field value of this will its wrapped version in the wrapper schema definitions. 
+                // All other field values will be taken directly from the remote schema, not from the wrapper schema definitions.
                 let nextTypeIsInRemote = (i !== 1);
 
                 // Find the matching remote type in the remote schema
@@ -498,9 +571,12 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                     errorMessage = `Could not find type in remote schema that is wrapped by '${nextType}'.\n`;
                     break;
                 }
+
+                // Validate the remote type against the remote schema. 
                 remoteSchema.definitions.forEach(ast => {
                     if(valid === true) {
                         visit(ast, {
+                            //---------------------------OBJECT TYPES--------------------------------------//
                             ObjectTypeDefinition(node) {
                                 if(remoteType.objectType === true) {
                                     if(node.name.value === remoteType.name) {
@@ -517,6 +593,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                         if(i === (item.argumentValues.length - 1)) {
                                                             valid = true;
                                                             foundField = true;
+                                                            leafNodeScalarType = fieldValue;
                                                             return;
                                                         } else {
                                                             valid = false;
@@ -549,6 +626,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                     }
                                 }
                             },
+                            //---------------------------INTERFACE TYPES--------------------------------------//
                             InterfaceTypeDefinition(node) {
                                 if(remoteType.objectType === false) {
                                     if(node.name.value === remoteType.name) {
@@ -565,6 +643,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                         if(i === (item.argumentValues.length - 1)) {
                                                             valid = true;
                                                             foundField = true;
+                                                            leafNodeScalarType = fieldValue;
                                                             return;
                                                         } else {
                                                             valid = false;
@@ -611,11 +690,31 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
             break;
         }
     }
+
+    // If any lists were found in the path, ensure that the value type of the field is also a list
     if(mustBeListType === true) {
         if(Array.isArray(item.fieldValue) === false) {
             valid = false;
             errorMessage = `Failed to validate 'path' of field '${item.fieldName}'.\n`;
             errorMessage += `Found List in one or more value types along the path. The value type of '${item.fieldName}' must therefore be a ListType.\n`;
+        } 
+    }
+    // If the value type is a list, ensure that the value type inside the list matches the value type of the leaf node in the remote schema
+    if(valid === true && Array.isArray(item.fieldValue) === true) {
+        if(Array.isArray(item.fieldValue) === true) {
+            if(leafNodeScalarType !== item.fieldValue[0]) {
+                valid = false;
+                errorMessage = `Failed to validate 'path' of field '${item.fieldName}'.\n`;
+                errorMessage += `Value type '${item.fieldValue[0]}' must match the value type in the remote schema.\n`;
+                errorMessage += `Found '${leafNodeScalarType}' on field '${item.argumentValues[item.argumentValues.length-1].value}' remote schema.\n`;
+            }
+        } else {
+            if(leafNodeScalarType !== item.fieldValue) {
+                valid = false;
+                errorMessage = `Failed to validate 'path' of field '${item.fieldName}'.\n`;
+                errorMessage += `Value type '${item.fieldValue}' must match the value type in the remote schema. Found '${leafNodeScalarType}' in remote schema.\n`;
+                errorMessage += `Found '${leafNodeScalarType}' on field '${item.argumentValues[item.argumentValues.length-1].value}' remote schema.\n`;
+            }
         }
     }
     return {
@@ -624,6 +723,15 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to validate a directive against the remote schema. Each directive has different validation steps, so they are divided based on the parameter 'argument'
+ * @param {*} item: the directive to be validated against the remote schema
+ * @param {*} node: the node in the remote schema currently being validated "against"
+ * @param {*} argument: the name of the directive to be validated
+ * @param {*} directivesUsed: the list of all directives found during parsing
+ * @returns an object with a boolean indicating if the directive was valid, and an error message if it was invalid
+ */
 const validateAgainstRemoteSchema = function(item, node, argument, directivesUsed) {
     let valid = true;
     let errorMessage;
@@ -631,6 +739,7 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
     let foundResolver = false;
     let foundArg = false;
     switch(argument) {
+        //---------------------INCLUDEALLFIELDS + EXCLUDEFIELDS--------------------------------// 
         case "includeExclude":
             let foundFields = 0;
             let neededFields = 0;
@@ -652,11 +761,7 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
             }
             valid = (foundFields === neededFields);
             break;
-            
-            /*
-                The field specified in the argument exists in the wrapped object or interface type in the remote schema.
-                The value type of the field in the wrapper schema definitions matches the value type of the field in the remote schema (specified in the field argument). 
-            */
+        //------------------------------FIELD DEFINITIONS--------------------------------------//
         case "field":
             // If the field exists in the wrapped object or interface type in the remote schema. 
             if(node.name.value === item.argumentValues[0]) { 
@@ -741,49 +846,11 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
                 }
             } else { // If the current node's name did not equal the item to be validated
                 valid = false;
-                let typeNotFound = true; // If the value type of the item does not exist in the wrapper schema definition, this will be true after the loop. 
-                
-                // Could not get this loop to work correctly.
-                // The intention was to get detailed error messages, but they were unreliable and more confusing than the current error message. 
-                /* 
-                for(let i = 0; i < directivesUsed.length; i++) {
-                    // We only care about types and interfaces at this point
-                    if(directivesUsed[i].argumentName === "type" || directivesUsed[i].argumentName === "interface"){
-                        // If the item's value type matches either the objectType or interfaceType of the current wrap directive, then...
-                        if(directivesUsed[i].objectTypeName === item.fieldValue || directivesUsed[i].interfaceTypeName === item.fieldValue) {
-                            if(node.type.kind === "NonNullType" || node.type.kind === "ListType") {
-                                // If the value type of the node does not match the value type of the wrapper schema definitions.
-                                // Could be that the object/interface type is not wrapped, or there is a wrapped type mismatch for example.
-                                if(node.type.type.name.value !== item.remoteObjectTypeName) {
-                                    console.log(node.type.type.name.value, item);
-                                }
-                            } else if(node.type.kind === "NamedType") {
-
-                            }
-                            if(item.remoteInterfaceTypeName !== undefined) {
-                                if(node.name.value !== item.argumentValues[0]) {
-
-                                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in interface type '${item.remoteInterfaceTypeName}' in remote schema.\n`;
-                                } else if(node.name.value !== item.fieldValue) {
-                                    
-                                }
-                            } else if(item.remoteObjectTypeName !== undefined) {
-                                if(node.name.value !== item.fieldValue && node.name.value) {
-                                } else if(node.name.value !== item.argumentValues[0]) {
-                                    typeNotFound = false;
-                                    errorMessage = `Could not find field with name '${item.argumentValues[0]}' in object type '${item.remoteObjectTypeName}' in remote schema.\n`;
-                                }
-                            }
-                        }
-                    }
-                }*/
-                if(typeNotFound === true) {
-                    errorMessage = `Failed to validate field with name '${item.fieldName}' in object '${item.objectTypeName}' in wrapper schema definitions.\n`;
-                    errorMessage += `Are you sure the wrapping definitions are correct?`
-                }
+                errorMessage = `Failed to validate field with name '${item.fieldName}' in object '${item.objectTypeName}' in wrapper schema definitions.\n`;
+                errorMessage += `Are you sure the wrapping definitions are correct?`
             }
             break;
-
+        //----------------------------SINGLE QUERY------------------------------------//
         case "singleQuery":
             splitArgs = parseResolverArguments(item.resolvers);
             node.definitions.forEach(ast => {
@@ -815,6 +882,7 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
                 errorMessage = `Could not find matching resolver argument named ${splitArgs.singleQuery.left} with value type ${splitArgs.singleQuery.right} in remote schema for resolver function ${splitArgs.singleQuery.resolver}.`
             }
             break;
+        //----------------------------LIST QUERY---------------------------------------//
         case "listQuery":
             splitArgs = parseResolverArguments(item.resolvers);
             node.definitions.forEach(ast => {
@@ -835,6 +903,7 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
                 errorMessage = `Could not find resolver function named ${splitArgs.listQuery.resolver} in remote schema.`
             }
             break;
+        //----------------------------DEFAULT-----------------------------------------//
         default: 
             valid = false;
             errorMessage = "Uncaught validation error, please ensure wrapper schema definitions are correct.\n";
@@ -847,6 +916,7 @@ const validateAgainstRemoteSchema = function(item, node, argument, directivesUse
     }
 }
 
+//-----------------------------------------------------------------------------------//
 /**
  * @param {*} item: the directive used on the current node in the AST
  * @param {*} node: the current node in the AST
@@ -869,6 +939,7 @@ const appendFieldsToType = function(item, node) {
     item.includeFields = temp;
 }
 
+//-----------------------------------------------------------------------------------// 
 /**
  * 
  * @param {*} item is the directive definitions parsed from parseSchemaDirectives
@@ -880,13 +951,13 @@ const appendFieldsToType = function(item, node) {
  *  3/ The field value type in the wrapper schema definition is not defined as a list, but one or more of the field value types in the remote schema is a list.
  *  4/ One or more of the fields in the 'field' or 'path' argument does not exist in the remote schema. 
  */
-
 const validateWrap = function(item, remoteSchema, directivesUsed) {
     let found = false;
     let validType = true;
     let errorMessage = "";
     let checkedFields = 0;
     if(item.argumentName === "type") { // Validation case 1   
+        //--------------------------OBJECT TYPES------------------------------------------//
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
                 ObjectTypeDefinition(node) {
@@ -927,6 +998,7 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                 }
             });
         });
+    //--------------------------FIELD DEFINITIONS------------------------------------------//
     } else if(item.argumentName === "field" || item.argumentName === "path"){ 
         remoteSchema.definitions.forEach(ast => {
             if(ast.name.value === item.remoteObjectTypeName && found === false) {
@@ -959,6 +1031,7 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                 }
             }
         });
+    //--------------------------INTERFACE TYPES------------------------------------------//
     } else if(item.argumentName === "interface") {
         remoteSchema.definitions.forEach(ast => {
             visit(ast, {
@@ -982,6 +1055,8 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
         "errorMessage": errorMessage
     }
 }
+
+//-----------------------------------------------------------------------------------//
 
 const validateConcatenate = function(item, remoteSchema) {
     let valid = true;
@@ -1054,16 +1129,53 @@ const validateConcatenate = function(item, remoteSchema) {
     return valid;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} item: the directive object to be validated
+ * @param {*} remoteSchema: the remote schema to be wrapped
+ * @param {*} directivesUsed: all parsed directives from the wrapper schema definitions
+ * @returns an object with a boolean indicating if the item was valid, and an error message if it was invalid
+ */
 const validateDirective = function(item, remoteSchema, directivesUsed) {
+    let valid;
+    let errorMessage;
     switch(item.directive){
         case "wrap":
-            return validateWrap(item, remoteSchema, directivesUsed);
+            let wrapValidation = validateWrap(item, remoteSchema, directivesUsed);
+            if(wrapValidation.valid === false) {
+                valid = false;
+                errorMessage = wrapValidation.errorMessage;
+            }
+            //return validateWrap(item, remoteSchema, directivesUsed);
+            break;
         case "concatenate":
-            return validateConcatenate(item, remoteSchema);
+            let concatenateValidation = validateConcatenate(item, remoteSchema);
+            if(concatenateValidation.valid === false) {
+                valid = false;
+                errorMessage = concatenateValidation.errorMessage;
+            }
+            //return validateConcatenate(item, remoteSchema);
+            break;
+        default:
+            valid = false;
+            errorMessage = "Validation failed.\n";
+            errorMessage += `Unknown directive name '${item.directive} found.\n`;
+            break;
     }
-    return false;
+    return {
+        "valid": valid,
+        "errorMessage": errorMessage
+    }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * The main function or entry-point of the validation algorithm.
+ * @param {*} wsDef: the wrapper schema definitions specified by the user
+ * @param {*} remoteSchema: the remote schema to be wrapped
+ * @returns object with boolean indicating if the directives were valid, the parsed directives used, and an error message if the directives were invalid
+ */
 const validateDirectives = function(wsDef, remoteSchema) {
     let parsedDirectives = parseSchemaDirectives(wsDef.schema[0].document);
     let directivesAreValid = true;

@@ -28,11 +28,11 @@ type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
     head: WrappedProfessor @wrap(field: "head") 
-    headEmailAddress: String @wrap(path: ["head", "emailAddress"])
+    headEmailAddress: String! @wrap(path: ["head", "emailAddress"])
     subOrganizationOfDoctorsPhones: [String] @wrap(path: ["subOrganizationOf", "doctoralDegreeObtainers", "telephone"])
 }
 
-interface WrappedAuthor @wrap(interface: "Author") {
+interface WrappedAuthor @wrap(interface: "Author"){#, includeAllFields: true)# {
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
