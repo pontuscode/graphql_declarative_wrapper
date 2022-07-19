@@ -573,7 +573,7 @@ const validateWrap = function(item, remoteSchema) {
                             }
                         }
                         found = true;
-                        WrappedTypes.push(item.objectTypeName);
+                        WrappedTypes.push(item.interfaceTypeName)
                     }
                 }
             });
@@ -597,7 +597,9 @@ const validateConcatenate = function(item, remoteSchema) {
             "errorMessage": "concatenate only accepts the 'values' argument"
         }
     }
-    if(WrappedTypes.includes(item.objectTypeName) || true){
+    // console.log(item)
+    // console.log(WrappedTypes)
+    if(WrappedTypes.includes(item.objectTypeName)){
 
 
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
