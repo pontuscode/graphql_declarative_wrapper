@@ -944,17 +944,6 @@ const resolvers = {
 			return (parent.abstract !== undefined) ? parent.abstract : null;
 		},
 		authors: (parent) => {
-			parent.authors.forEach(child => {
-				if(child.__typename === "Professor") {
-					child.__typename = "WrappedProfessor"
-				}
-				if(child.__typename === "Lecturer") {
-					child.__typename = "WrappedLecturer"
-				}
-				if(child.__typename === "GraduateStudent") {
-					child.__typename = "WrappedGraduateStudent"
-				}
-			})
 			return (parent.authors !== undefined) ? parent.authors : null;
 		},
 	},

@@ -4,6 +4,7 @@ const { loadSchemaSync, loadTypedefsSync } = require("@graphql-tools/load");
 const { GraphQLFileLoader } = require("@graphql-tools/graphql-file-loader");
 const { correctASTNodes } = require("@graphql-tools/utils");
 const { generateWrapperSchema } = require("./generate-schema");
+const { count } = require("console");
 
 let WrappedTypes = [];
 
@@ -26,6 +27,19 @@ const parseValue = function(node) {
         }
     });
     visit(node, {
+        ListType(list) {
+            visit(list, {
+                NamedType(named) {
+                    if(!set){
+                        returnValue = "["+named.name.value+"]";
+                        set = true;
+                    }
+                    
+                }
+            });
+        }
+    });
+    visit(node, {
         NamedType(named) {
             if(!set){
                 returnValue = named.name.value;
@@ -35,18 +49,8 @@ const parseValue = function(node) {
 
         }
     });
-    visit(node, {
-        ListType(list) {
-            visit(list, {
-                NamedType(named) {
-                    if(!set){
-                        returnValue = [named.name.value];
-                    }
-                    
-                }
-            });
-        }
-    });
+
+    // console.log(returnValue)
     return returnValue;
 }
 
@@ -253,6 +257,7 @@ const parseSchemaDirectives = function(schema) {
                             valid = false;
                             errorMessage = validateInclude.errorMessage;
                         } 
+
                         let temp = {
                             "remoteInterfaceTypeName": node.directives[0].arguments[0].value.value,
                             "interfaceTypeName": node.name.value,
@@ -580,15 +585,16 @@ const validateWrap = function(item, remoteSchema) {
 const validateConcatenate = function(item, remoteSchema) {
     let valid = true;
     let nonNullable = false;
+    let listType = false;
     let errorMessage;
-    if(item.argumentName.length > 1){
-        errorMessage = "concatenate only accepts one argument"
+    
+    if(item.argumentName !== "values"){
         return { 
             "valid": false,
-            "errorMessage": errorMessage
+            "errorMessage": "concatenate only accepts the 'values' argument"
         }
     }
-    if(item.argumentName === "values" && WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
+    if(WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
     //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
       // commonType = item.fieldValue
 
@@ -596,88 +602,136 @@ const validateConcatenate = function(item, remoteSchema) {
       // directly copied from the remote schema. If the remote schema does not have the field, then the
       // validation algorithm should hallt.
 
-      if(item.remoteObjectTypeName == undefined) {
-        errorMessage = "The object which concatenate resides in is not wrapped";
-        return { 
-            "valid": false,
-            "errorMessage": errorMessage
-        }
-      }
-        item.remoteObjectTypeName = item.objectTypeName;
-      
+    //   if(item.remoteObjectTypeName == undefined) {
+    //     errorMessage = "The object which concatenate resides in is not wrapped";
+    //     return { 
+    //         "valid": false,
+    //         "errorMessage": errorMessage
+    //     }
+    //   }      
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
+        // console.log(item.fieldValue)
+        if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
+            nonNullable = true;
+        if(item.fieldValue.charAt(item.fieldValue.length-1) === "]")
+            listType = true;
+        let counter = 0;
+        // console.log(item)
+        let found = false;
+        let commonType = "Not set";
+        // remoteSchema.definitions.forEach(ast => {
+        for(ast of remoteSchema.definitions){
+            if(ast.name.value === item.remoteObjectTypeName && !found) {
+                // item.argumentValues[0].forEach(arg => {
+                for(arg of item.argumentValues[0]){
+                    let argFound = false;
+                    // console.log(arg);
+                    visit(ast, { //i den här visiten ska endast remote fields hanteras, inte delimiters
+                        FieldDefinition(node) {
+                            counter += 1
+                            // console.log(arg.value)
+                            if(node.name.value === arg.value){
+                                argFound = true;
+                                // console.log(commonType)
+                                if(commonType === "Not set"){
+                                    commonType = node.type.name.value;
+                                }   
+                                else if(commonType !== node.type.name.value){
+                                    valid = false;
+                                    errorMessage = "Arguments in 'values' do not share a common data type";
+                                }
 
-      if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
-        nonNullable = true;
-      
-      
-      let found = false;
-      remoteSchema.definitions.forEach(ast => {
-        if(ast.name.value === item.remoteObjectTypeName && !found) {
-            visit(ast, {
-                FieldDefinition(node) {
-                    switch(item.argumentName[0]) {
-                        case "field":
-                            found = true;
-                            break;
-                        case "path":
-                            traversePath(item, node, remoteSchema);
-                            found = true;
-                            break;
+                                if(node.type.kind === "NamedType"){
+                                    if(node.type.name.value !== item.fieldValue || nonNullable || listType){
+                                        valid = false;
+                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
+                                    }
+                                }
+                                else if(node.type.kind === "ListType"){
+                                    if(node.type.type.name.value !== item.fieldValue[0] || nonNullable || !listType)
+                                    {
+                                        valid = false;
+                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
+                                    }
+                                }
+                                else if(node.type.kind === "NonNullType"){
+                                    if(node.type.type.name.value !== item.fieldValue[0] || !nonNullable || listType){
+                                        valid = false;
+                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
+                                    } 
+                                }
+                            }
+                        }
+                    });
+                    if(!argFound){ //if argument is a delimiter then check whether it is the first argument, otherwise ensure that commonType is String.
+                        if(commonType !== "String" && commonType !== "Not set"){
+                            valid = false;
+                            errorMessage = "Arguments in 'values' do not share a common data type";
+                        }
+                        else
+                            commonType = "String" //We end up here if the delimiter is the first argument.
                     }
                 }
-            });
-        }
-
-
-
-
-        // if(ast.name.value === item.remoteObjectTypeName && !found){
-        //   item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
-        //     let CorrectargType = false;
-        //     let argFound = false;
-        //     ast.fields.forEach(field => {
-        //       if(field.name.value == arg.value){
-        //         argFound = false;
                 
-        //         CorrectargType = false;
-        //         if(field.type.kind === "NamedType"){
-        //           if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
-        //             argFound = true;
-        //             CorrectargType = true;
-        //           }
-        //           else valid=false;
-        //         }
-        //         else if(field.type.kind === "ListType"){
-        //           if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
-        //             argFound = true;
-        //             CorrectargType = true;
-        //           }
-        //           else valid = false;
-        //         }
-        //         else if(field.type.kind === "NonNullType"){
-        //             if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
-        //               argFound = true;
-        //               CorrectargType = true;
-        //             }
-        //             else valid = false;
-        //           }
-        //       }
-        //     });
-        //     if(argFound){
-        //       if(!CorrectargType) valid = false;
-        //     }
-        //     else{
-        //       if(typeof(item.fieldValue) !== "string") valid = false;
-        //     }
-            
-        //   });
-        //   found = true;
-        // }
-      });
+            }
+
+
+
+
+            // if(ast.name.value === item.remoteObjectTypeName && !found){
+            //   item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
+            //     let CorrectargType = false;
+            //     let argFound = false;
+            //     ast.fields.forEach(field => {
+            //       if(field.name.value == arg.value){
+            //         argFound = false;
+                    
+            //         CorrectargType = false;
+            //         if(field.type.kind === "NamedType"){
+            //           if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
+            //             argFound = true;
+            //             CorrectargType = true;
+            //           }
+            //           else valid=false;
+            //         }
+            //         else if(field.type.kind === "ListType"){
+            //           if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
+            //             argFound = true;
+            //             CorrectargType = true;
+            //           }
+            //           else valid = false;
+            //         }
+            //         else if(field.type.kind === "NonNullType"){
+            //             if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
+            //               argFound = true;
+            //               CorrectargType = true;
+            //             }
+            //             else valid = false;
+            //           }
+            //       }
+            //     });
+            //     if(argFound){
+            //       if(!CorrectargType) valid = false;
+            //     }
+            //     else{
+            //       if(typeof(item.fieldValue) !== "string") valid = false;
+            //     }
+                
+            //   });
+            //   found = true;
+            // }
+        };
+        return {
+            "valid": valid,
+            "errorMessage": errorMessage
+        }
     }
-    else valid = false;
-    return valid;
+    else{
+        return { 
+            "valid": false,
+            "errorMessage": "object type must be wrapped"
+        }
+    }
 }
 
 const validateSubstring = function(item, remoteSchema) {
@@ -717,6 +771,7 @@ const validateDirectives = function(wsDef, remoteSchema) {
         directivesAreValid = parsedDirectives.valid;
         errorMessage = parsedDirectives.errorMessage;
     }
+    // console.log(parsedDirectives.directivesUsed)
     return {
         "directivesAreValid": directivesAreValid,
         "directivesUsed": parsedDirectives.directivesUsed,

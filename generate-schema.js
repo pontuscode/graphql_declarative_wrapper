@@ -446,6 +446,10 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === false
             ) {
+                if(directivesUsed[i].fieldValue.charAt(directivesUsed[i].fieldValue.length-1) === "]"){
+                    directivesUsed[i].fieldValue = directivesUsed[i].fieldValue.slice(1,-1)
+                }
+
                 text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                 text += `${generateIndentation(3)}result.selections.push({\n`;
                 text += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
@@ -484,7 +488,6 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
         }
         if(directivesUsed[i].directive === "concatenate" && (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)) {
             let concValues = parseConcArgs(directivesUsed[i], rsDef);
-            console.log(concValues)
             text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
             concValues.forEach(field => {
                 if(field[1]){
@@ -566,6 +569,11 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             if(directivesUsed[i].directive === "wrap") {
                 // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
                 if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+
+                    if(directivesUsed[i].fieldValue.charAt(directivesUsed[i].fieldValue.length-1) === "]"){
+                        directivesUsed[i].fieldValue = directivesUsed[i].fieldValue.slice(1,-1)
+                    }
+
                     text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                     text += `${generateIndentation(7)}newSelectionSet.selections.push({\n`;
                     text += `${generateIndentation(8)}kind: Kind.FIELD,\n`;
@@ -725,8 +733,12 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         for(let i = 0; i < directivesUsed.length; i++){
             if(directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName){
                 if(directivesUsed[i].directive === "wrap") {
+
                     // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
                     if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
+                        if(directivesUsed[i].fieldValue.charAt(directivesUsed[i].fieldValue.length-1) === "]"){
+                            directivesUsed[i].fieldValue = directivesUsed[i].fieldValue.slice(1,-1)
+                        }
                         text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                         text += `${generateIndentation(7)}newSelectionSet.selections.push({\n`;
                         text += `${generateIndentation(8)}kind: Kind.FIELD,\n`;
