@@ -1096,7 +1096,7 @@ const validateConcatenate = function(item, remoteSchema) {
         let commonType = "Not set";
         for(ast of remoteSchema.definitions){
             if(ast.name.value === item.remoteObjectTypeName && !found) {
-                for(arg of item.argumentValues[0]){
+                for(arg of item.argumentValues){
                     let argFound = false;
                     visit(ast, { //i den här visiten ska endast remote fields hanteras, inte delimiters
                         FieldDefinition(node) {

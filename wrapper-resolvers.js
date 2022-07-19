@@ -736,6 +736,14 @@ const resolvers = {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
 		undergraduateDegreeObtainedByFaculty: (parent) => {
+			parent.undergraduateDegreeObtainedByFaculty.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
 			return (parent.undergraduateDegreeObtainedByFaculty !== undefined) ? parent.undergraduateDegreeObtainedByFaculty : null;
 		},
 		departments: (parent) => {
@@ -745,6 +753,14 @@ const resolvers = {
 			return (parent.undergraduateDegreeObtainedBystudent !== undefined) ? parent.undergraduateDegreeObtainedBystudent : null;
 		},
 		doctoralDegreeObtainers: (parent) => {
+			parent.doctoralDegreeObtainers.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
 			return (parent.doctoralDegreeObtainers !== undefined) ? parent.doctoralDegreeObtainers : null;
 		},
 	},
@@ -756,6 +772,14 @@ const resolvers = {
 			return (parent.subOrganizationOf !== undefined) ? parent.subOrganizationOf : null;
 		},
 		faculties: (parent) => {
+			parent.faculties.forEach(child => {
+				if(child.__typename === "Professor") {
+					child.__typename = "WrappedProfessor"
+				}
+				if(child.__typename === "Lecturer") {
+					child.__typename = "WrappedLecturer"
+				}
+			})
 			return (parent.faculties !== undefined) ? parent.faculties : null;
 		},
 		head: (parent) => {
@@ -765,6 +789,13 @@ const resolvers = {
 			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
 		},
 		subOrganizationOfDoctorsPhones: (parent) => {
+			let result = [];
+			if(parent.subOrganizationOf.doctoralDegreeObtainers !== undefined) {
+				parent.subOrganizationOf.doctoralDegreeObtainers.forEach(child => {
+					result.push(child.telephone);
+				})
+			}
+			return result;
 			return (parent.subOrganizationOf.doctoralDegreeObtainers.telephone !== undefined) ? parent.subOrganizationOf.doctoralDegreeObtainers.telephone : null;
 		},
 	},

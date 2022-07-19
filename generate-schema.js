@@ -450,8 +450,8 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName) && 
                 builtInScalars.includes(directivesUsed[i].fieldValue) === false
             ) {
-                if(directivesUsed[i].fieldValue.charAt(directivesUsed[i].fieldValue.length-1) === "]"){
-                    directivesUsed[i].fieldValue = directivesUsed[i].fieldValue.slice(1,-1)
+                if(Array.isArray(directivesUsed[i].fieldValue)) {
+                    directivesUsed[i].fieldValue = directivesUsed[i].fieldValue[0]
                 }
 
                 text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
@@ -575,8 +575,8 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
                 // If the field does not have a built-in scalar value type, we must extract the nested values via the "correct" extracting function.
                 if(directivesUsed[i].argumentName === "field" && builtInScalars.includes(directivesUsed[i].fieldValue) === false) {
 
-                    if(directivesUsed[i].fieldValue.charAt(directivesUsed[i].fieldValue.length-1) === "]"){
-                        directivesUsed[i].fieldValue = directivesUsed[i].fieldValue.slice(1,-1)
+                    if(Array.isArray(directivesUsed[i].fieldValue)) { 
+                        directivesUsed[i].fieldValue = directivesUsed[i].fieldValue[0];
                     }
 
                     text += `${generateIndentation(6)}if(selection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
