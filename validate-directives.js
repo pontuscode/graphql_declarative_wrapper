@@ -337,7 +337,25 @@ const parseSchemaDirectives = function(schema) {
 }
 
 const findNameOfRemoteType = function(currentType, directivesUsed, visitingObjectType = true) {
-    console.log(currentType);
+    let remoteType = "";
+    directivesUsed.forEach(directive => {
+        if(directive.directive === "wrap") {
+            if(visitingObjectType === true) {
+                if(directive.argumentName === "type") {
+                    if(directive.objectTypeName === currentType) {
+                        remoteType = directive.remoteObjectTypeName;
+                    }
+                }
+            } else if(visitingObjectType === false) {
+                if(directive.argumentName === "interface") {
+                    if(directive.interfaceTypeName === currentType) {
+                        remoteType = directive.remoteInterfaceTypeName;
+                    }
+                }
+            }
+        }
+    })
+    return (remoteType !== "") ? remoteType : undefined;
 }
 
 const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
@@ -345,7 +363,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
     let nextType;
     let visitingObjectType = false;
     let valid = true;
-    let errorMessage;
+    let errorMessage = "";
     for(let i = 0; i < item.argumentValues.length; i++) {
         if(valid === true) {
         // These variables are used in multiple places further down in the loop.
@@ -375,7 +393,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                             if(i !== (item.argumentValues.length - 1)) { // If it is a scalar and we are not at the last step of the path, then validation should fail.
                                                 foundField = false;
                                                 errorMessage = `The value type can only be a built-in scalar on the last step of the path.\n`;
-                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in type '${item.objectTypeName}'\n`;
+                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in object type '${item.objectTypeName}'\n`;
                                             } else {
                                                 foundField = true;
                                             }
@@ -383,7 +401,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                             if(i === (item.argumentValues.length - 1)) { // If it is not a scalar, but we are at the last step of the path, then validation should fail.
                                                 valid = false;
                                                 errorMessage = `The value type of the last step in the path must be a built-in scalar.\n`;
-                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in type '${item.objectTypeName}'.\n`;
+                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in object type '${item.objectTypeName}'.\n`;
                                             } else {
                                                 nextType = directive.fieldValue;
                                                 foundField = true;
@@ -392,9 +410,34 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                     }
                                 }
                             }
-                        } else {
+                        } else if(visitingObjectType === false) {
                             if(directive.argumentName === "interface") {
-
+                                if(directive.interfaceTypeName === item.interfaceTypeName) {
+                                    // If the directive's argument was either field or path, check the field's name and value type
+                                    if(directive.argumentName === "field" || directive.argumentName === "path") {
+                                        // If the field name of the directive matches the first value in the path, then either: 
+                                        if(directive.fieldName === item.argumentValues[0].value) {
+                                            if(builtInScalars.includes(directive.fieldValue)) { // ensure it is the last step of the path (if it is a scalar)
+                                                if(i !== (item.argumentValues.length - 1)) { // If it is a scalar and we are not at the last step of the path, then validation should fail.
+                                                    foundField = false;
+                                                    errorMessage = `The value type can only be a built-in scalar on the last step of the path.\n`;
+                                                    errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in interface type '${item.interfaceTypeName}'\n`;
+                                                } else {
+                                                    foundField = true;
+                                                }
+                                            } else { // save the value type of that field as the next step in the path (if it is not a built-in scalar)
+                                                if(i === (item.argumentValues.length - 1)) { // If it is not a scalar, but we are at the last step of the path, then validation should fail.
+                                                    valid = false;
+                                                    errorMessage = `The value type of the last step in the path must be a built-in scalar.\n`;
+                                                    errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in interface type '${item.interfaceTypeName}'.\n`;
+                                                } else {
+                                                    nextType = directive.fieldValue;
+                                                    foundField = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -409,7 +452,14 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                 } else if(item.remoteInterfaceTypeName !== undefined) {
                     visitingObjectType = false;
                 }
+                // Find the matching remote type in the remote schema
                 remoteType = findNameOfRemoteType(nextType, directivesUsed, visitingObjectType);
+                // If we could not find a matching remote type, then validation should fail
+                if(remoteType === undefined) {
+                    valid = false;
+                    errorMessage = `Could not find type in remote schema that is wrapped by '${nextType}'.\n`;
+                    break;
+                }
                 remoteSchema.definitions.forEach(ast => {
                     if(valid === true) {
                         visit(ast, {
@@ -430,13 +480,15 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                             foundField = true;
                                                         } else {
                                                             valid = false;
-                                                            errorMessage = `Cannot traverse path with built-in scalars as non-leaf nodes. Check argument ${i} in your argument list.\n`;
+                                                            errorMessage = `Cannot traverse path with built-in scalars as non-leaf nodes. Check argument ${i+1} in your argument list.\n`;
+                                                            return;
                                                         }
                                                     } else { // If it is not a built-in scalar, check the reverse case
                                                         if(i < (item.argumentValues.length - 1)) {
                                                             valid = false;
                                                             errorMessage = `Cannot end 'path' on an object or interface type ('${fieldValue}').\n`
                                                             errorMessage += `The path must end on a field in this type.\n`;
+                                                            return;
                                                         } else {
                                                             foundField = true;
                                                         }
@@ -446,8 +498,10 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                         })
                                         if(foundField === false) {
                                             valid = false;
-                                            errorMessage = `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
-                                            errorMessage += `Could not find field '${item.argumentValues[i].value}' in remote type.\n`;
+                                            if(errorMessage === "") { // If we have not yet assigned the error message with a value, then add the "generic" error with location info.
+                                                errorMessage = `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
+                                                errorMessage += `Could not find field '${item.argumentValues[i].value}' in remote type '${remoteType}'.\n`;
+                                            }
                                         }
                                     }
                                 }
