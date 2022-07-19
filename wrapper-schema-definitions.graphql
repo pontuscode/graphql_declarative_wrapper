@@ -12,7 +12,7 @@ type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID
     doctoralDegreeObtainers: [WrappedFaculty] @wrap(field: "doctoralDegreeObtainers")
 }
 
-interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: ID!)") {
+interface WrappedFaculty @wrap(singleQuery: "faculty(nr: ID!)", interface: "Faculty") {
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")

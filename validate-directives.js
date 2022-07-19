@@ -1130,8 +1130,13 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
         });   
     } else { // If this else-statement is reached, the user has used the 'wrap' directive incorrectly
         found = false;
-        errorMessage = `Unknown wrapping argument '${item.argumentName}'.\n`;
-        errorMessage += `If you are wrapping an object or interface type, make sure the first argument is "type" or "interface".\n`;
+        if(item.objectTypeName !== undefined) {
+            errorMessage = `Unknown wrapping argument '${item.argumentName}' in object type '${item.objectTypeName}'.\n`;
+        } else if (item.interfaceTypeName !== undefined) {
+            errorMessage = `Unknown wrapping argument '${item.argumentName}' in interface type '${item.interfaceTypeName}'.\n`;
+        } else {
+            errorMessage = `Unknown wrapping argument '${item.argumentName}'.\n`;
+        }
     }
     return { 
         "valid": found,
