@@ -28,11 +28,12 @@ type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID
     id: ID! @wrap(field: "id")
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
-    head: WrappedProfessor @wrap(field: "head") # @wrap(path: ["head"]) Detta ska inte vara möjligt. WrappedProfessor är inte en lövnod!!
-    headEmailAddress: String @wrap(path: ["head", "emailAddress"])
+    head: WrappedProfessor @wrap(field: "head") 
+    headEmailAddress: String! @wrap(path: ["head", "emailAddress"])
+    subOrganizationOfDoctorsPhones: [String] @wrap(path: ["subOrganizationOf", "doctoralDegreeObtainers", "telephone"])
 }
 
-interface WrappedAuthor @wrap(interface: "Author") {
+interface WrappedAuthor @wrap(interface: "Author"){#, includeAllFields: true)# {
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
@@ -44,7 +45,7 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
     emailAddress: String @wrap(field: "emailAddress")
     researchInterest: String @wrap(field: "researchInterest")
     profType: String @wrap(field: "profType")
-    newEmail:  String @concatenate(values: ["new", "emailAddress"])
+    newEmail: String @concatenate(values: ["new", "emailAddress"])
     contactInfo: String @concatenate(values: ["telephone", "emailAddress"])
     concatFour: String @concatenate(values: ["telephone", "emailAddress", "researchInterest", "profType"])
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
@@ -81,7 +82,7 @@ type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStuden
 
 type WrappedResearchGroup @wrap(type: "ResearchGroup", singleQuery: "researchGroup(nr: ID!)") { 
     id: ID! @wrap(path: ["id"])
-    subOrganizationOf: WrappedDepartment @wrap(field: "subOrganizationOf") # @wrap(path: ["subOrganizationOf"]*) Detta ska inte vara möjligt. WrappedProfessor är inte en lövnod!!
+    subOrganizationOf: WrappedDepartment @wrap(field: "subOrganizationOf")
 } 
 
 type WrappedPublication @wrap(type: "Publication") { 

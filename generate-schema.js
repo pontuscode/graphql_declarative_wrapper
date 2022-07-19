@@ -266,17 +266,17 @@ const generateWrapQueryPath = function(directivesUsed, selectionName, selectionS
         ${generateIndentation(indentationOffset + 1)}${selectionSetName}.selections.push( {
     `;
     
-    for(let i = 0; i < directivesUsed.argumentValues[0].length; i++) {
-        if(i === directivesUsed.argumentValues[0].length - 1) { // If we are at the last element in the list
+    for(let i = 0; i < directivesUsed.argumentValues.length; i++) {
+        if(i === directivesUsed.argumentValues.length - 1) { // If we are at the last element in the list
             text += `
                 ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
                 ${generateIndentation((i*2) + indentationOffset)}name: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[0][i].value}"
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
                 ${generateIndentation((i*2) + indentationOffset)}}
             `;
             /* Loop to close out all brackets and square parenthesis */
-            for(let j = 0; j < directivesUsed.argumentValues[0].length - 1; j++) { 
+            for(let j = 0; j < directivesUsed.argumentValues.length - 1; j++) { 
                 // Close selections object }, selections list ], selection set } 
                 text += `
                     ${generateIndentation(i - (j*2) + indentationOffset - 1)}}]
@@ -289,7 +289,7 @@ const generateWrapQueryPath = function(directivesUsed, selectionName, selectionS
                 ${generateIndentation((i*2) + indentationOffset)}kind: Kind.FIELD,
                 ${generateIndentation((i*2) + indentationOffset)}name: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.NAME,
-                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[0][i].value}"
+                ${generateIndentation((i*2) + indentationOffset + 1)}value: "${directivesUsed.argumentValues[i].value}"
                 ${generateIndentation((i*2) + indentationOffset)}}, 
                 ${generateIndentation((i*2) + indentationOffset)}selectionSet: {
                 ${generateIndentation((i*2) + indentationOffset + 1)}kind: Kind.SELECTION_SET,
@@ -315,7 +315,7 @@ const parseConcArgs = function(directive, rsDef) {
             remoteFields = definition.fields;
     })
     let nameFound;
-    directive.argumentValues[0].forEach(value => {
+    directive.argumentValues.forEach(value => {
         nameFound = false;
         remoteFields.forEach(field => {
             if(value.value === field.name.value) {
