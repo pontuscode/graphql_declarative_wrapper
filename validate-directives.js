@@ -594,45 +594,26 @@ const validateConcatenate = function(item, remoteSchema) {
             "errorMessage": "concatenate only accepts the 'values' argument"
         }
     }
-    if(WrappedTypes.includes(item.objectTypeName)){ // There is only 1 argument, called "values" (type conversion from ['values'] to 'values')
-    //   The include check makes sure that the type is wrapped, all directives have to fulfill this requirement.
-      // commonType = item.fieldValue
+    if(WrappedTypes.includes(item.objectTypeName)){
 
-      // if a field does not have a wrap directive, the default behavior is that it corresponds to a field
-      // directly copied from the remote schema. If the remote schema does not have the field, then the
-      // validation algorithm should hallt.
 
-    //   if(item.remoteObjectTypeName == undefined) {
-    //     errorMessage = "The object which concatenate resides in is not wrapped";
-    //     return { 
-    //         "valid": false,
-    //         "errorMessage": errorMessage
-    //     }
-    //   }      
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
-        // console.log(item.fieldValue)
         if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
             nonNullable = true;
         if(item.fieldValue.charAt(item.fieldValue.length-1) === "]")
             listType = true;
         let counter = 0;
-        // console.log(item)
         let found = false;
         let commonType = "Not set";
-        // remoteSchema.definitions.forEach(ast => {
         for(ast of remoteSchema.definitions){
             if(ast.name.value === item.remoteObjectTypeName && !found) {
-                // item.argumentValues[0].forEach(arg => {
                 for(arg of item.argumentValues[0]){
                     let argFound = false;
-                    // console.log(arg);
                     visit(ast, { //i den här visiten ska endast remote fields hanteras, inte delimiters
                         FieldDefinition(node) {
                             counter += 1
-                            // console.log(arg.value)
                             if(node.name.value === arg.value){
                                 argFound = true;
-                                // console.log(commonType)
                                 if(commonType === "Not set"){
                                     commonType = node.type.name.value;
                                 }   
@@ -674,52 +655,6 @@ const validateConcatenate = function(item, remoteSchema) {
                 }
                 
             }
-
-
-
-
-            // if(ast.name.value === item.remoteObjectTypeName && !found){
-            //   item.argumentValues.forEach(arg =>{ //Here it was argumentvalues[0], don't remember why but it does not work now. 
-            //     let CorrectargType = false;
-            //     let argFound = false;
-            //     ast.fields.forEach(field => {
-            //       if(field.name.value == arg.value){
-            //         argFound = false;
-                    
-            //         CorrectargType = false;
-            //         if(field.type.kind === "NamedType"){
-            //           if(field.type.name.value.toLowerCase() === typeof(item.fieldValue) && !nonNullable){
-            //             argFound = true;
-            //             CorrectargType = true;
-            //           }
-            //           else valid=false;
-            //         }
-            //         else if(field.type.kind === "ListType"){
-            //           if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && !nonNullable){
-            //             argFound = true;
-            //             CorrectargType = true;
-            //           }
-            //           else valid = false;
-            //         }
-            //         else if(field.type.kind === "NonNullType"){
-            //             if(field.type.type.name.value.toLowerCase() === typeof(item.fieldValue[0]) && nonNullable){
-            //               argFound = true;
-            //               CorrectargType = true;
-            //             }
-            //             else valid = false;
-            //           }
-            //       }
-            //     });
-            //     if(argFound){
-            //       if(!CorrectargType) valid = false;
-            //     }
-            //     else{
-            //       if(typeof(item.fieldValue) !== "string") valid = false;
-            //     }
-                
-            //   });
-            //   found = true;
-            // }
         };
         return {
             "valid": valid,
