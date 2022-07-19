@@ -27,7 +27,7 @@ type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID
     id: ID! @wrap(field: "id")
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
-    head: WrappedProfessor @wrap(field: "head") # @wrap(path: ["head"]) Detta ska inte vara möjligt. WrappedProfessor är inte en lövnod!!
+    head: WrappedProfessor @wrap(field: "head") 
     headEmailAddress: String @wrap(path: ["head", "emailAddress"])
 }
 
@@ -80,7 +80,7 @@ type WrappedGraduateStudent implements WrappedAuthor @wrap(type: "GraduateStuden
 
 type WrappedResearchGroup @wrap(type: "ResearchGroup", singleQuery: "researchGroup(nr: ID!)") { 
     id: ID! @wrap(path: ["id"])
-    subOrganizationOf: WrappedDepartment @wrap(field: "subOrganizationOf") # @wrap(path: ["subOrganizationOf"]*) Detta ska inte vara möjligt. WrappedProfessor är inte en lövnod!!
+    subOrganizationOf: WrappedDepartment @wrap(field: "subOrganizationOf")
 } 
 
 type WrappedPublication @wrap(type: "Publication") { 
