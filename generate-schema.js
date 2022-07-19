@@ -161,58 +161,8 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
         }
     }
     fileContent += "}\n";
-/*
-    fileContent += "const extractNestedFields = (selection,selectionType) => {\n";
-    fileContent += `${generateIndentation(1)}let result = {\n`;
-    fileContent += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
-    fileContent += `${generateIndentation(2)}selections: []\n`;
-    fileContent += `${generateIndentation(1)}}\n`;
-
-
-    fileContent += `${generateIndentation(1)}let remoteResolver\n`;
-    fileContent += `${generateIndentation(1)}if(selectionType !== undefined){\n`;
-    fileContent += `${generateIndentation(2)}if(selectionType._fields){\n`;
-    fileContent += `${generateIndentation(3)}remoteResolver = selectionType._fields[selection.name.value].type\n`;
-    fileContent += `${generateIndentation(2)}}\n`;
-    fileContent += `${generateIndentation(2)}else{\n`;
-    fileContent += `${generateIndentation(3)}remoteResolver = selectionType.ofType._fields[selection.name.value].type\n`;
-    fileContent += `${generateIndentation(2)}}\n`;
-    fileContent += `${generateIndentation(1)}}\n`;
-    fileContent += `${generateIndentation(1)}selection.selectionSet.selections.forEach(nestedSelection => {\n`;
-    fileContent += `${generateIndentation(2)}if(nestedSelection.selectionSet != undefined) {\n`;
-    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
-    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
-    fileContent += `${generateIndentation(4)}name: {\n`;
-    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
-    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
-    fileContent += `${generateIndentation(4)}},\n`;
-    fileContent += `${generateIndentation(4)}selectionSet: extractNestedFields(nestedSelection, remoteResolver)\n`;
-    fileContent += `${generateIndentation(3)}})\n`;
-    fileContent += `${generateIndentation(2)}} else {\n`;
-    fileContent += `${generateIndentation(3)}result.selections.push({\n`;
-    fileContent += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
-    fileContent += `${generateIndentation(4)}name: {\n`;
-    fileContent += `${generateIndentation(5)}kind: Kind.NAME,\n`;
-    fileContent += `${generateIndentation(5)}value: nestedSelection.name.value\n`;
-    fileContent += `${generateIndentation(4)}}\n`;
-    fileContent += `${generateIndentation(3)}})\n`;
-    fileContent += `${generateIndentation(2)}}\n`;
-
-    fileContent += `${generateIndentation(2)}if(remoteResolver._fields){`
-    fileContent += extractNestedFieldsTextOne;
-    fileContent += `${generateIndentation(1)}}else{`;
-    fileContent += extractNestedFieldsTextTwo;
-    fileContent += `${generateIndentation(0)}}\n`;
-
-    fileContent += `${generateIndentation(1)}})\n`;
-    fileContent += `${generateIndentation(1)}return result;\n`;
-    fileContent += "}\n\n";
-*/
-
     fileContent += writeNestedExtractFunctions(directivesUsed, remoteSchema.document.definitions);
-
     fileContent += "module.exports = resolvers;\n";
-
     await fs.writeFile("wrapper-resolvers.js", fileContent);
     typeDefFileContent += "\n}";
 
