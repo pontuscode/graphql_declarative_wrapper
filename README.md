@@ -1,20 +1,21 @@
 # Todo
 
-## Fix traversePath in the validation algorithm
+##Important
 
-## Implement/finish wrap validation for field definitions
+### Fix traversePath in the validation algorithm
 
-## Add proper error messages to everything, both validation and generation errors
+### Implement/finish wrap validation for field definitions
 
-## Change concatenate validation. If object type is not wrapped, then return false
+### Add proper error messages to everything, both validation and generation errors
 
-## Revamp concatenate validation.
-
-## Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example)
+### Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example)
 
 
+Done/Not required
 
+### Change concatenate validation. If object type is not wrapped, then return false - done
 
+### Revamp concatenate validation. - done
 
 ### Add checks before overwriting files during schema generation (check if file exists)
 
