@@ -165,7 +165,29 @@ const resolvers = {
 									},
 								})
 							}
-						if(selection.name.value === "undergraduateDegreeFrom") {
+
+        						if(selection.name.value === "contactInfo") {
+        
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "telephone"
+                    						}
+                    					}
+                    				)
+                
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "emailAddress"
+                    						}
+                    					}
+                    				)
+                
+        						}
+        						if(selection.name.value === "undergraduateDegreeFrom") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -1140,6 +1162,29 @@ const extractNestedWrappedFacultyFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "contactInfo") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "telephone"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "emailAddress"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
 			result.selections.push({
 				kind: Kind.FIELD,

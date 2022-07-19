@@ -16,6 +16,7 @@ interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: I
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
+    contactInfo: String @concatenate(values: ["telephone", "emailAddress"])
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
     doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")

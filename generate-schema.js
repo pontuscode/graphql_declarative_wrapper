@@ -309,6 +309,7 @@ const parseConcArgs = function(directive, rsDef) {
     let remoteName = directive.remoteObjectTypeName;
     returnList = [];
     let remoteFields;
+    
     rsDef.forEach(definition => {
         if(definition.name.value === remoteName)
             remoteFields = definition.fields;
@@ -330,7 +331,9 @@ const parseConcArgs = function(directive, rsDef) {
 }
 
 const generateConcatenateField = function(directive, rsDef, remoteResolver) {
+    // console.log(directive)
     const concValues = parseConcArgs(directive,rsDef);
+    // console.log(concValues)
     let text = "";
     let extractNestedFieldsTextOne = ""
     let extractNestedFieldsTextTwo = ""
@@ -395,6 +398,7 @@ const addConcatenateResolvers = function(directive, rsDef) {
     text += `
         ${generateIndentation(0)}${concDirective[0]}: async(parent) => {
     `;
+    
     concDirective[2].forEach(value => {    
 
         if(value[1]){
@@ -487,6 +491,7 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
             }
         }
         if(directivesUsed[i].directive === "concatenate" && (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)) {
+            // console.log(directivesUsed[i])
             let concValues = parseConcArgs(directivesUsed[i], rsDef);
             text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
             concValues.forEach(field => {

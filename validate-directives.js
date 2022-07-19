@@ -50,7 +50,6 @@ const parseValue = function(node) {
         }
     });
 
-    // console.log(returnValue)
     return returnValue;
 }
 
@@ -298,12 +297,16 @@ const parseSchemaDirectives = function(schema) {
                         let remote;
                         
                         
-                        if(remoteObjectTypeName !== undefined) {
-                            remote = remoteObjectTypeName;
-                        }
-                        else if(remoteInterfaceTypeName !== undefined) {
+
+                        if(remoteInterfaceTypeName !== undefined) {
                             remote = remoteInterfaceTypeName;
                         } 
+                        else if(remoteObjectTypeName !== undefined) {
+                            remote = remoteObjectTypeName;
+                            
+                        }
+
+                        
                         let temp = {
                             "remoteObjectTypeName": remote,
                             "objectTypeName": ast.name.value,
@@ -320,9 +323,9 @@ const parseSchemaDirectives = function(schema) {
                         directivesUsed.push(temp);
                     }
                 }
-
             }
         });
+        remoteInterfaceTypeName = undefined;
     });
     return {
         "directivesUsed": directivesUsed,
@@ -594,7 +597,7 @@ const validateConcatenate = function(item, remoteSchema) {
             "errorMessage": "concatenate only accepts the 'values' argument"
         }
     }
-    if(WrappedTypes.includes(item.objectTypeName)){
+    if(WrappedTypes.includes(item.objectTypeName) || true){
 
 
       // console.log(typeof(item.fieldValue)); //  IF THIS IS OBJECT, IT IS A LIST, CHECK TYPE INSIDE IT AGAIN
