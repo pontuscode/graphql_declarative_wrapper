@@ -1,6 +1,6 @@
 # Todo
 
-##Important
+#Important
 
 ### Fix traversePath in the validation algorithm
 
@@ -8,10 +8,11 @@
 
 ### Add proper error messages to everything, both validation and generation errors
 
-### Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example)
 
 
-Done/Not required
+#Done/Not required
+
+### Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example) - done
 
 ### Change concatenate validation. If object type is not wrapped, then return false - done
 
