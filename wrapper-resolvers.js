@@ -325,6 +325,42 @@ const resolvers = {
         							})
         						}
     
+        						if(selection.name.value === "subOrganizationOfDoctorsPhones") {
+        							newSelectionSet.selections.push( {
+    
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "subOrganizationOf"
+                						}, 
+                						selectionSet: {
+                							kind: Kind.SELECTION_SET,
+                							selections: [{
+            
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "doctoralDegreeObtainers"
+                								}, 
+                								selectionSet: {
+                									kind: Kind.SELECTION_SET,
+                									selections: [{
+            
+                										kind: Kind.FIELD,
+                										name: {
+                											kind: Kind.NAME,
+                											value: "telephone"
+                										}
+            
+                    							}]
+                    						}
+                
+                    					}]
+                    				}
+                
+        							})
+        						}
+    
         				})
 
         				return newSelectionSet;
@@ -705,6 +741,9 @@ const resolvers = {
 		},
 		headEmailAddress: (parent) => {
 			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
+		},
+		subOrganizationOfDoctorsPhones: (parent) => {
+			return (parent.subOrganizationOf.doctoralDegreeObtainers.telephone !== undefined) ? parent.subOrganizationOf.doctoralDegreeObtainers.telephone : null;
 		},
 	},
 	WrappedProfessor: {
@@ -1234,6 +1273,42 @@ const extractNestedWrappedDepartmentFields = (selection) => {
                 			value: "emailAddress"
                 		}
             
+                    }]
+                    }
+                
+        	})
+        }
+    
+        if(nestedSelection.name.value === "subOrganizationOfDoctorsPhones") {
+        	result.selections.push( {
+    
+                kind: Kind.FIELD,
+                name: {
+                	kind: Kind.NAME,
+                	value: "subOrganizationOf"
+                }, 
+                selectionSet: {
+                	kind: Kind.SELECTION_SET,
+                	selections: [{
+            
+                		kind: Kind.FIELD,
+                		name: {
+                			kind: Kind.NAME,
+                			value: "doctoralDegreeObtainers"
+                		}, 
+                		selectionSet: {
+                			kind: Kind.SELECTION_SET,
+                			selections: [{
+            
+                				kind: Kind.FIELD,
+                				name: {
+                					kind: Kind.NAME,
+                					value: "telephone"
+                				}
+            
+                    	}]
+                    }
+                
                     }]
                     }
                 
