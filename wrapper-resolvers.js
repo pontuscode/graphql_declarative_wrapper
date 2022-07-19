@@ -792,11 +792,10 @@ const resolvers = {
 			let result = [];
 			if(parent.subOrganizationOf.doctoralDegreeObtainers !== undefined) {
 				parent.subOrganizationOf.doctoralDegreeObtainers.forEach(child => {
-					result.push(child.telephone);
+					result.push(child.telephone)
 				})
 			}
 			return result;
-			return (parent.subOrganizationOf.doctoralDegreeObtainers.telephone !== undefined) ? parent.subOrganizationOf.doctoralDegreeObtainers.telephone : null;
 		},
 	},
 	WrappedProfessor: {
@@ -1016,106 +1015,6 @@ const resolvers = {
 		},
 	},
 }
-const extractNestedFields = (selection,selectionType) => {
-	let result = {
-		kind: Kind.SELECTION_SET, 
-		selections: []
-	}
-	let remoteResolver
-	if(selectionType !== undefined){
-		if(selectionType._fields){
-			remoteResolver = selectionType._fields[selection.name.value].type
-		}
-		else{
-			remoteResolver = selectionType.ofType._fields[selection.name.value].type
-		}
-	}
-	selection.selectionSet.selections.forEach(nestedSelection => {
-		if(nestedSelection.selectionSet != undefined) {
-			result.selections.push({
-				kind: Kind.FIELD,
-				name: {
-					kind: Kind.NAME,
-					value: nestedSelection.name.value
-				},
-				selectionSet: extractNestedFields(nestedSelection, remoteResolver)
-			})
-		} else {
-			result.selections.push({
-				kind: Kind.FIELD,
-				name: {
-					kind: Kind.NAME,
-					value: nestedSelection.name.value
-				}
-			})
-		}
-		if(remoteResolver._fields){
-        	if(remoteResolver.name.value === "GraduateStudent"){
-        		if(nestedSelection.name.value === "newEmail"){
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "emailAddress"
-                    	}
-                    })
-        		}
-        	}
-        
-        	if(remoteResolver.name.value === "GraduateStudent"){
-        		if(nestedSelection.name.value === "contactInfo"){
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "telephone"
-                    	}
-                    })
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "emailAddress"
-                    	}
-                    })
-        		}
-        	}
-        	}else{
-        	if(remoteResolver.ofType.name === "GraduateStudent"){
-        		if(nestedSelection.name.value === "newEmail"){
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "emailAddress"
-                    	}
-                    })
-        		}
-        	}
-        
-        	if(remoteResolver.ofType.name === "GraduateStudent"){
-        		if(nestedSelection.name.value === "contactInfo"){
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "telephone"
-                    	}
-                    })
-                    result.selections.push( {
-                    	kind: Kind.FIELD,
-                    	name: {
-                    		kind: Kind.NAME,
-                    		value: "emailAddress"
-                    	}
-                    })
-        		}
-        	}
-        }
-	})
-	return result;
-}
-
 const extractNestedWrappedUniversityFields = (selection) => {
 	let result = {
 		kind: Kind.SELECTION_SET, 

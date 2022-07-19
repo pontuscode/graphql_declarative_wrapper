@@ -161,7 +161,7 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
         }
     }
     fileContent += "}\n";
-
+/*
     fileContent += "const extractNestedFields = (selection,selectionType) => {\n";
     fileContent += `${generateIndentation(1)}let result = {\n`;
     fileContent += `${generateIndentation(2)}kind: Kind.SELECTION_SET, \n`;
@@ -207,7 +207,7 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     fileContent += `${generateIndentation(1)}})\n`;
     fileContent += `${generateIndentation(1)}return result;\n`;
     fileContent += "}\n\n";
-
+*/
 
     fileContent += writeNestedExtractFunctions(directivesUsed, remoteSchema.document.definitions);
 
@@ -331,9 +331,7 @@ const parseConcArgs = function(directive, rsDef) {
 }
 
 const generateConcatenateField = function(directive, rsDef, remoteResolver) {
-    // console.log(directive)
     const concValues = parseConcArgs(directive,rsDef);
-    // console.log(concValues)
     let text = "";
     let extractNestedFieldsTextOne = ""
     let extractNestedFieldsTextTwo = ""
@@ -546,7 +544,6 @@ const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
 
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
     let concValues = [];
-    let upperCaseResolver = upperCase(remoteResolver.resolver)
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const data = await delegateToSchema({
@@ -686,30 +683,52 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
         text += `${generateIndentation(3)}return (parent.${currentDirective.argumentValues} !== undefined) ? parent.${currentDirective.argumentValues} : null;\n`;
         text += `${generateIndentation(2)}},\n`;
     } else if(currentDirective.argumentName === "path") {
-        text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
-        if(Object.keys(interfaceTypeResolvers).length > 0) {
-            text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
-            Object.entries(interfaceTypeResolvers).forEach(entry => {
-                const [name, value] = entry;
-                text += `${generateIndentation(4)}if(child.__typename === "${name}") {\n`;
-                text += `${generateIndentation(5)}child.__typename = "${value}"\n`;
-                text += `${generateIndentation(4)}}\n`;
-            });
-            text += `${generateIndentation(3)}})\n`;
-        }
-        let path = "parent.";
-        for(let i = 0; i < currentDirective.argumentValues.length; i++) {
-            path += currentDirective.argumentValues[i].value;
-            // If we're not on the last element
-            if(i !== (currentDirective.argumentValues.length - 1)) {
-                path += ".";
+        // If the path does not include any lists, then we can just map the value to the full path
+        if(Array.isArray(currentDirective.fieldValue) === false) {
+            text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
+            if(Object.keys(interfaceTypeResolvers).length > 0) {
+                text += `${generateIndentation(3)}parent.${currentDirective.fieldName}.forEach(child => {\n`;
+                Object.entries(interfaceTypeResolvers).forEach(entry => {
+                    const [name, value] = entry;
+                    text += `${generateIndentation(4)}if(child.__typename === "${name}") {\n`;
+                    text += `${generateIndentation(5)}child.__typename = "${value}"\n`;
+                    text += `${generateIndentation(4)}}\n`;
+                });
+                text += `${generateIndentation(3)}})\n`;
             }
+            let path = "parent.";
+            for(let i = 0; i < currentDirective.argumentValues.length; i++) {
+                path += currentDirective.argumentValues[i].value;
+                // If we're not on the last element
+                if(i !== (currentDirective.argumentValues.length - 1)) {
+                    path += ".";
+                }
+            }
+            text += `${generateIndentation(3)}return (${path} !== undefined) ? ${path} : null;\n`;
+            text += `${generateIndentation(2)}},\n`;
+        // If the path DOES include lists, we must create a loop to extract all values from the list
+        } else if(Array.isArray(currentDirective.fieldValue) === true) {
+            text += `${generateIndentation(2)}${currentDirective.fieldName}: (parent) => {\n`;
+            text += `${generateIndentation(3)}let result = [];\n`;
+            let path = "parent.";
+            // Find the path to the second-to-last element. This is the object we will iterate over later.
+            for(let i = 0; i < currentDirective.argumentValues.length-1; i++) {
+                path += currentDirective.argumentValues[i].value;
+                // If we're not on the second-to-last element
+                if(i !== (currentDirective.argumentValues.length - 2)) {
+                    path += ".";
+                }
+            }
+            text += `${generateIndentation(3)}if(${path} !== undefined) {\n`;
+            text += `${generateIndentation(4)}${path}.forEach(child => {\n`;
+            text += `${generateIndentation(5)}result.push(child.${currentDirective.argumentValues[currentDirective.argumentValues.length-1].value})\n`;
+            text += `${generateIndentation(4)}})\n`;
+            text += `${generateIndentation(3)}}\n`;
+            text += `${generateIndentation(3)}return result;\n`;
+            text += `${generateIndentation(2)}},\n`;
         }
-        text += `${generateIndentation(3)}return (${path} !== undefined) ? ${path} : null;\n`;
-        text += `${generateIndentation(2)}},\n`;
-    } else if(currentDirective.argumentName === "concatenate") {
-        console.log("hey!");
     }
+
     return text;
 }
 
