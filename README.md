@@ -1,16 +1,16 @@
 # Todo
 
-#Important
-
-### Fix traversePath in the validation algorithm
-
-### Implement/finish wrap validation for field definitions
+## Important
 
 ### Add proper error messages to everything, both validation and generation errors
 
+### Add generation steps for object and interface types that have enabled includeAllFields
 
+## Done/Not required
 
-#Done/Not required
+### Fix traversePath in the validation algorithm - done
+
+### Implement/finish wrap validation for field definitions - done
 
 ### Add functionality for concatenate on types wrapping an interface (wrappedFaculty for example) - done
 
