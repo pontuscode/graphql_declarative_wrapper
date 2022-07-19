@@ -201,6 +201,57 @@ const parseInterfaces = function(node) {
 //-----------------------------------------------------------------------------------//
 /**
  * 
+ * @param {*} args: the arguments of an AST node in the wrapper schema definitions
+ * @returns an object with the name of the interface type in the remote schema and the name of the argument used 
+ */
+const parseInterfaceTypeArguments = function(args) {
+    let remoteInterfaceTypeName = "";
+    let argumentName = "";
+    args.forEach(arg => {
+        if(arg.name.value === "interface") {
+            remoteInterfaceTypeName = arg.value.value;
+            argumentName = arg.name.value;
+        }
+    })
+
+    if(argumentName !== "") {
+        return {
+            "remoteInterfaceTypeName": remoteInterfaceTypeName,
+            "argumentName": argumentName
+        }
+    } else {
+        return undefined;
+    }
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} args: the arguments of an AST node in the wrapper schema definitions
+ * @returns an object with the name of the interface type in the remote schema and the name of the argument used 
+ */
+const parseObjectTypeArguments = function(args) {
+    let remoteObjectTypeName = "";
+    let argumentName = "";
+    args.forEach(arg => {
+        if(arg.name.value === "type") {
+            remoteObjectTypeName = arg.value.value;
+            argumentName = arg.name.value;
+        }
+    })
+    if(argumentName !== "") {
+        return {
+            "remoteObjectTypeName": remoteObjectTypeName,
+            "argumentName": argumentName
+        }
+    } else {
+        return undefined;
+    }
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * 
  * @param {*} directivesUsed: the list of all directives found during parsing
  * @param {*} interfaces: object that is non-null if the current object/interface type has implemented any interfaces
  * @returns an object with key-value pairs of the implemented interface names and their names in the remote schema
@@ -266,7 +317,6 @@ const parseSchemaDirectives = function(schema) {
                             if(validateInclude.valid === false) {
                                 valid = false;
                                 errorMessage = validateInclude.errorMessage;
-                                return;
                             }
                         }
                         let interfaces = parseInterfaces(node);
@@ -276,24 +326,28 @@ const parseSchemaDirectives = function(schema) {
                             errorMessage = validateInter.errorMessage;
                         }
                         currentParentType = "ObjectType";
-                        let temp = {
-                            "remoteObjectTypeName": node.directives[0].arguments[0].value.value,
-                            "objectTypeName": node.name.value,
-                            "directive": node.directives[0].name.value,
-                            "argumentName": node.directives[0].arguments[0].name.value,
-                            "argumentValues": node.directives[0].arguments[0].value.value,
-                            "resolvers": resolvers,
-                            "includeAllFields": includeExcludeFields.includeAllFields,
-                            "excludeFields": includeExcludeFields.excludeFields,
-                            "includeFields": {}, // These will be added later if includeAllFields is true,
-                            "interfaces": interfaces
-                        };
-                        if(!directivesUsed.includes(temp)){
-                            directivesUsed.push(temp); 
-                            remoteObjectTypeName = ast.directives[0].arguments[0].value.value;
+                        let remoteObjectType = parseObjectTypeArguments(node.directives[0].arguments);
+                        if(remoteObjectType !== undefined) {
+                            let temp = {
+                                "remoteObjectTypeName": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
+                                "objectTypeName": node.name.value,
+                                "directive": node.directives[0].name.value,
+                                "argumentName": remoteObjectType.argumentName, //node.directives[0].arguments[0].name.value,
+                                "argumentValues": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
+                                "resolvers": resolvers,
+                                "includeAllFields": includeExcludeFields.includeAllFields,
+                                "excludeFields": includeExcludeFields.excludeFields,
+                                "includeFields": {}, // These will be added later if includeAllFields is true,
+                                "interfaces": interfaces
+                            };
+                            if(!directivesUsed.includes(temp)){
+                                directivesUsed.push(temp); 
+                                remoteObjectTypeName = remoteObjectType.remoteObjectTypeName; //ast.directives[0].arguments[0].value.value;
+                            }
+                        } else if(remoteObjectType === undefined) {
+                            valid = false;
+                            errorMessage = `Did not find required argument 'type' in wrapping arguments for Object Type '${node.name.value}'.\n`;
                         }
-
-
                     }
                 }
             }
@@ -314,24 +368,29 @@ const parseSchemaDirectives = function(schema) {
                             if(validateInclude.valid === false) {
                                 valid = false;
                                 errorMessage = validateInclude.errorMessage;
-                                return;
                             }
                         }
-                        let temp = {
-                            "remoteInterfaceTypeName": node.directives[0].arguments[0].value.value,
-                            "interfaceTypeName": node.name.value,
-                            "directive": node.directives[0].name.value,
-                            "argumentName": node.directives[0].arguments[0].name.value,
-                            "argumentValues": node.directives[0].arguments[0].value.value,
-                            "resolvers": resolvers,
-                            "includeAllFields": includeExcludeFields.includeAllFields,
-                            "excludeFields": includeExcludeFields.excludeFields,
-                            "includeFields": {} // These will be added later if includeAllFields is true
-                        };
-                        currentParentType = "InterfaceType";
-                        if(!directivesUsed.includes(temp)){
-                            directivesUsed.push(temp); 
-                            remoteInterfaceTypeName = ast.directives[0].arguments[0].value.value;
+                        let remoteInterfaceType = parseInterfaceTypeArguments(node.directives[0].arguments);
+                        if(remoteInterfaceType !== undefined) {
+                            let temp = {
+                                "remoteInterfaceTypeName": remoteInterfaceType.remoteInterfaceTypeName,//node.directives[0].arguments[0].value.value,
+                                "interfaceTypeName": node.name.value,
+                                "directive": node.directives[0].name.value,
+                                "argumentName": remoteInterfaceType.argumentName, //node.directives[0].arguments[0].name.value,
+                                "argumentValues": remoteInterfaceType.remoteInterfaceTypeName,//node.directives[0].arguments[0].value.value,
+                                "resolvers": resolvers,
+                                "includeAllFields": includeExcludeFields.includeAllFields,
+                                "excludeFields": includeExcludeFields.excludeFields,
+                                "includeFields": {} // These will be added later if includeAllFields is true
+                            };
+                            currentParentType = "InterfaceType";
+                            if(!directivesUsed.includes(temp)){
+                                directivesUsed.push(temp); 
+                                remoteInterfaceTypeName = remoteInterfaceType.remoteInterfaceTypeName; //ast.directives[0].arguments[0].value.value;
+                            }
+                        } else if(remoteInterfaceType === undefined) {
+                            valid = false;
+                            errorMessage = `Did not find required argument 'interface' in wrapping arguments for Interface Type '${node.name.value}.\n'`;
                         }
                     }
                 }
@@ -1036,6 +1095,10 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                                     found = true;
                                 }
                                 break;
+                            default: 
+                                found = false;
+                                errorMessage = `Unknown wrapping argument '${item.argumentName}' found on field '${item.fieldName}'.\n`
+                                break;
                         }
                     }
                 });
@@ -1065,6 +1128,10 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                 }
             });
         });   
+    } else { // If this else-statement is reached, the user has used the 'wrap' directive incorrectly
+        found = false;
+        errorMessage = `Unknown wrapping argument '${item.argumentName}'.\n`;
+        errorMessage += `If you are wrapping an object or interface type, make sure the first argument is "type" or "interface".\n`;
     }
     return { 
         "valid": found,

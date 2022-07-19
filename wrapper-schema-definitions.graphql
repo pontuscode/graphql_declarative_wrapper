@@ -24,7 +24,7 @@ interface WrappedFaculty @wrap(interface: "Faculty", singleQuery: "faculty(nr: I
     worksFor: WrappedDepartment @wrap(field: "worksFor")
 }
 
-type WrappedDepartment @wrap(type: "Department", singleQuery: "department(nr: ID!)") {
+type WrappedDepartment @wrap(singleQuery: "department(nr: ID!)", type: "Department") {
     id: ID! @wrap(field: "id")
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
