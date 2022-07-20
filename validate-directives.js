@@ -538,6 +538,11 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
     let mustBeListType = false;
     let leafNodeScalarType;
     let errorMessage = "";
+    // Ensure there are values in the 'path' argument list
+    if(item.argumentValues.length === 0) {
+        valid = false;
+        errorMessage = `The length of the 'path' argument must be greater than 1, found empty list in field definition with name '${item.fieldName}'.\n`;
+    }
     for(let i = 0; i < item.argumentValues.length; i++) {
         if(valid === true) {
         // These variables are used in multiple places further down in the loop.
