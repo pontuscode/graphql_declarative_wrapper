@@ -46,7 +46,11 @@ const parseValue = function(node) {
         ListType(list) {
             visit(list, {
                 NamedType(named) {
-                    returnValue = [named.name.value];   
+                    if(list.type.kind === "NonNullType") {
+                        returnValue = [named.name.value + "!"];
+                    } else {
+                        returnValue = [named.name.value];   
+                    }
                 }
             });
         }
@@ -562,7 +566,6 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                 return;
                                             } else {
                                                 foundField = true;
-                                                //nextType = directive.fieldValue;
                                                 leafNodeScalarType = directive.fieldValue;
                                                 return;
                                             }
@@ -596,7 +599,6 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
                                                     return;
                                                 } else {
                                                     foundField = true;
-                                                    //nextType = directive.fieldValue;
                                                     leafNodeScalarType = directive.fieldValue;
                                                     return;
                                                 }

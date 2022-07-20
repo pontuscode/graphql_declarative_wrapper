@@ -323,7 +323,7 @@ const resolvers = {
 							})
 						}
 
-        						if(selection.name.value === "headEmailAddress") {
+        						if(selection.name.value === "headTelephone") {
         							newSelectionSet.selections.push( {
     
                 						kind: Kind.FIELD,
@@ -338,7 +338,7 @@ const resolvers = {
                 								kind: Kind.FIELD,
                 								name: {
                 									kind: Kind.NAME,
-                									value: "emailAddress"
+                									value: "telephone"
                 								}
             
                     						}]
@@ -347,13 +347,13 @@ const resolvers = {
         							})
         						}
     
-        						if(selection.name.value === "subOrganizationOfDoctorsPhones") {
+        						if(selection.name.value === "headUndergradFromId") {
         							newSelectionSet.selections.push( {
     
                 						kind: Kind.FIELD,
                 						name: {
                 							kind: Kind.NAME,
-                							value: "subOrganizationOf"
+                							value: "head"
                 						}, 
                 						selectionSet: {
                 							kind: Kind.SELECTION_SET,
@@ -362,7 +362,7 @@ const resolvers = {
                 								kind: Kind.FIELD,
                 								name: {
                 									kind: Kind.NAME,
-                									value: "doctoralDegreeObtainers"
+                									value: "undergraduateDegreeFrom"
                 								}, 
                 								selectionSet: {
                 									kind: Kind.SELECTION_SET,
@@ -371,7 +371,7 @@ const resolvers = {
                 										kind: Kind.FIELD,
                 										name: {
                 											kind: Kind.NAME,
-                											value: "telephone"
+                											value: "id"
                 										}
             
                     							}]
@@ -379,6 +379,54 @@ const resolvers = {
                 
                     					}]
                     				}
+                
+        							})
+        						}
+    
+        						if(selection.name.value === "headUndergradFromDoctorsId") {
+        							newSelectionSet.selections.push( {
+    
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "head"
+                						}, 
+                						selectionSet: {
+                							kind: Kind.SELECTION_SET,
+                							selections: [{
+            
+                								kind: Kind.FIELD,
+                								name: {
+                									kind: Kind.NAME,
+                									value: "undergraduateDegreeFrom"
+                								}, 
+                								selectionSet: {
+                									kind: Kind.SELECTION_SET,
+                									selections: [{
+            
+                										kind: Kind.FIELD,
+                										name: {
+                											kind: Kind.NAME,
+                											value: "doctoralDegreeObtainers"
+                										}, 
+                										selectionSet: {
+                											kind: Kind.SELECTION_SET,
+                											selections: [{
+            
+                												kind: Kind.FIELD,
+                												name: {
+                													kind: Kind.NAME,
+                													value: "id"
+                												}
+            
+                    								}]
+                    							}
+                
+                    						}]
+                    					}
+                
+                    				}]
+                    			}
                 
         							})
         						}
@@ -800,14 +848,17 @@ const resolvers = {
 		head: (parent) => {
 			return (parent.head !== undefined) ? parent.head : null;
 		},
-		headEmailAddress: (parent) => {
-			return (parent.head.emailAddress !== undefined) ? parent.head.emailAddress : null;
+		headTelephone: (parent) => {
+			return (parent.head.telephone !== undefined) ? parent.head.telephone : null;
 		},
-		subOrganizationOfDoctorsPhones: (parent) => {
+		headUndergradFromId: (parent) => {
+			return (parent.head.undergraduateDegreeFrom.id !== undefined) ? parent.head.undergraduateDegreeFrom.id : null;
+		},
+		headUndergradFromDoctorsId: (parent) => {
 			let result = [];
-			if(parent.subOrganizationOf.doctoralDegreeObtainers !== undefined) {
-				parent.subOrganizationOf.doctoralDegreeObtainers.forEach(child => {
-					result.push(child.telephone)
+			if(parent.head.undergraduateDegreeFrom.doctoralDegreeObtainers !== undefined) {
+				parent.head.undergraduateDegreeFrom.doctoralDegreeObtainers.forEach(child => {
+					result.push(child.id);
 				})
 			}
 			return result;
@@ -1255,7 +1306,7 @@ const extractNestedWrappedDepartmentFields = (selection) => {
 			})
 		}
 
-        if(nestedSelection.name.value === "headEmailAddress") {
+        if(nestedSelection.name.value === "headTelephone") {
         	result.selections.push( {
     
                 kind: Kind.FIELD,
@@ -1270,7 +1321,7 @@ const extractNestedWrappedDepartmentFields = (selection) => {
                 		kind: Kind.FIELD,
                 		name: {
                 			kind: Kind.NAME,
-                			value: "emailAddress"
+                			value: "telephone"
                 		}
             
                     }]
@@ -1279,13 +1330,13 @@ const extractNestedWrappedDepartmentFields = (selection) => {
         	})
         }
     
-        if(nestedSelection.name.value === "subOrganizationOfDoctorsPhones") {
+        if(nestedSelection.name.value === "headUndergradFromId") {
         	result.selections.push( {
     
                 kind: Kind.FIELD,
                 name: {
                 	kind: Kind.NAME,
-                	value: "subOrganizationOf"
+                	value: "head"
                 }, 
                 selectionSet: {
                 	kind: Kind.SELECTION_SET,
@@ -1294,7 +1345,7 @@ const extractNestedWrappedDepartmentFields = (selection) => {
                 		kind: Kind.FIELD,
                 		name: {
                 			kind: Kind.NAME,
-                			value: "doctoralDegreeObtainers"
+                			value: "undergraduateDegreeFrom"
                 		}, 
                 		selectionSet: {
                 			kind: Kind.SELECTION_SET,
@@ -1303,10 +1354,58 @@ const extractNestedWrappedDepartmentFields = (selection) => {
                 				kind: Kind.FIELD,
                 				name: {
                 					kind: Kind.NAME,
-                					value: "telephone"
+                					value: "id"
                 				}
             
                     	}]
+                    }
+                
+                    }]
+                    }
+                
+        	})
+        }
+    
+        if(nestedSelection.name.value === "headUndergradFromDoctorsId") {
+        	result.selections.push( {
+    
+                kind: Kind.FIELD,
+                name: {
+                	kind: Kind.NAME,
+                	value: "head"
+                }, 
+                selectionSet: {
+                	kind: Kind.SELECTION_SET,
+                	selections: [{
+            
+                		kind: Kind.FIELD,
+                		name: {
+                			kind: Kind.NAME,
+                			value: "undergraduateDegreeFrom"
+                		}, 
+                		selectionSet: {
+                			kind: Kind.SELECTION_SET,
+                			selections: [{
+            
+                				kind: Kind.FIELD,
+                				name: {
+                					kind: Kind.NAME,
+                					value: "doctoralDegreeObtainers"
+                				}, 
+                				selectionSet: {
+                					kind: Kind.SELECTION_SET,
+                					selections: [{
+            
+                						kind: Kind.FIELD,
+                						name: {
+                							kind: Kind.NAME,
+                							value: "id"
+                						}
+            
+                    		}]
+                    	}
+                
+                    }]
                     }
                 
                     }]
