@@ -63,7 +63,29 @@ const resolvers = {
 									},
 								})
 							}
-						if(selection.name.value === "undergraduateDegreeObtainedByFaculty") {
+
+        						if(selection.name.value === "doubleID") {
+        
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "id"
+                    						}
+                    					}
+                    				)
+                
+                    				newSelectionSet.selections.push( {
+                    					kind: Kind.FIELD,
+                    						name: {
+                    							kind: Kind.NAME,
+                    							value: "id"
+                    						}
+                    					}
+                    				)
+                
+        						}
+        						if(selection.name.value === "undergraduateDegreeObtainedByFaculty") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -165,29 +187,7 @@ const resolvers = {
 									},
 								})
 							}
-
-        						if(selection.name.value === "contactInfo") {
-        
-                    				newSelectionSet.selections.push( {
-                    					kind: Kind.FIELD,
-                    						name: {
-                    							kind: Kind.NAME,
-                    							value: "telephone"
-                    						}
-                    					}
-                    				)
-                
-                    				newSelectionSet.selections.push( {
-                    					kind: Kind.FIELD,
-                    						name: {
-                    							kind: Kind.NAME,
-                    							value: "emailAddress"
-                    						}
-                    					}
-                    				)
-                
-        						}
-        						if(selection.name.value === "undergraduateDegreeFrom") {
+						if(selection.name.value === "undergraduateDegreeFrom") {
 							newSelectionSet.selections.push({
 								kind: Kind.FIELD,
 								name: {
@@ -735,6 +735,21 @@ const resolvers = {
 		id: (parent) => {
 			return (parent.id !== undefined) ? parent.id : null;
 		},
+
+        doubleID: async(parent) => {
+    
+            if(parent.doubleID === undefined && parent.id !== undefined) 
+            	parent.doubleID = parent.id
+            else if(parent.id !== undefined)
+            	parent.doubleID += parent.id
+            
+            if(parent.doubleID === undefined && parent.id !== undefined) 
+            	parent.doubleID = parent.id
+            else if(parent.id !== undefined)
+            	parent.doubleID += parent.id
+            
+        	return parent.doubleID
+        },
 		undergraduateDegreeObtainedByFaculty: (parent) => {
 			parent.undergraduateDegreeObtainedByFaculty.forEach(child => {
 				if(child.__typename === "Professor") {
@@ -814,6 +829,16 @@ const resolvers = {
 		profType: (parent) => {
 			return (parent.profType !== undefined) ? parent.profType : null;
 		},
+
+        newID: async(parent) => {
+    
+            if(parent.newID === undefined && parent.id !== undefined) 
+            	parent.newID = parent.id
+            else if(parent.id !== undefined)
+            	parent.newID += parent.id
+            
+        	return parent.newID
+        },
 
         newEmail: async(parent) => {
     
@@ -1030,6 +1055,29 @@ const extractNestedWrappedUniversityFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "doubleID") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "id"
+            		}
+            	}
+            )
+                
+            
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "id"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "undergraduateDegreeObtainedByFaculty") {
 			result.selections.push({
 				kind: Kind.FIELD,
@@ -1107,29 +1155,6 @@ const extractNestedWrappedFacultyFields = (selection) => {
 				},
 			})
 		}
-		if(nestedSelection.name.value === "contactInfo") {
-
-            result.selections.push( {
-            	kind: Kind.FIELD,
-            		name: {
-            			kind: Kind.NAME,
-            			value: "telephone"
-            		}
-            	}
-            )
-                
-            
-            result.selections.push( {
-            	kind: Kind.FIELD,
-            		name: {
-            			kind: Kind.NAME,
-            			value: "emailAddress"
-            		}
-            	}
-            )
-                
-            
-        }
 		if(nestedSelection.name.value === "undergraduateDegreeFrom") {
 			result.selections.push({
 				kind: Kind.FIELD,
@@ -1354,6 +1379,19 @@ const extractNestedWrappedProfessorFields = (selection) => {
 				},
 			})
 		}
+		if(nestedSelection.name.value === "newID") {
+
+            result.selections.push( {
+            	kind: Kind.FIELD,
+            		name: {
+            			kind: Kind.NAME,
+            			value: "id"
+            		}
+            	}
+            )
+                
+            
+        }
 		if(nestedSelection.name.value === "newEmail") {
 
             result.selections.push( {

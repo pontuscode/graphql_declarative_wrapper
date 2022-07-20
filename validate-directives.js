@@ -1172,11 +1172,18 @@ const validateConcatenate = function(item, remoteSchema) {
         }
     }
     
+    if(item.argumentValues.length <1){
+        return { 
+            "valid": false,
+            "errorMessage": "the 'values' argument in concatenate requires at least one argument "
+        }
+    }
     if(WrappedTypes.includes(item.objectTypeName)){
-        if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
-            nonNullable = true;
-        if(item.fieldValue.charAt(item.fieldValue.length-1) === "]")
+        if(typeof(item.fieldValue) === "object")
             listType = true;
+        else if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
+            nonNullable = true;
+
         let counter = 0;
         let found = false;
         let commonType = "Not set";
@@ -1184,7 +1191,7 @@ const validateConcatenate = function(item, remoteSchema) {
             if(ast.name.value === item.remoteObjectTypeName && !found) {
                 for(arg of item.argumentValues){
                     let argFound = false;
-                    visit(ast, { //i den här visiten ska endast remote fields hanteras, inte delimiters
+                    visit(ast, { //in this visit, we only handle remote fields (not delimiters)
                         FieldDefinition(node) {
                             counter += 1
                             if(node.name.value === arg.value){
@@ -1192,13 +1199,15 @@ const validateConcatenate = function(item, remoteSchema) {
                                 
                                 let noError = true;
                                 if(commonType === "Not set"){
-                                    // console.log(node)
                                     switch(node.type.kind){
                                         case "NamedType":
                                             commonType = node.type.name.value;
                                             break;
-                                        case "NonNullType"||"ListType":
-                                            console.log(node.type)
+                                        case "NonNullType":
+                                            
+                                            commonType = node.type.type.name.value + "!";
+                                            break;
+                                        case "ListType":
                                             commonType = node.type.type.name.value;
                                             break;
                                     }
@@ -1207,18 +1216,21 @@ const validateConcatenate = function(item, remoteSchema) {
                                 else{
                                     switch(node.type.kind){
                                         case "NamedType": 
-                                            // console.log(commonType)
-                                            // console.log(node)
                                             if(commonType !== node.type.name.value){
                                                 valid = false;
                                                 errorMessage = "Arguments in 'values' do not share a common data type. Type was " + commonType + ", but found " +node.type.name.value;
                                                 noError = false;
                                             }
                                             break;
-                                        case "NonNullType"||"ListType":
-                                            // console.log(commonType)
-                                            // console.log(node.type.type.name.value)
+                                        case "ListType":
                                             if(commonType !== node.type.type.name.value){
+                                                valid = false;
+                                                errorMessage = "Arguments in 'values' do not share a common data type. Type was " + commonType + ", but found " +node.type.type.name.value;
+                                                noError = false;
+                                            }
+                                            break;
+                                        case "NonNullType":
+                                            if(commonType !== node.type.type.name.value+"!"){
                                                 valid = false;
                                                 errorMessage = "Arguments in 'values' do not share a common data type. Type was " + commonType + ", but found " +node.type.type.name.value;
                                                 noError = false;
@@ -1227,21 +1239,20 @@ const validateConcatenate = function(item, remoteSchema) {
                                     }
                                         
                                 }
-
-                                // else if(commonType !== node.type.name.value){
-                                //     valid = false;
-                                //     errorMessage = "Arguments in 'values' do not share a common data type";
-                                // }
+                                if(!builtInScalars.includes(commonType)){
+                                    valid = false;
+                                    errorMessage = "Concatenation can only be performed with built in scalar types. You can not use \"" + item.fieldValue + "\"" 
+                                }
                                 if(noError){
                                     if(node.type.kind === "NamedType"){
-                                        if(node.type.name.value !== item.fieldValue || nonNullable || listType){
+                                        if(commonType !== item.fieldValue || nonNullable || listType){
                                             valid = false;
                                             errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
                                             errorMessage += "\" and argument values have the type \"" + commonType +"\""
                                         }
                                     }
                                     else if(node.type.kind === "ListType"){
-                                        if(node.type.type.name.value !== item.fieldValue[0] || nonNullable || !listType)
+                                        if(commonType !== item.fieldValue[0] || nonNullable || !listType)
                                         {
                                             valid = false;
                                             errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
@@ -1249,7 +1260,7 @@ const validateConcatenate = function(item, remoteSchema) {
                                         }
                                     }
                                     else if(node.type.kind === "NonNullType"){
-                                        if(node.type.type.name.value !== item.fieldValue[0] || !nonNullable || listType){
+                                        if(commonType !== item.fieldValue || !nonNullable || listType){
                                             valid = false;
                                             errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
                                             errorMessage += "\" and argument values have the type \"" + commonType +"\""

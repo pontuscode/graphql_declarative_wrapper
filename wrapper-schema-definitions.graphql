@@ -6,6 +6,7 @@ directive @concatenate(values: [String]) on FIELD_DEFINITION
 
 type WrappedUniversity @wrap(type: "University", singleQuery: "university(nr: ID!)") {
     id: ID! @wrap(field: "id")
+    doubleID: ID! @concatenate(values: ["id", "id"])
     undergraduateDegreeObtainedByFaculty: [WrappedFaculty] @wrap(field: "undergraduateDegreeObtainedByFaculty")
     departments: [WrappedDepartment] @wrap(field: "departments")
     undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent] @wrap(field: "undergraduateDegreeObtainedBystudent")
@@ -16,7 +17,6 @@ interface WrappedFaculty @wrap(singleQuery: "faculty(nr: ID!)", interface: "Facu
     id: ID! @wrap(field: "id")
     telephone: String @wrap(field: "telephone")
     emailAddress: String @wrap(field: "emailAddress")
-    contactInfo: ID! @concatenate(values: ["id"])
     undergraduateDegreeFrom: WrappedUniversity @wrap(field: "undergraduateDegreeFrom")
     masterDegreeFrom: WrappedUniversity @wrap(field: "masterDegreeFrom")
     doctoralDegreeFrom: WrappedUniversity @wrap(field: "doctoralDegreeFrom")
@@ -41,6 +41,7 @@ type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Pro
     emailAddress: String @wrap(field: "emailAddress")
     researchInterest: String @wrap(field: "researchInterest")
     profType: String @wrap(field: "profType")
+    newID: ID! @concatenate(values: ["id"])
     newEmail: String @concatenate(values: ["new", "emailAddress"])
     contactInfo: String @concatenate(values: ["telephone", "emailAddress"])
     concatFour: String @concatenate(values: ["telephone", "emailAddress", "researchInterest", "profType"])
