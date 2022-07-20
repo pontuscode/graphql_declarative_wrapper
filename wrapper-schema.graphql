@@ -28,7 +28,7 @@ type WrappedUniversity {
 }
 
  interface WrappedAuthor {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 }
