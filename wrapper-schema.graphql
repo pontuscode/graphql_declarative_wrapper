@@ -25,7 +25,7 @@ type WrappedUniversity {
 	head: WrappedProfessor
 	headTelephone: String
 	headUndergradFromId: ID!
-	headUndergradFromDepartmentsId: [ID!]
+	headUndergradFromDoctorsId: [ID!]
 }
 
  interface WrappedAuthor {
