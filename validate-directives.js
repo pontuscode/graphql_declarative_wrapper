@@ -538,6 +538,11 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
     let mustBeListType = false;
     let leafNodeScalarType;
     let errorMessage = "";
+    // Ensure there are values in the 'path' argument list
+    if(item.argumentValues.length === 0) {
+        valid = false;
+        errorMessage = `The length of the 'path' argument must be greater than 1, found empty list in field definition with name '${item.fieldName}'.\n`;
+    }
     for(let i = 0; i < item.argumentValues.length; i++) {
         if(valid === true) {
         // These variables are used in multiple places further down in the loop.
@@ -1158,6 +1163,15 @@ const validateConcatenate = function(item, remoteSchema) {
             "errorMessage": "concatenate only accepts the 'values' argument"
         }
     }
+
+    //Ensure that arguments of 'values' reside inside a List
+    if(typeof(item.argumentValues) !== "object"){
+        return { 
+            "valid": false,
+            "errorMessage": "The values of the 'values' argument in concatenate have to reside in a List. Found \"" + typeof(item.argumentValues) + "\" instead of List"
+        }
+    }
+    
     if(WrappedTypes.includes(item.objectTypeName)){
         if(item.fieldValue.charAt(item.fieldValue.length-1) === "!")
             nonNullable = true;
@@ -1175,32 +1189,72 @@ const validateConcatenate = function(item, remoteSchema) {
                             counter += 1
                             if(node.name.value === arg.value){
                                 argFound = true;
+                                
+                                let noError = true;
                                 if(commonType === "Not set"){
-                                    commonType = node.type.name.value;
+                                    // console.log(node)
+                                    switch(node.type.kind){
+                                        case "NamedType":
+                                            commonType = node.type.name.value;
+                                            break;
+                                        case "NonNullType"||"ListType":
+                                            console.log(node.type)
+                                            commonType = node.type.type.name.value;
+                                            break;
+                                    }
+                                    
                                 }   
-                                else if(commonType !== node.type.name.value){
-                                    valid = false;
-                                    errorMessage = "Arguments in 'values' do not share a common data type";
+                                else{
+                                    switch(node.type.kind){
+                                        case "NamedType": 
+                                            // console.log(commonType)
+                                            // console.log(node)
+                                            if(commonType !== node.type.name.value){
+                                                valid = false;
+                                                errorMessage = "Arguments in 'values' do not share a common data type. Type was " + commonType + ", but found " +node.type.name.value;
+                                                noError = false;
+                                            }
+                                            break;
+                                        case "NonNullType"||"ListType":
+                                            // console.log(commonType)
+                                            // console.log(node.type.type.name.value)
+                                            if(commonType !== node.type.type.name.value){
+                                                valid = false;
+                                                errorMessage = "Arguments in 'values' do not share a common data type. Type was " + commonType + ", but found " +node.type.type.name.value;
+                                                noError = false;
+                                            }
+                                            break;
+                                    }
+                                        
                                 }
 
-                                if(node.type.kind === "NamedType"){
-                                    if(node.type.name.value !== item.fieldValue || nonNullable || listType){
-                                        valid = false;
-                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
+                                // else if(commonType !== node.type.name.value){
+                                //     valid = false;
+                                //     errorMessage = "Arguments in 'values' do not share a common data type";
+                                // }
+                                if(noError){
+                                    if(node.type.kind === "NamedType"){
+                                        if(node.type.name.value !== item.fieldValue || nonNullable || listType){
+                                            valid = false;
+                                            errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
+                                            errorMessage += "\" and argument values have the type \"" + commonType +"\""
+                                        }
                                     }
-                                }
-                                else if(node.type.kind === "ListType"){
-                                    if(node.type.type.name.value !== item.fieldValue[0] || nonNullable || !listType)
-                                    {
-                                        valid = false;
-                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
+                                    else if(node.type.kind === "ListType"){
+                                        if(node.type.type.name.value !== item.fieldValue[0] || nonNullable || !listType)
+                                        {
+                                            valid = false;
+                                            errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
+                                            errorMessage += "\" and argument values have the type \"" + commonType +"\""
+                                        }
                                     }
-                                }
-                                else if(node.type.kind === "NonNullType"){
-                                    if(node.type.type.name.value !== item.fieldValue[0] || !nonNullable || listType){
-                                        valid = false;
-                                        errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'";
-                                    } 
+                                    else if(node.type.kind === "NonNullType"){
+                                        if(node.type.type.name.value !== item.fieldValue[0] || !nonNullable || listType){
+                                            valid = false;
+                                            errorMessage = "The data type of FieldDefinition does not match the data types of the arguments in 'values'. FieldDefinition is of type \""+item.fieldValue;
+                                            errorMessage += "\" and argument values have the type \"" + commonType +"\""
+                                        } 
+                                    }
                                 }
                             }
                         }
