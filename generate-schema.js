@@ -1148,23 +1148,36 @@ const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveIt
 }
 
 //-----------------------------------------------------------------------------------//
-/**
- * 
- * @param {*} node 
- * @returns 
+/** This function is used to parse the value type of a node in an AST
+ * @param {*} node: The node from which we want to extract the value
+ * @returns the value type of the node. Returns a list of the type if it is a list. 
  */
-const parseValue = function(node) {
+ const parseValue = function(node) {
     let returnValue;
+    let set = false;
+    visit(node, {
+        NonNullType(nonNull) {
+            visit(nonNull, {
+                NamedType(named) {
+                    returnValue = named.name.value + "!";
+                    set = true;
+                }
+            });
+        }
+    });
     visit(node, {
         NamedType(named) {
-            returnValue = named.name.value;
+            if(!set){
+                returnValue = named.name.value;
+                set = true;
+            }
         }
     });
     visit(node, {
         ListType(list) {
             visit(list, {
                 NamedType(named) {
-                    returnValue = [named.name.value];
+                    returnValue = [named.name.value];   
                 }
             });
         }

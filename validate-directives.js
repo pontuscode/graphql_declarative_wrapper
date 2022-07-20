@@ -51,17 +51,6 @@ const parseValue = function(node) {
             });
         }
     });
-    visit(node, {
-        NamedType(named) {
-            if(!set){
-                returnValue = named.name.value;
-                set = true;
-            }
-                
-
-        }
-    });
-
     return returnValue;
 }
 
@@ -438,7 +427,6 @@ const parseSchemaDirectives = function(schema) {
                         else if(remoteObjectTypeName !== undefined) {
                             remote = remoteObjectTypeName;
                         }
-
                         let temp = {
                             "remoteObjectTypeName": remote,
                             "objectTypeName": ast.name.value,
