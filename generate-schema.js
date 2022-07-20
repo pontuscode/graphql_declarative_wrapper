@@ -110,7 +110,11 @@ const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) 
                 }
                 let value = parseValue(node);
                 if(Array.isArray(value)) {
-                    value = `[${value}]`;
+                    if(value.includes("!")) { // Check if is non-null
+                        value = `[${value}!]`;
+                    } else {
+                        value = `[${value}]`;
+                    }
                 }
                 fileContent += ": " + value + "\n";
             }
@@ -1177,7 +1181,11 @@ const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveIt
         ListType(list) {
             visit(list, {
                 NamedType(named) {
-                    returnValue = [named.name.value];   
+                    if(list.type.kind === "NonNullType") {
+                        returnValue = [named.name.value + "!"];
+                    } else {
+                        returnValue = [named.name.value];   
+                    }
                 }
             });
         }

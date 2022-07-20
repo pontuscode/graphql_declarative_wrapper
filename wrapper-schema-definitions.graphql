@@ -29,8 +29,9 @@ type WrappedDepartment @wrap(singleQuery: "department(nr: ID!)", type: "Departme
     subOrganizationOf: WrappedUniversity @wrap(field: "subOrganizationOf")
     faculties: [WrappedFaculty] @wrap(field: "faculties")
     head: WrappedProfessor @wrap(field: "head") 
-    headEmailAddress: String! @wrap(path: ["head", "emailAddress"])
-    subOrganizationOfDoctorsPhones: [String] @wrap(path: ["subOrganizationOf", "doctoralDegreeObtainers", "telephone"])
+    headTelephone: String @wrap(path: ["head", "telephone"])
+    headUndergradFromId: ID! @wrap(path: ["head", "undergraduateDegreeFrom", "id"])
+    headUndergradFromDepartmentsId:  [ ID! ] @wrap(path: ["head", "undergraduateDegreeFrom", "departments", "id"])
 }
 
 interface WrappedAuthor @wrap(interface: "Author", includeAllFields: true)
