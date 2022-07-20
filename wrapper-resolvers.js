@@ -1299,33 +1299,6 @@ const extractNestedWrappedAuthorFields = (selection) => {
 		selections: []
 	}
 	selection.selectionSet.selections.forEach(nestedSelection => {
-		if(nestedSelection.name.value === "id") {
-			result.selections.push({
-				kind: Kind.FIELD, 
-				name: {
-					kind: Kind.NAME, 
-					value: "id"
-				},
-			})
-		}
-		if(nestedSelection.name.value === "telephone") {
-			result.selections.push({
-				kind: Kind.FIELD, 
-				name: {
-					kind: Kind.NAME, 
-					value: "telephone"
-				},
-			})
-		}
-		if(nestedSelection.name.value === "emailAddress") {
-			result.selections.push({
-				kind: Kind.FIELD, 
-				name: {
-					kind: Kind.NAME, 
-					value: "emailAddress"
-				},
-			})
-		}
 	})
 	return result;
 }

@@ -33,11 +33,7 @@ type WrappedDepartment @wrap(singleQuery: "department(nr: ID!)", type: "Departme
     subOrganizationOfDoctorsPhones: [String] @wrap(path: ["subOrganizationOf", "doctoralDegreeObtainers", "telephone"])
 }
 
-interface WrappedAuthor @wrap(interface: "Author"){#, includeAllFields: true)# {
-    id: ID! @wrap(field: "id")
-    telephone: String @wrap(field: "telephone")
-    emailAddress: String @wrap(field: "emailAddress")
-}
+interface WrappedAuthor @wrap(interface: "Author", includeAllFields: true)
 
 type WrappedProfessor implements WrappedFaculty & WrappedAuthor @wrap(type: "Professor") {
     id: ID! @wrap(field: "id")

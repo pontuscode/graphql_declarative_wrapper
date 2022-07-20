@@ -1,5 +1,5 @@
 type WrappedUniversity {
-	id: ID
+	id: ID!
 	undergraduateDegreeObtainedByFaculty: [WrappedFaculty]
 	departments: [WrappedDepartment]
 	undergraduateDegreeObtainedBystudent: [WrappedGraduateStudent]
@@ -7,7 +7,7 @@ type WrappedUniversity {
 }
 
  interface WrappedFaculty {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 	contactInfo: String
@@ -19,22 +19,22 @@ type WrappedUniversity {
 }
 
  type WrappedDepartment {
-	id: ID
+	id: ID!
 	subOrganizationOf: WrappedUniversity
 	faculties: [WrappedFaculty]
 	head: WrappedProfessor
-	headEmailAddress: String
+	headEmailAddress: String!
 	subOrganizationOfDoctorsPhones: [String]
 }
 
  interface WrappedAuthor {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 }
 
  type WrappedProfessor implements & WrappedFaculty & WrappedAuthor {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 	researchInterest: String
@@ -50,7 +50,7 @@ type WrappedUniversity {
 }
 
  type WrappedLecturer implements & WrappedFaculty & WrappedAuthor {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 	contactInfo: String
@@ -63,7 +63,7 @@ type WrappedUniversity {
 }
 
  type WrappedGraduateStudent implements & WrappedAuthor {
-	id: ID
+	id: ID!
 	telephone: String
 	emailAddress: String
 	newEmail: String
@@ -75,12 +75,12 @@ type WrappedUniversity {
 }
 
  type WrappedResearchGroup {
-	id: ID
+	id: ID!
 	subOrganizationOf: WrappedDepartment
 }
 
  type WrappedPublication {
-	id: ID
+	id: ID!
 	title: String
 	abstract: String
 	authors: [WrappedAuthor]

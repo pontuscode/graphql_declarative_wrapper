@@ -9,6 +9,8 @@ const builtInScalars = [
     "['Int!']", "['Float!']", "['String!']", "['Boolean!']", "['ID!']",
     "['Int!']!", "['Float!']!", "['String!']!", "['Boolean!']!", "['ID!']!"
 ]
+
+//-----------------------------------------------------------------------------------//
 /**
  * @param {*} wsDef is the typedefs of the wrapper schema definitions
  * @param {*} directivesUsed is a list of directives parsed from the wrapper schema definitions
@@ -28,6 +30,111 @@ const generateSchema = async function(wsDef, directivesUsed, remoteSchema, remot
     }
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} wsDef 
+ * @param {*} fileName 
+ * @param {*} directivesUsed 
+ * @returns 
+ */
+const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) {
+    let fileContent = "";
+    wsDef.definitions.forEach(ast => {
+        visit(ast, {
+            ObjectTypeDefinition(node) {
+                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
+                    fileContent += "type " + node.name.value;
+                } else {
+                    fileContent += "}\n\n type " + node.name.value;
+                }
+                // Check if the user wants to implement any interfaces
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].interfaces !== undefined) {
+                        fileContent += " implements";
+                        Object.keys(directivesUsed[i].interfaces).forEach(key => {
+                            fileContent += " & " + key;
+                        });
+                    }
+                }
+                fileContent += " {\n"; // new line to field declarations
+                // Check if the user wants to include all fields
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
+                        // If they want to include all fields, add the fields to the type definition
+                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
+                            const [name, value] = entry;
+                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
+                                fileContent += `\t${name}: ${value}\n`;
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        visit(ast, {
+            InterfaceTypeDefinition(node) {
+                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
+                    fileContent += "interface " + node.name.value + " {\n";
+                } else {
+                    fileContent += "}\n\n interface " + node.name.value + " {\n";
+                }
+                // Check if the user wants to include all fields
+                for(let i = 0; i < directivesUsed.length; i++) {
+                    if(directivesUsed[i].interfaceTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
+                        // If they want to include all fields, add the fields to the type definition
+                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
+                            const [name, value] = entry;
+                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
+                                fileContent += `\t${name}: ${value}\n`;
+                            }
+                        });
+                    }
+                }
+            }
+        });
+        visit(ast, {
+            FieldDefinition(node) {
+                fileContent += "\t" + node.name.value;
+                if(node.arguments.length > 0) {
+                    fileContent += "(";
+                }
+                for(let i = 0; i < node.arguments.length; i++){
+                    fileContent += node.arguments[i].name.value + ": " + node.arguments[i].type.type.name.value;
+                    if(node.arguments[i].type.kind === "NonNullType"){
+                        fileContent += "!";
+                    }
+                }
+                if(node.arguments.length > 0) {
+                    fileContent += ")";
+                }
+                let value = parseValue(node);
+                if(Array.isArray(value)) {
+                    value = `[${value}]`;
+                }
+                fileContent += ": " + value + "\n";
+            }
+        });
+    });
+    fileContent += "}";
+    fileContent += `
+
+type Query {
+    `;
+    await fs.writeFile(fileName, fileContent);
+    return fileContent;
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} wsDef 
+ * @param {*} directivesUsed 
+ * @param {*} remoteSchema 
+ * @param {*} remoteServerUrl 
+ * @param {*} typeDefFileName 
+ * @returns 
+ */
 const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, remoteServerUrl, typeDefFileName) {
     let typeDefFileContent = "";
     let extractNestedFieldsTextOne = "";
@@ -126,12 +233,10 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
                 typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.singleQuery, isList = false);
             } 
             if(parsedArgument.listQuery !== undefined) {
-                // fileContent += writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
                 let temp = writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
                 fileContent += temp[0]
                 extractNestedFieldsTextOne += temp[1]
                 extractNestedFieldsTextTwo += temp[2]
-
                 typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.listQuery, isList = true);
             }
         }
@@ -158,11 +263,17 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
                 }
             }
             fileContent += `${generateIndentation(1)}},\n`;
+        // The structure of an includeAllFields directive is slightly different, so if it is used we used a separate function to generate its resolvers
+        } else if(directivesUsed[i].directive === "wrap" && directivesUsed[i].argumentName === "type" && directivesUsed[i].includeAllFields === true) {
+            fileContent += `${generateIndentation(1)}${directivesUsed[i].objectTypeName}: {\n`;
+            fileContent += generateIncludeAllTypeSpecificResolver(directivesUsed[i]);
+            fileContent += `${generateIndentation(1)}},\n`;
         }
     }
     fileContent += "}\n";
     fileContent += writeNestedExtractFunctions(directivesUsed, remoteSchema.document.definitions);
     fileContent += "module.exports = resolvers;\n";
+
     await fs.writeFile("wrapper-resolvers.js", fileContent);
     typeDefFileContent += "\n}";
 
@@ -170,18 +281,36 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
     return fileContent;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} input 
+ * @returns 
+ */
 const camelCase = function(input) {
     let temp = input;
     let camelCased = temp[0].toLowerCase() + temp.slice(1);
     return camelCased;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} input 
+ * @returns 
+ */
 const upperCase = function(input) {
     let temp = input;
     let capitalCased = temp[0].toUpperCase() + temp.slice(1);
     return capitalCased;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} input 
+ * @returns 
+ */
 const parseArgument = function(input) {
     let regex = /[\W]/;
     let parsedValues = {};
@@ -202,6 +331,12 @@ const parseArgument = function(input) {
     return parsedValues;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} factor 
+ * @returns 
+ */
 const generateIndentation = function(factor) {
     let text = "";
     for(let i = 0; i < factor; i++){
@@ -210,6 +345,15 @@ const generateIndentation = function(factor) {
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directivesUsed 
+ * @param {*} selectionName 
+ * @param {*} selectionSetName 
+ * @param {*} indentationOffset 
+ * @returns 
+ */
 const generateWrapQueryPath = function(directivesUsed, selectionName, selectionSetName, indentationOffset) {
     let text =`
         ${generateIndentation(indentationOffset)}if(${selectionName}.name.value === "${directivesUsed.fieldName}") {
@@ -254,7 +398,13 @@ const generateWrapQueryPath = function(directivesUsed, selectionName, selectionS
     return text;
 }
 
-
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directive 
+ * @param {*} rsDef 
+ * @returns 
+ */
 const parseConcArgs = function(directive, rsDef) {
     let remoteName = directive.remoteObjectTypeName;
     returnList = [];
@@ -280,6 +430,14 @@ const parseConcArgs = function(directive, rsDef) {
     return returnList;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directive 
+ * @param {*} rsDef 
+ * @param {*} remoteResolver 
+ * @returns 
+ */
 const generateConcatenateField = function(directive, rsDef, remoteResolver) {
     const concValues = parseConcArgs(directive,rsDef);
     let text = "";
@@ -340,6 +498,13 @@ const generateConcatenateField = function(directive, rsDef, remoteResolver) {
     return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo]
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directive 
+ * @param {*} rsDef 
+ * @returns 
+ */
 const addConcatenateResolvers = function(directive, rsDef) {
     const concDirective = [directive.fieldName, directive.objectTypeName, parseConcArgs(directive,rsDef)];
     let text = "";
@@ -372,6 +537,14 @@ const addConcatenateResolvers = function(directive, rsDef) {
     return text
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} objectTypeName 
+ * @param {*} argument 
+ * @param {*} isList 
+ * @returns 
+ */
 const addToQueryType = function(objectTypeName, argument, isList) {
     let text;
 
@@ -387,6 +560,14 @@ const addToQueryType = function(objectTypeName, argument, isList) {
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directivesUsed 
+ * @param {*} objectTypeName 
+ * @param {*} rsDef 
+ * @returns 
+ */
 const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName, rsDef) {
     let text = "";
     
@@ -467,6 +648,13 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} directivesUsed 
+ * @param {*} rsDef 
+ * @returns 
+ */
 const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
     let text = "";
     for(let i = 0; i < directivesUsed.length; i++) {
@@ -492,6 +680,17 @@ const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} objectTypeName 
+ * @param {*} directivesUsed 
+ * @param {*} remoteResolver 
+ * @param {*} wsDef 
+ * @param {*} remoteSchema 
+ * @param {*} typesImplementingInterface 
+ * @returns 
+ */
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
     let concValues = [];
     let text = `    
@@ -601,6 +800,13 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} currentDirective 
+ * @param {*} directivesUsed 
+ * @returns 
+ */
 const generateTypeSpecificResolver = function(currentDirective, directivesUsed) {
     let text = "";
     let interfaceTypeResolvers = {};
@@ -682,6 +888,35 @@ const generateTypeSpecificResolver = function(currentDirective, directivesUsed) 
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+
+const generateIncludeAllTypeSpecificResolver = function(currentDirective) {
+    let text = "";
+    text += `${generateIndentation(2)}${currentDirective.objectTypeName}: {\n`;
+    console.log(currentDirective);
+    Object.entries(currentDirective.includeFields).forEach(entry => {
+        const [name, value] = entry;
+        // includeAllFields only supports built-in scalar value types, so ensure that this is the case
+        if(builtInScalars.includes(value)) {
+            text += `${generateIndentation(3)}${name}: (parent) => {\n`;
+            text += `${generateIndentation(4)}return (parent.${name} !== undefined) ? parent.${name} : null;\n`;
+            text += `${generateIndentation(3)}},\n`;
+        }
+    })
+    text += `${generateIndentation(2)}},\n`;
+    return text;
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} objectTypeName 
+ * @param {*} directivesUsed 
+ * @param {*} remoteResolver 
+ * @param {*} remoteSchema 
+ * @param {*} typesImplementingInterface 
+ * @returns 
+ */
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema, typesImplementingInterface){
     let upperCaseResolver = upperCase(remoteResolver.resolver)
     let extractNestedFieldsTextOne = ""
@@ -791,6 +1026,14 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
     return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo];
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} objectTypeName 
+ * @param {*} directiveItem 
+ * @param {*} remoteResolver 
+ * @returns 
+ */
 const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, remoteResolver) {
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
@@ -845,6 +1088,14 @@ const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, 
     return text;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} objectTypeName 
+ * @param {*} directiveItem 
+ * @param {*} remoteResolver 
+ * @returns 
+ */
 const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveItem, remoteResolver) {
     let text = `    
         ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
@@ -885,20 +1136,6 @@ const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveIt
         ${generateIndentation(4)}return newSelectionSet;
         ${generateIndentation(3)}},
         ${generateIndentation(3)}(result) => {
-        ${generateIndentation(4)}result.forEach(function(element) {
-    `;
-    Object.entries(directiveItem.includeFields).forEach(entry => {
-        const [name, value] = entry;
-        if(builtInScalars.includes(value)) { // We currently only support built-in scalars.
-            text += `
-                ${generateIndentation(3)}if(element.${name} !== undefined) {
-                ${generateIndentation(4)}element.${name} = element.${name}; 
-                ${generateIndentation(3)}}
-            `;
-        }
-    });
-    text += `
-        ${generateIndentation(4)}});
         ${generateIndentation(4)}return result;
         ${generateIndentation(3)}}
         ${generateIndentation(2)}),
@@ -910,105 +1147,37 @@ const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveIt
     return text;
 }
 
-const generateTypeDefinitions = async function(wsDef, fileName, directivesUsed) {
-    let fileContent = "";
-    wsDef.definitions.forEach(ast => {
-        visit(ast, {
-            ObjectTypeDefinition(node) {
-                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
-                    fileContent += "type " + node.name.value;
-                } else {
-                    fileContent += "}\n\n type " + node.name.value;
-                }
-                // Check if the user wants to implement any interfaces
-                for(let i = 0; i < directivesUsed.length; i++) {
-                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].interfaces !== undefined) {
-                        fileContent += " implements";
-                        Object.keys(directivesUsed[i].interfaces).forEach(key => {
-                            fileContent += " & " + key;
-                        });
-                    }
-                }
-                fileContent += " {\n"; // new line to field declarations
-                // Check if the user wants to include all fields
-                for(let i = 0; i < directivesUsed.length; i++) {
-                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
-                        // If they want to include all fields, add the fields to the type definition
-                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
-                            const [name, value] = entry;
-                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
-                                fileContent += `\t${name}: ${value}\n`;
-                            }
-                        });
-                    }
-                }
-            }
-        });
-        visit(ast, {
-            InterfaceTypeDefinition(node) {
-                if(fileContent === "") { // If the content is currently empty we should not add any brackets 
-                    fileContent += "interface " + node.name.value + " {\n";
-                } else {
-                    fileContent += "}\n\n interface " + node.name.value + " {\n";
-                }
-                // Check if the user wants to include all fields
-                for(let i = 0; i < directivesUsed.length; i++) {
-                    if(directivesUsed[i].objectTypeName === node.name.value && directivesUsed[i].includeAllFields === true) {
-                        // If they want to include all fields, add the fields to the type definition
-                        Object.entries(directivesUsed[i].includeFields).forEach(entry => {
-                            const [name, value] = entry;
-                            if(builtInScalars.includes(value)) { // Currently we only support built in scalars!
-                                fileContent += `\t${name}: ${value}\n`;
-                            }
-                        });
-                    }
-                }
-            }
-        });
-        visit(ast, {
-            FieldDefinition(node) {
-                fileContent += "\t" + node.name.value;
-                if(node.arguments.length > 0) {
-                    fileContent += "(";
-                }
-                for(let i = 0; i < node.arguments.length; i++){
-                    fileContent += node.arguments[i].name.value + ": " + node.arguments[i].type.type.name.value;
-                    if(node.arguments[i].type.kind === "NonNullType"){
-                        fileContent += "!";
-                    }
-                }
-                if(node.arguments.length > 0) {
-                    fileContent += ")";
-                }
-                let value = parseValue(node);
-                if(Array.isArray(value)) {
-                    value = `[${value}]`;
-                }
-                fileContent += ": " + value + "\n";
-            }
-        });
-    });
-    fileContent += "}";
-    fileContent += `
-
-type Query {
-    `;
-    await fs.writeFile(fileName, fileContent);
-    return fileContent;
-}
-
-const parseValue = function(node) {
+//-----------------------------------------------------------------------------------//
+/** This function is used to parse the value type of a node in an AST
+ * @param {*} node: The node from which we want to extract the value
+ * @returns the value type of the node. Returns a list of the type if it is a list. 
+ */
+ const parseValue = function(node) {
     let returnValue;
+    let set = false;
+    visit(node, {
+        NonNullType(nonNull) {
+            visit(nonNull, {
+                NamedType(named) {
+                    returnValue = named.name.value + "!";
+                    set = true;
+                }
+            });
+        }
+    });
     visit(node, {
         NamedType(named) {
-            returnValue = named.name.value;
+            if(!set){
+                returnValue = named.name.value;
+                set = true;
+            }
         }
     });
     visit(node, {
         ListType(list) {
             visit(list, {
                 NamedType(named) {
-                    returnValue = [named.name.value];
+                    returnValue = [named.name.value];   
                 }
             });
         }
@@ -1016,6 +1185,12 @@ const parseValue = function(node) {
     return returnValue;
 }
 
+//-----------------------------------------------------------------------------------//
+/**
+ * 
+ * @param {*} fileName 
+ * @param {*} fileContent 
+ */
 const writeToFile = function(fileName, fileContent) {
     fs.readFile(fileName, function(err, data) {
         if(data === undefined) { //File does not exist

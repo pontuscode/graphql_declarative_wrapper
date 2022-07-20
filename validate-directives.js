@@ -51,17 +51,6 @@ const parseValue = function(node) {
             });
         }
     });
-    visit(node, {
-        NamedType(named) {
-            if(!set){
-                returnValue = named.name.value;
-                set = true;
-            }
-                
-
-        }
-    });
-
     return returnValue;
 }
 
@@ -438,7 +427,6 @@ const parseSchemaDirectives = function(schema) {
                         else if(remoteObjectTypeName !== undefined) {
                             remote = remoteObjectTypeName;
                         }
-
                         let temp = {
                             "remoteObjectTypeName": remote,
                             "objectTypeName": ast.name.value,
@@ -1053,6 +1041,8 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                         } else if(item.includeAllFields === false || item.includeAllFields === undefined) { // Validation case 4
                             if(item.excludeFields !== undefined) {
                                 validType = false;
+                                errorMessage = `Failed to validate object type '${item.objectTypeName}'.\n`;
+                                errorMessage += `Argument 'excludeFields' cannot be used if 'includeAllFields' is not used or if it is set to 'false'.\n`;
                             }
                         }
                         if(item.resolvers.singleQuery !== undefined) { // Validation case 7
@@ -1067,6 +1057,7 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                             if(checkResolver.valid !== true) {
                                 validType = false;
                                 errorMessage = checkResolver.errorMessage;
+                                
                             }
                         }
                         // If it passed all validation, then consider it 'found' and add it to the list of wrapped types 
@@ -1127,8 +1118,17 @@ const validateWrap = function(item, remoteSchema, directivesUsed) {
                                 appendFieldsToType(item, node); //If the arguments were correctly used, append the fields to the wrapper type defs
                             }
                         }
-                        found = true;
-                        WrappedTypes.push(item.interfaceTypeName)
+                        if(item.includeAllFields === false || item.includeAllFields === undefined) { // Validation case 4
+                            if(item.excludeFields !== undefined) {
+                                validType = false;
+                                errorMessage = `Failed to validate interface type '${item.interfaceTypeName}'.\n`;
+                                errorMessage += `Argument 'excludeFields' cannot be used if 'includeAllFields' is not used or if it is set to 'false'.\n`;
+                            }
+                        }
+                        if(validType) {
+                            found = true;
+                            WrappedTypes.push(item.interfaceTypeName)
+                        }
                     }
                 }
             });
@@ -1337,22 +1337,23 @@ const validateDirectives = function(wsDef, remoteSchema) {
     let errorMessage = "";
     if(parsedDirectives.valid === true) {
         directivesUsed.forEach(item => {
-            if(remoteSchema.fromUrl) { // Schemas from url currently have a different structure than local schemas.
-                errorMessage = "Remote schemas from url's are not currently supported.";
-                directivesAreValid = false;
-            } else {
-                let validate = validateDirective(item, remoteSchema.schema[0].document, directivesUsed);
-                if(validate.valid === false) {
+            if(directivesAreValid === true) { // If all directives are currently valid, then continue. Without this error, error messages might "cascade" and the root cause is lost.
+                if(remoteSchema.fromUrl) { // Schemas from url currently have a different structure than local schemas.
+                    errorMessage = "Remote schemas from url's are not currently supported.";
                     directivesAreValid = false;
-                    errorMessage = validate.errorMessage;
+                } else {
+                    let validate = validateDirective(item, remoteSchema.schema[0].document, directivesUsed);
+                    if(validate.valid === false) {
+                        directivesAreValid = false;
+                        errorMessage = validate.errorMessage;
+                    }
                 }
             }
         });
     } else {
-        directivesAreValid = parsedDirectives.valid;
+        directivesAreValid = false;
         errorMessage = parsedDirectives.errorMessage;
     }
-    // console.log(parsedDirectives.directivesUsed)
     return {
         "directivesAreValid": directivesAreValid,
         "directivesUsed": parsedDirectives.directivesUsed,
