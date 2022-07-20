@@ -11,6 +11,7 @@ type WrappedUniversity {
 	id: ID!
 	telephone: String
 	emailAddress: String
+	contactInfo: String
 	undergraduateDegreeFrom: WrappedUniversity
 	masterDegreeFrom: WrappedUniversity
 	doctoralDegreeFrom: WrappedUniversity
