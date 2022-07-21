@@ -2,11 +2,19 @@
 
 ## Important
 
-### Add proper error messages to everything, both validation and generation errors
+-
 
-### Add generation steps for object and interface types that have enabled includeAllFields
+## Not as important
 
-## Done/Not required
+### Remove wrappedTypes 
+
+### Add checks before overwriting files during schema generation (check if file exists)
+
+## Done
+
+### Add proper error messages to everything, both validation and generation errors - done
+
+### Add generation steps for object and interface types that have enabled includeAllFields - done
 
 ### Fix traversePath in the validation algorithm - done
 
@@ -17,8 +25,6 @@
 ### Change concatenate validation. If object type is not wrapped, then return false - done
 
 ### Revamp concatenate validation. - done
-
-### Add checks before overwriting files during schema generation (check if file exists)
 
 ### Add typesImplementingInterface to resolver without arguments - done
 
