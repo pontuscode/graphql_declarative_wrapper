@@ -1,0 +1,28 @@
+type MyStudent @wrap(
+    type:"Student", 
+    singleQuery:"student(id: ID!)"
+) {
+    id: ID! @wrap(field: "id")
+    firstName: String @wrap(field: "firstName")
+    surName: String @wrap(field: "lastName")
+    myProfessors: [MyProfessor] @wrap(field: "professors")
+}
+type MyProfessor @wrap(
+    type:"Professor", 
+    singleQuery:"professor(id: ID!)"
+) {
+    id: ID! @wrap(path: ["id"])
+    firstName: String @wrap(path: ["firstName"])
+    surName: String! @wrap(field: "lastName")
+    teacherOf: [MyClass] @wrap(field: "teaches")
+    examinerOf: [MyStudent] @wrap(field: "examinerOf")
+}
+type MyClass @wrap(
+    type: "Class", 
+    listQuery: "classes"
+) {
+    id: ID! @wrap(field: "id")
+    professorSurName: String @wrap(path: ["teaches", "lastName"])
+    teaches: MyProfessor @wrap(field: "teaches")
+    students: [MyStudent] @wrap(field: "students")
+}
