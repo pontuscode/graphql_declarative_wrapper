@@ -195,7 +195,7 @@ const resolvers = {
         	return data;
         },
         
-        myClasss: async(_, __, context, info) => {
+        myClasses: async(_, __, context, info) => {
         	const data = await delegateToSchema({
         		schema: schema,
         		operation: 'query',

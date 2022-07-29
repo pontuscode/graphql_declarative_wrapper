@@ -26,6 +26,6 @@ type Query {
         
     myProfessor(id: ID!): MyProfessor
         
-    myClasss: [MyClass]
+    myClasses: [MyClass]
         
 }

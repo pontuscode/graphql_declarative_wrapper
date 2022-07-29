@@ -551,10 +551,16 @@ const addConcatenateResolvers = function(directive, rsDef) {
  */
 const addToQueryType = function(objectTypeName, argument, isList) {
     let text;
-
     if(isList === true) {
+        let resolverName = objectTypeName;
+        // "Pluralize" the name of the resolver function
+        if(resolverName.charAt(resolverName.length - 1) === "s") {
+            resolverName += "es";
+        } else {
+            resolverName += "s";
+        }
         text = `
-    ${camelCase(objectTypeName)}s: [${objectTypeName}]
+    ${camelCase(resolverName)}: [${objectTypeName}]
         `;
     } else {
         text = `
@@ -586,7 +592,6 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
                 if(Array.isArray(directivesUsed[i].fieldValue)) {
                     directivesUsed[i].fieldValue = directivesUsed[i].fieldValue[0]
                 }
-
                 text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`; 
                 text += `${generateIndentation(3)}result.selections.push({\n`;
                 text += `${generateIndentation(4)}kind: Kind.FIELD,\n`;
@@ -624,7 +629,6 @@ const writeTypeSpecificExtractFunction = function(directivesUsed, objectTypeName
             }
         }
         if(directivesUsed[i].directive === "concatenate" && (directivesUsed[i].objectTypeName === objectTypeName || directivesUsed[i].interfaceTypeName === objectTypeName)) {
-            // console.log(directivesUsed[i])
             let concValues = parseConcArgs(directivesUsed[i], rsDef);
             text += `${generateIndentation(2)}if(nestedSelection.name.value === "${directivesUsed[i].fieldName}") {\n`;
             concValues.forEach(field => {
@@ -922,11 +926,18 @@ const generateIncludeAllTypeSpecificResolver = function(currentDirective) {
  * @returns 
  */
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema, typesImplementingInterface){
-    let upperCaseResolver = upperCase(remoteResolver.resolver)
-    let extractNestedFieldsTextOne = ""
-    let extractNestedFieldsTextTwo = ""
+    let upperCaseResolver = upperCase(remoteResolver.resolver);
+    let extractNestedFieldsTextOne = "";
+    let extractNestedFieldsTextTwo = "";
+    let resolverName = objectTypeName;
+    // "Pluralize" the name of the resolver function
+    if(resolverName.charAt(resolverName.length - 1) === "s") {
+        resolverName += "es";
+    } else {
+        resolverName += "s";
+    }
     let text = `    
-        ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
+        ${camelCase(resolverName)}: async(_, __, context, info) => {
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
@@ -1101,8 +1112,15 @@ const writeIncludeAllResolverWithArgs = function(objectTypeName, directiveItem, 
  * @returns 
  */
 const writeIncludeAllResolversWithoutArgs = function(objectTypeName, directiveItem, remoteResolver) {
+    let resolverName = objectTypeName;
+    // "Pluralize" the name of the resolver function
+    if(resolverName.charAt(resolverName.length - 1) === "s") {
+        resolverName += "es";
+    } else {
+        resolverName += "s";
+    }
     let text = `    
-        ${camelCase(objectTypeName)}s: async(_, __, context, info) => {
+        ${camelCase(resolverName)}: async(_, __, context, info) => {
         ${generateIndentation(1)}const data = await delegateToSchema({
         ${generateIndentation(2)}schema: schema,
         ${generateIndentation(2)}operation: 'query',
