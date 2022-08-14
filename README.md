@@ -16,6 +16,8 @@
 
 ### Add checks before overwriting files during schema generation (check if file exists)
 
+### Remove redundant parameters in concatenate resolver functions
+
 ## Done
 
 ### Add proper error messages to everything, both validation and generation errors - done
