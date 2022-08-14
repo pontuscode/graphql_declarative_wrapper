@@ -2,7 +2,11 @@
 
 ## Important
 
--
+### Remove all unnecessary files and clean up the repository
+
+### Add explanations for how to use the tool 
+
+### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs.   
 
 ## Not as important
 
