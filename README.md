@@ -6,7 +6,9 @@
 
 ### Add explanations for how to use the tool 
 
-### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs.   
+### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. 
+
+### Add additional checks for concatenation in resolver functions
 
 ## Not as important
 
