@@ -8,6 +8,8 @@
 
 ### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. 
 
+### Fix includeAllFields validation so it meets new requirements. 
+
 ### Add additional checks for concatenation in resolver functions
 
 ## Not as important
