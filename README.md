@@ -12,6 +12,8 @@
 
 ### Add additional checks for concatenation in resolver functions
 
+### Fix path traversal so it aligns with Section 3.2
+
 ## Not as important
 
 ### Remove wrappedTypes 
