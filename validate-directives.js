@@ -81,47 +81,93 @@ const parseIncludeExclude = function(args) {
     }
 }
 
+const _doParseExcludedFields = function(excludedFieldsAstNode) {
+    let values;
+    try {
+        values = excludedFieldsAstNode.value.values;
+    } catch(err) {
+        return undefined;
+    }
+
+    let excludedFields = [];
+    for(let i = 0; i < values.length; i++) {
+        excludedFields.push(values[i].value);
+    }
+    return excludedFields;
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to get the list of excluded fields (with regards to includeAllFields). 
+ * @param {*} args: an AST node containing the "parent node's" arguments 
+ * @returns A list containing the fields the user wants to exclude, or undefined if the list is empty
+ */
+ const parseExcludedFields = function(args) {
+    for(let i = 0; i < args.length; i++) {
+        if(args[i].name.value === "excludeFields") {
+            return _doParseExcludedFields(args[i]);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------------//
+/**
+ * This function is used to get the list of excluded fields (with regards to includeAllFields). 
+ * @param {*} args: an AST node containing the "parent node's" arguments 
+ * @returns A list containing the fields the user wants to exclude, or undefined if the argument was not used.
+ */
+const getExcludeFieldsNode = function(args) {
+    for(let i = 0; i < args.length; i++) {
+        if(args[i].name.value === "excludeFields") {
+            return args[i];
+        }
+    }
+    return undefined;
+}
+
+const valueNodeIsStringType = function(node) {
+    return node.kind === "StringValue";
+}
+
+const nodeIsListType = function(node) {
+    return node.value.kind === "ListValue";
+}
 //-----------------------------------------------------------------------------------//
 /**
  * This function is used to validate the includeAllFields and excludeFields arguments 
- * @param {*} includeExcludeFields: object with a boolean indicating if the includeAllFields argument was true/false and which fields the user wants to exclude
+ * @param {*} excludeFieldsNode: AST node representing the list of fields the user wants to exclude
  * @returns a boolean indicating if the include/exclude usage was valid, and an error message if it was not valid
  */
-const validateIncludeExclude = function(includeExcludeFields) {
+const validateIncludeExclude = function(excludeFieldsNode) {
+    // If the user did not want to exclude any fields we can return early.
     let valid = true;
     let errorMessage = "";
-    let parsedExcludeFields = [];
-    if(includeExcludeFields.includeAllFields === true) { 
-        // If the includeAllFields argument was set to true, check if they also want to exclude any fields
-        if(includeExcludeFields.excludeFields !== undefined) {
-            if(includeExcludeFields.excludeFields.value.kind === "ListValue") { // Must be a list 
-                for(let i = 0; i < includeExcludeFields.excludeFields.value.values.length; i++) { // The list must consist only of Strings
-                    if(includeExcludeFields.excludeFields.value.values[i].kind === "StringValue"){
-                        // If all validation was successful, save the name of the field that the user wants to exclude
-                        parsedExcludeFields.push(includeExcludeFields.excludeFields.value.values[i].value);
-                    } else if(includeExcludeFields.excludeFields.value.values[i].kind !== "StringValue") {
-                        errorMessage = `Each element in 'excludeFields' must be a 'String', got '${includeExcludeFields.excludeFields.value.values[i].kind}'.`;
-                        valid = false;
-                    }
-                }
-            } else if(includeExcludeFields.excludeFields.value.kind !== "ListValue") {
-                errorMessage = "The value of 'excludeFields' must be a 'List'.\n";
-                valid = false;
-            }
+    if(excludeFieldsNode === undefined) {
+        return {
+            "valid": true,
+            "errorMessage": ""
         }
-    } else if(includeExcludeFields.includeAllFields === false) {
-        if(includeExcludeFields.excludeFields !== undefined) {
-            errorMessage = `'excludeFields' argument can only be used when the 'includeAllFields' argument is set to true.`;
+    }
+
+    if(nodeIsListType(excludeFieldsNode) === false) {
+        valid = false;
+        errorMessage = "The value type of argument 'excludeFields' must be a 'List'.\n";
+    }
+
+    let valueNodes = excludeFieldsNode.value.values;
+    let parsedExcludedFields = [];
+    valueNodes.forEach(valueNode => {
+        if(valueNodeIsStringType(valueNode) === false) {
             valid = false;
+            errorMessage = `Expected 'StringValue' for each element in 'excludeFields', got '${valueNode.kind}'.`
         }
-    }
-    // If the input is valid and the user wants to exclude some fields, save the parsed values instead of the AST nodes for easier processing later. 
-    if(valid === true && parsedExcludeFields.length > 0) { 
-        includeExcludeFields.excludeFields = parsedExcludeFields;
-    }
+        parsedExcludedFields.push(valueNode.value);
+    })
+
     return {
         "valid": valid,
-        "errorMessage": errorMessage
+        "errorMessage": errorMessage, 
+        "excludedFields": parsedExcludedFields
     }
 }
 
@@ -274,6 +320,48 @@ const validateInterfaces = function(directivesUsed, interfaces) {
     }
 }
 
+const nodeHasDirectives = function(node) {
+    let hasDirectives = false;
+    try {
+        hasDirectives = node.directives.length > 0;
+    } catch(err) {
+        
+    } finally {
+        return hasDirectives;
+    }
+}
+
+const findWrapDirective = function(directives) {
+    for(let i = 0; i < directives.length; i++) {
+        if(directives[i].name.value === "wrap") {
+            return directives[i];
+        }
+    }
+    return undefined;
+}
+
+const requiredArgsForObjectType = function(args) {
+    let requiredFound = false;
+    for(let i = 0; i < args.length; i++) {
+        if(args[i].name.value === "type") {
+            requiredFound = true;
+        }
+    }
+    return requiredFound;
+}
+
+const directiveContainsRequiredArgs = function(directive, location) {
+    const args = directive.arguments;
+    if(location === "ObjectType"){
+        return requiredArgsForObjectType(args);
+    }
+}
+
+const includeAllFieldsArgumentIsUsed = function(args) {
+    let argUsed = args.find(item => {return (item.name.value === "includeAllFields" && item.value.value === true)});
+    return argUsed !== undefined;    
+}
+
 //-----------------------------------------------------------------------------------//
 /**
  * 
@@ -297,51 +385,83 @@ const parseSchemaDirectives = function(schema) {
         //---------------------------OBJECT TYPES--------------------------------------//
         visit(ast, {
             ObjectTypeDefinition(node) {
-                if(node.directives.length > 0) {
-                    if(node.directives[0].arguments === undefined) {
-                        valid = false; // There needs to be atleast one argument
-                        errorMessage = `No arguments found for type ${node.name.value}, atleast one argument is required!`;
-                    } else {
-                        let resolvers = parseResolvers(node.directives[0].arguments);
-                        let includeExcludeFields = parseIncludeExclude(node.directives[0].arguments);
-                        // If the user has indicated that they want to include all or exclude fields, then validate it
-                        if(includeExcludeFields.includeAllFields === true) {
-                            let validateInclude = validateIncludeExclude(includeExcludeFields);
-                            if(validateInclude.valid === false) {
-                                valid = false;
-                                errorMessage = validateInclude.errorMessage;
-                            }
-                        }
-                        let interfaces = parseInterfaces(node);
-                        let validateInter = validateInterfaces(directivesUsed, interfaces);
-                        if(validateInter.valid === false) {
-                            valid = false;
-                            errorMessage = validateInter.errorMessage;
-                        }
-                        currentParentType = "ObjectType";
-                        let remoteObjectType = parseObjectTypeArguments(node.directives[0].arguments);
-                        if(remoteObjectType !== undefined) {
-                            let temp = {
-                                "remoteObjectTypeName": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
-                                "objectTypeName": node.name.value,
-                                "directive": node.directives[0].name.value,
-                                "argumentName": remoteObjectType.argumentName, //node.directives[0].arguments[0].name.value,
-                                "argumentValues": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
-                                "resolvers": resolvers,
-                                "includeAllFields": includeExcludeFields.includeAllFields,
-                                "excludeFields": includeExcludeFields.excludeFields,
-                                "includeFields": {}, // These will be added later if includeAllFields is true,
-                                "interfaces": interfaces
-                            };
-                            if(!directivesUsed.includes(temp)){
-                                directivesUsed.push(temp); 
-                                remoteObjectTypeName = remoteObjectType.remoteObjectTypeName; //ast.directives[0].arguments[0].value.value;
-                            }
-                        } else if(remoteObjectType === undefined) {
-                            valid = false;
-                            errorMessage = `Did not find required argument 'type' in wrapping arguments for Object Type '${node.name.value}'.\n`;
-                        }
+                if(nodeHasDirectives(node) === false) {
+                    valid = false;
+                    errorMessage = `No directives found on type ${node.name.value}.`;
+                    return;
+                }
+
+                const wrapDirective = findWrapDirective(node.directives);
+                if(wrapDirective === undefined) {
+                    valid = false;
+                    errorMessage = `No 'wrap' directive found on type ${node.name.value}`;
+                    return;
+                }
+
+                if(directiveContainsRequiredArgs(wrapDirective, "ObjectType") === false) {
+                    valid = false;
+                    errorMessage = `Did not find required argument 'type' in wrapping arguments on Object Type ${node.name.value}.\n`;
+                    return;
+                }
+                const directiveArguments = wrapDirective.arguments;
+
+                // VALIDATE THE USAGE OF ARGUMENTS includeAllFields and excludeFields //
+                // Try to get the excludeFields AST node
+                let excludeFieldsNode = getExcludeFieldsNode(directiveArguments);
+                // Pre-declare the list of excluded fields to avoid undefined references
+                let excludedFields = undefined;
+                // Check if the user has indicated that they want to include all fields          
+                const includeAllFieldsUsed = includeAllFieldsArgumentIsUsed(directiveArguments);
+
+                if(includeAllFieldsUsed === false && excludeFieldsNode !== undefined) {
+                    valid = false;
+                    errorMessage = `Failed to validate object type ${node.name.value}:\n`
+                    errorMessage += `'excludeFields' argument can only be used when the 'includeAllFields' argument is set to true.`;
+                    return;
+                }
+
+                if(includeAllFieldsUsed === true) {
+                    let validateInclude = validateIncludeExclude(excludeFieldsNode);
+                    if(validateInclude.valid === false) {
+                        valid = false;
+                        errorMessage = validateInclude.errorMessage;
+                        return;
                     }
+                    excludedFields = validateInclude.parsedExcludedFields;
+                }
+
+                let resolvers = parseResolvers(directiveArguments);
+
+                let interfaces = parseInterfaces(node);
+                let validateInter = validateInterfaces(directivesUsed, interfaces);
+                if(validateInter.valid === false) {
+                    valid = false;
+                    errorMessage = validateInter.errorMessage;
+                    return;
+                }
+
+                currentParentType = "ObjectType";
+                let remoteObjectType = parseObjectTypeArguments(directiveArguments); //node.directives[0].arguments);
+                if(remoteObjectType !== undefined) {
+                    let temp = {
+                        "remoteObjectTypeName": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
+                        "objectTypeName": node.name.value,
+                        "directive": wrapDirective.name.value, //node.directives[0].name.value,
+                        "argumentName": remoteObjectType.argumentName, //node.directives[0].arguments[0].name.value,
+                        "argumentValues": remoteObjectType.remoteObjectTypeName, //node.directives[0].arguments[0].value.value,
+                        "resolvers": resolvers,
+                        "includeAllFields": includeAllFieldsUsed, //includeExcludeFields.includeAllFields,
+                        "excludeFields": excludedFields, //includeExcludeFields.excludeFields,
+                        "includeFields": {}, // These will be added later if includeAllFields is true,
+                        "interfaces": interfaces
+                    };
+                    if(!directivesUsed.includes(temp)){
+                        directivesUsed.push(temp); 
+                        remoteObjectTypeName = remoteObjectType.remoteObjectTypeName; 
+                    }
+                } else if(remoteObjectType === undefined) {
+                    valid = false;
+                    errorMessage = `Did not find required argument 'type' in wrapping arguments for Object Type '${node.name.value}'.\n`;
                 }
             }
         });
@@ -355,14 +475,39 @@ const parseSchemaDirectives = function(schema) {
                     } else {
                         let resolvers = parseResolvers(node.directives[0].arguments);
                         let includeExcludeFields = parseIncludeExclude(node.directives[0].arguments);
-                        // If the user has indicated that they want to include all or exclude fields, then validate it
+
+                        // VALIDATE THE USAGE OF ARGUMENTS includeAllFields and excludeFields //
+                        // Try to get the excludeFields AST node
+                        let excludeFieldsNode = getExcludeFieldsNode(node.directives[0].arguments);//directiveArguments);
+                        // Pre-declare the list of excluded fields to avoid undefined references
+                        let excludedFields = undefined;
+                        // Check if the user has indicated that they want to include all fields          
+                        const includeAllFieldsUsed = includeAllFieldsArgumentIsUsed(node.directives[0].arguments); //directiveArguments);
+
+                        if(includeAllFieldsUsed === false && excludeFieldsNode !== undefined) {
+                            valid = false;
+                            errorMessage = `Failed to validate object type ${node.name.value}:\n`
+                            errorMessage += `'excludeFields' argument can only be used when the 'includeAllFields' argument is set to true.`;
+                            return;
+                        }
+
+                        if(includeAllFieldsUsed === true) {
+                            let validateInclude = validateIncludeExclude(excludeFieldsNode);
+                            if(validateInclude.valid === false) {
+                                valid = false;
+                                errorMessage = validateInclude.errorMessage;
+                                return;
+                            }
+                        }
+                        /*
                         if(includeExcludeFields.includeAllFields === true) {
                             let validateInclude = validateIncludeExclude(includeExcludeFields);
+                            let excludedFields = parseExcludedFields(node.directives[0].arguments);
                             if(validateInclude.valid === false) {
                                 valid = false;
                                 errorMessage = validateInclude.errorMessage;
                             }
-                        }
+                        }*/
                         let remoteInterfaceType = parseInterfaceTypeArguments(node.directives[0].arguments);
                         if(remoteInterfaceType !== undefined) {
                             let temp = {
@@ -372,8 +517,8 @@ const parseSchemaDirectives = function(schema) {
                                 "argumentName": remoteInterfaceType.argumentName, //node.directives[0].arguments[0].name.value,
                                 "argumentValues": remoteInterfaceType.remoteInterfaceTypeName,//node.directives[0].arguments[0].value.value,
                                 "resolvers": resolvers,
-                                "includeAllFields": includeExcludeFields.includeAllFields,
-                                "excludeFields": includeExcludeFields.excludeFields,
+                                "includeAllFields": includeAllFieldsUsed, //includeExcludeFields.includeAllFields,
+                                "excludeFields": excludedFields,
                                 "includeFields": {} // These will be added later if includeAllFields is true
                             };
                             currentParentType = "InterfaceType";
@@ -792,6 +937,8 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
         "errorMessage": errorMessage
     }
 }
+
+
 
 //-----------------------------------------------------------------------------------//
 /**
