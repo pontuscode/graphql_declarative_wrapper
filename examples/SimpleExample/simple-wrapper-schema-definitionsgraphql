@@ -3,11 +3,13 @@ directive @wrap(path: [String!]!) on FIELD_DEFINITION
 directive @wrap(field: String!) on FIELD_DEFINITION
 directive @concatenate(values: [String!]!) on FIELD_DEFINITION
 
+# These wrapper schema definitions are based on the remote schema created 
+
 type MyTrack @wrap(type: "Track", listQuery: "tracksForHome", singleQuery: "track(id: ID!)") {
     id: ID! @wrap(field: "id")
-    myTitle: String @wrap(field: "title")
-    author: MyAuthor @wrap(field: "author")
-    authorName: String @wrap(path: ["author", "name"])
+    myTitle: String! @wrap(field: "title")
+    author: MyAuthor! @wrap(field: "author")
+    authorName: String! @wrap(path: ["author", "name"])
     myModulesCount: Int @wrap(path: ["modulesCount"])
 
     concatenateTest: String @concatenate(values: ["description", " ", "thumbnail"])
@@ -16,7 +18,7 @@ type MyTrack @wrap(type: "Track", listQuery: "tracksForHome", singleQuery: "trac
 
 type MyAuthor @wrap(type: "Author") {
     id: ID! @wrap(field: "id")
-    name: String @wrap(path: ["name"])
+    name: String! @wrap(path: ["name"])
 }
 
 type MyModule @wrap(type: "Module", singleQuery: "module(id: ID!)") {
