@@ -11,19 +11,33 @@ The first three points should be self-explanatory if you are familiar with Graph
 
 The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found [here](directives.md).
 
+When you have the four required things listed above, you can use the tool in this repo to generate a wrapper schema and corresponding resolver functions. 
+In order to do this, do the following:
+
+1. Clone the repo: git clone https://github.com/pontuscode/graphql_declarative_wrapper.git
+2. Run 'npm install' to install the required node packages
+3. Run 'npm run generate \[OPTIONS\]' to generate the wrapper schema and resolver functions, where \[OPTIONS\] are the following: 
+  * --definitions <PATH_TO_WSDEF_FILE> (required)
+  * --remoteSchema <PATH_TO_REMOTE_SCHEMA_FILE> (required)
+  * --remoteServer <URL_TO_REMOTE_SERVER> (required)
+  * --wrapperName <NAME_OF_GENERATED_WRAPPER_SCHEMA> (optional)
+4. Run 'npm run delegate' to start the wrapper server. 
+
+If all went well you should be able to send queries to your wrapper server which will then delegate the queries to the remote server. Happy querying! 
+
 # Todo
 
 ## Important
 
 ### Remove all unnecessary files and clean up the repository (Pontus)
 
-### Add explanations for how to use the tool (Pontus + Markus)
-
 ### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. (Markus)
 
 ### Add additional checks for concatenation in resolver functions (Markus)
 
 ### Document functions that are not self-explanatory (preferably using docstrings like some functions already have) (Markus + Pontus)
+
+### Add information about concatenate directive [here](directives.md)
 
 ## Not as important
 
@@ -34,6 +48,8 @@ The wsDef file is the input to the tool. The wsDef file supports five different 
 ### Remove redundant parameters in concatenate resolver functions (Markus) (done?)
 
 ## Done
+
+### Add explanations for how to use the tool (Pontus + Markus)
 
 ### Fix path traversal so it aligns with Section 3.2 (Pontus)
 
