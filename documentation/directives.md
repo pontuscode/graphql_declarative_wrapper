@@ -5,7 +5,7 @@ used to wrap the remote schema. The tool will then generate a wrapper schema and
 
 ## Wrapping object types
 
-directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: \[String!\], listQuery: String, singleQuery: String)
+```directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String)```
 
 * type: The name of the object type you want to wrap in the remote schema
 * includeAllFields: Can be used as a short-hand if you want to include all field definitions that are found in the remote object type 
@@ -15,7 +15,7 @@ directive @wrap(type: String!, includeAllFields: Boolean, excludeFields: \[Strin
 
 ## Wrapping interface types
 
-directive @wrap(interface: String!, includeAllFields: Boolean, excludeFields: \[String!\], listQuery: String, singleQuery: String)
+```directive @wrap(interface: String!, includeAllFields: Boolean, excludeFields: [String!], listQuery: String, singleQuery: String)```
 
 * interface: The name of the interface type you want to wrap in the remote schema
 * includeAllFields: Can be used as a short-hand if you want to include all field definitions that are found in the remote interface type 
@@ -25,18 +25,20 @@ directive @wrap(interface: String!, includeAllFields: Boolean, excludeFields: \[
 
 ## Wrapping field definitions
 
-### Wrapping field directly
+There are three different ways to wrap fields.
 
-directive @wrap(field: String!)
+### Wrapping fields directly
+
+```directive @wrap(field: String!)```
 
 * Accepts a string that corresponds to a field name in the remote schema. The given field name must exist in the remote object type. 
 
 ### Wrapping fields by traversing a path
 
-directive @wrap(path: \[String!\]!)
+```directive @wrap(path: [String!]!)```
 
 * Accepts a list of strings that correspond to a path of field names. Consider the following remote schema: 
-
+```
 type MotherStar {
   id: ID!
   name: String
@@ -46,10 +48,10 @@ type Planet {
   name: String
   motherStar: MotherStar
 }
-
+```
 If you want to include the name of the MotherStar object directly in the Planet object in your wrapper schema, you can define the following 
 wrapper schema definitions: 
-
+```
 type MyMotherStar @wrap(type: "MotherStar") {
   id: ID! @wrap(field: "id")
   name: String @wrap(field: "name")
@@ -57,9 +59,9 @@ type MyMotherStar @wrap(type: "MotherStar") {
 type MyPlanet @wrap(type: "Planet") {
   id: ID! @wrap(field: "id")
   name: String @wrap(field: "name")
-  nameOfMotherStar: String @wrap(path: \["motherStar", "name"\])
+  nameOfMotherStar: String @wrap(path: ["motherStar", "name"])
 }
-
+```
 ### Wrapping fields by concatenating field values and delimiters
 
-directive @concatenate(values: \[String!\])
+```directive @concatenate(values: [String!])```
