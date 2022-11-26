@@ -9,7 +9,7 @@ In order to use this tool, the following four things are needed:
 
 The first three points should be self-explanatory if you are familiar with GraphQL and the GraphQL Schema Definition Language. 
 
-The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found [here](www.google.com).
+The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found [here](directives.md).
 
 # Todo
 
