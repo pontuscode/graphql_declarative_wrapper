@@ -10,8 +10,6 @@
 
 ### Add additional checks for concatenation in resolver functions (Markus)
 
-### Fix path traversal so it aligns with Section 3.2 (Pontus)
-
 ### Document functions that are not self-explanatory (preferably using docstrings like some functions already have) (Markus + Pontus)
 
 ## Not as important
@@ -23,6 +21,8 @@
 ### Remove redundant parameters in concatenate resolver functions (Markus) (done?)
 
 ## Done
+
+### Fix path traversal so it aligns with Section 3.2 (Pontus)
 
 ### Fix includeAllFields validation so it meets new requirements. 
 
