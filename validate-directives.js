@@ -1,11 +1,4 @@
-const { parse, visit, print } = require("graphql/language");
-// const wsDef = require("./wrapper-schema-definition");
-const { loadSchemaSync, loadTypedefsSync } = require("@graphql-tools/load");
-const { GraphQLFileLoader } = require("@graphql-tools/graphql-file-loader");
-const { correctASTNodes } = require("@graphql-tools/utils");
-const { generateWrapperSchema } = require("./generate-schema");
-const { count } = require("console");
-const { error } = require("util");
+const { visit } = require("graphql/language");
 
 let WrappedTypes = [];
 
@@ -59,29 +52,6 @@ const parseValue = function(node) {
     return returnValue;
 }
 
-//-----------------------------------------------------------------------------------//
-/**
- * This function is used to determine if the user wants to include all fields in the wrapper type. 
- * @param {*} args: an AST node containing the "parent node's" arguments 
- * @returns an object with a boolean indicating the includeAllFields argument was true/false and which fields the user wants to exclude
- */
-const parseIncludeExclude = function(args) {
-    let includeAllFields = false;
-    let excludeFields;
-    for(let i = 0; i < args.length; i++) {
-        if(args[i].name.value === "includeAllFields") {
-            includeAllFields = args[i].value.value;
-        }
-        if(args[i].name.value === "excludeFields") {
-            excludeFields = args[i];
-        }
-    }
-    return {
-        "includeAllFields": includeAllFields,
-        "excludeFields": excludeFields
-    }
-}
-
 const _doParseExcludedFields = function(excludedFieldsAstNode) {
     let values;
     try {
@@ -101,7 +71,7 @@ const _doParseExcludedFields = function(excludedFieldsAstNode) {
 /**
  * This function is used to get the list of excluded fields (with regards to includeAllFields). 
  * @param {*} args: an AST node containing the "parent node's" arguments 
- * @returns A list containing the fields the user wants to exclude, or undefined if the list is empty
+ * @returns A list of strings containing the fields the user wants to exclude, or undefined if the list is empty
  */
  const parseExcludedFields = function(args) {
     for(let i = 0; i < args.length; i++) {
@@ -469,7 +439,7 @@ const parseSchemaDirectives = function(schema) {
                     return;
                 }
 
-                // VALIDATE THE USAGE OF ARGUMENTS includeAllFields and excludeFields //
+                // VALIDATE THE USE OF ARGUMENTS includeAllFields and excludeFields 
                 // Try to get the excludeFields AST node
                 let excludeFieldsNode = getExcludeFieldsNode(directiveArguments);
                 // Check if the user has indicated that they want to include all fields          
@@ -562,7 +532,7 @@ const parseSchemaDirectives = function(schema) {
                     return;  
                 }
 
-                // VALIDATE THE USAGE OF ARGUMENTS includeAllFields and excludeFields 
+                // VALIDATE THE USE OF ARGUMENTS includeAllFields and excludeFields 
                 // Try to get the excludeFields AST node
                 let excludeFieldsNode = getExcludeFieldsNode(directiveArguments);//directiveArguments);
                 // Check if the user has indicated that they want to include all fields          
@@ -684,62 +654,88 @@ const parseSchemaDirectives = function(schema) {
     }
 }
 
-//-----------------------------------------------------------------------------------//
-/**
- * 
- * @param {*} currentType: the name of the type to be found in the remote schema
- * @param {*} directivesUsed: the list of all directives found during parsing
- * @param {*} inRemoteSchema: boolean value that tells us if we're looking in the wrapper schema definitions or in the remote schema
- * @returns: object with the name of the type in the remote schema and a boolean indicating if it's an object type or interface type
- */
-const findNameOfRemoteType = function(currentType, directivesUsed, inRemoteSchema = false) {
-    let remoteType = {};
-    directivesUsed.forEach(directive => {
-        if(directive.directive === "wrap") {
-            if(inRemoteSchema === false) { // Are we looking in the wrapper schema definitions or in the remote schema? 
-                if(directive.objectTypeName !== undefined) { // If the field's value type is an object type
-                    if(directive.argumentName === "type") {
-                        if(directive.objectTypeName === currentType) {
-                            remoteType = {
-                                "name": directive.remoteObjectTypeName,
-                                "objectType": true
-                            }
-                        }
-                    }
-                } else if(directive.interfaceTypeName !== undefined) { // If the field's value type is an interface type
-                    if(directive.argumentName === "interface") {
-                        if(directive.interfaceTypeName === currentType) {
-                            remoteType = {
-                                "name": directive.remoteInterfaceTypeName,
-                                "objectType": false
-                            }
-                        }
-                    }
-                }
-            } else if(inRemoteSchema === true) { // Are we looking in the wrapper schema definitions or in the remote schema? 
-                if(directive.remoteObjectTypeName !== undefined) { // If the field's value type is an object type
-                    if(directive.argumentName === "type") {  
-                        if(directive.remoteObjectTypeName === currentType) {
-                            remoteType = {
-                                "name": directive.remoteObjectTypeName,
-                                "objectType": true
-                            }
-                        }
-                    }
-                } else if(directive.remoteInterfaceTypeName !== undefined) { // If the field's value type is an interface type
-                    if(directive.argumentName === "interface") {
-                        if(directive.remoteInterfaceTypeName === currentType) {
-                            remoteType = {
-                                "name": directive.remoteInterfaceTypeName,
-                                "objectType": false
-                            }
-                        }
-                    }
-                }    
+const getFieldInfoFromRemoteType = function(node, fieldNameToFind) {
+    let nextFieldInfo = {};
+    visit(node, {
+        FieldDefinition(field) {
+            if(field.name.value !== fieldNameToFind) {
+                return;
             }
+            let fieldValue = parseValue(field);
+            if(Array.isArray(fieldValue) === true) {
+                fieldValue = fieldValue[0];
+                nextFieldInfo.isListType = true;
+            }
+            nextFieldInfo.fieldValue = fieldValue;
         }
     })
-    return (remoteType.name !== "") ? remoteType : undefined;
+    return (nextFieldInfo !== {}) ? nextFieldInfo : undefined;
+}
+
+const findNextFieldInPath = function(nodeToVisit, fieldNameToFind, remoteSchema, numberOfTraversedFields) {
+    let valid = true;
+    let errorMessage = "";
+    let nextFieldInfo;
+
+    remoteSchema.definitions.forEach(ast => {
+        if(valid === false) {
+            return;
+        }
+        visit(ast, {
+            ObjectTypeDefinition(node) {
+                // If the name of the visited object doesn't match the next remote type, stop visiting this object
+                if(node.name.value !== nodeToVisit) {
+                    return;
+                }
+                nextFieldInfo = getFieldInfoFromRemoteType(node, fieldNameToFind, numberOfTraversedFields);
+            },
+            InterfaceTypeDefinition(node) {
+                // If the name of the visited interface doesn't match the next remote type, stop visiting this interface
+                if(node.name.value !== nodeToVisit) {
+                    return;
+                }
+                nextFieldInfo = getFieldInfoFromRemoteType(node, fieldNameToFind, numberOfTraversedFields);
+            }
+        })
+    });
+
+    return {
+        "valid": valid,
+        "errorMessage": errorMessage,
+        "nextFieldInfo": nextFieldInfo
+    }
+}
+
+const sanityCheckFieldInfo = function(fieldInfo, fieldNameToFind, isLastStepInPath) {
+    let valid = true;
+    let errorMessage = "";
+    if(fieldInfo.valid === false) {
+        valid = false;
+        errorMessage += `Failed to validate field name '${fieldNameToFind}' in wrapping path.\n`;
+    }
+    if(fieldInfo.nextFieldInfo === undefined) {
+        valid = false;
+        errorMessage += `Failed to find information about field '${fieldNameToFind}' in remote schema.\n`;
+    } else {
+        if(isLastStepInPath === false) {
+            if(builtInScalars.includes(fieldInfo.nextFieldInfo.fieldValue) === true) {
+                valid = false;
+                errorMessage += `Failed to validate field name '${fieldNameToFind}' when traversing path.\n`;
+                errorMessage += `Value type can only be built-in scalar type in the last step of the path.`;
+            }
+        } else if(isLastStepInPath === true) {
+            if(builtInScalars.includes(fieldInfo.nextFieldInfo.fieldValue) === false) {
+                valid = false;
+                errorMessage += `Failed to validate field name '${fieldNameToFind}' when traversing path.\n`;
+                errorMessage += `Value type must be built-in scalar type in the last step of the path.`;
+            }
+        }
+    }
+
+    return {
+        "valid": valid,
+        "errorMessage": errorMessage
+    }
 }
 
 //-----------------------------------------------------------------------------------//
@@ -751,249 +747,56 @@ const findNameOfRemoteType = function(currentType, directivesUsed, inRemoteSchem
  * @returns an object with a boolean indicating the path was valid, and an error message if it was invalid
  */
 const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
-    let remoteType;
-    let nextType;
     let valid = true;
-    let mustBeListType = false;
-    let leafNodeScalarType;
     let errorMessage = "";
     // Ensure there are values in the 'path' argument list
     if(item.argumentValues.length === 0) {
         valid = false;
         errorMessage = `The length of the 'path' argument must be greater than 1, found empty list in field definition with name '${item.fieldName}'.\n`;
     }
+
+    let traversedFieldInfo;
+    let nextType;
+    let fieldNameToFind;
+    let mustBeListType = false;
+    let isLastStepInPath = false;
     for(let i = 0; i < item.argumentValues.length; i++) {
-        if(valid === true) {
-        // These variables are used in multiple places further down in the loop.
-            let foundField = false;
-            let fieldValue;
-
-            if(i === 0) { // First iteration we check the wrapped remote object/interface type
-                // Are we looking for an object type or interface type?
-                if(item.objectTypeName !== undefined) {
-                    nextType = item.objectTypeName;
-                } else if(item.interfaceTypeName !== undefined) {
-                    nextType = item.interfaceTypeName;
-                }
-                // Now we must find the field that starts the path and get its value type. 
-                directivesUsed.forEach(directive => {
-                    if(directive.directive === "wrap") {
-                        if(item.objectTypeName !== undefined) { // If the value type of the path's field is an object type
-                            // If the object's name matches the value type of the field in the first step of the path
-                            if(directive.objectTypeName === item.objectTypeName) {
-                                // If the directive's argument was either field or path, check the field's name and value type
-                                if(directive.argumentName === "field" || directive.argumentName === "path") {
-                                    // If the field name of the directive matches the first value in the path, then either: 
-                                    if(directive.fieldName === item.argumentValues[0].value) {
-                                        if(builtInScalars.includes(directive.fieldValue)) { // ensure it is the last step of the path (if it is a scalar)
-                                            if(i !== (item.argumentValues.length - 1)) { // If it is a scalar and we are not at the last step of the path, then validation should fail.
-                                                foundField = false;
-                                                errorMessage = `The value type can only be a built-in scalar on the last step of the path.\n`;
-                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in object type '${item.objectTypeName}'\n`;
-                                                return;
-                                            } else {
-                                                foundField = true;
-                                                leafNodeScalarType = directive.fieldValue;
-                                                return;
-                                            }
-                                        } else { // save the value type of that field as the next step in the path (if it is not a built-in scalar)
-                                            if(i === (item.argumentValues.length - 1)) { // If it is not a scalar, but we are at the last step of the path, then validation should fail.
-                                                valid = false;
-                                                errorMessage = `The value type of the last step in the path must be a built-in scalar.\n`;
-                                                errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in object type '${item.objectTypeName}'.\n`;
-                                                return;
-                                            } else {
-                                                nextType = directive.fieldValue;
-                                                foundField = true;
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else if(item.interfaceTypeName !== undefined) { // If the value type of the path's field is an interface type
-                            if(directive.argumentName === "interface") {
-                                if(directive.interfaceTypeName === item.interfaceTypeName) {
-                                    // If the directive's argument was either field or path, check the field's name and value type
-                                    if(directive.argumentName === "field" || directive.argumentName === "path") {
-                                        // If the field name of the directive matches the first value in the path, then either: 
-                                        if(directive.fieldName === item.argumentValues[0].value) {
-                                            if(builtInScalars.includes(directive.fieldValue)) { // ensure it is the last step of the path (if it is a scalar)
-                                                if(i !== (item.argumentValues.length - 1)) { // If it is a scalar and we are not at the last step of the path, then validation should fail.
-                                                    foundField = false;
-                                                    errorMessage = `The value type can only be a built-in scalar on the last step of the path.\n`;
-                                                    errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in interface type '${item.interfaceTypeName}'\n`;
-                                                    return;
-                                                } else {
-                                                    foundField = true;
-                                                    leafNodeScalarType = directive.fieldValue;
-                                                    return;
-                                                }
-                                            } else { // save the value type of that field as the next step in the path (if it is not a built-in scalar)
-                                                if(i === (item.argumentValues.length - 1)) { // If it is not a scalar, but we are at the last step of the path, then validation should fail.
-                                                    valid = false;
-                                                    errorMessage = `The value type of the last step in the path must be a built-in scalar.\n`;
-                                                    errorMessage += `Found value type '${directive.fieldValue}' in path for field '${item.fieldName}' in interface type '${item.interfaceTypeName}'.\n`;
-                                                    return;
-                                                } else {
-                                                    nextType = directive.fieldValue;
-                                                    foundField = true;
-                                                    return;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                })
-                if(foundField === false) {
-                    valid = false;
-                    errorMessage += `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
-                    break;
-                }
-            // After the first iteration, we need to check the value types of the fields in the remote object/interface types
-            } else if(i > 0) { 
-                // We only need to deduce the name of the object/interface type in the remote schema if we are on the second iteration. 
-                // This is because the field value of this will its wrapped version in the wrapper schema definitions. 
-                // All other field values will be taken directly from the remote schema, not from the wrapper schema definitions.
-                let nextTypeIsInRemote = (i !== 1);
-
-                // Find the matching remote type in the remote schema
-                remoteType = findNameOfRemoteType(nextType, directivesUsed, nextTypeIsInRemote);
-                // If we could not find a matching remote type, then validation should fail
-                if(remoteType === undefined) {
-                    valid = false;
-                    errorMessage = `Could not find type in remote schema that is wrapped by '${nextType}'.\n`;
-                    break;
-                }
-
-                // Validate the remote type against the remote schema. 
-                remoteSchema.definitions.forEach(ast => {
-                    if(valid === true) {
-                        visit(ast, {
-                            //---------------------------OBJECT TYPES--------------------------------------//
-                            ObjectTypeDefinition(node) {
-                                if(remoteType.objectType === true) {
-                                    if(node.name.value === remoteType.name) {
-                                        visit(node, {
-                                            FieldDefinition(field) {
-                                                if(field.name.value === item.argumentValues[i].value) {
-                                                    fieldValue = parseValue(field);
-                                                    if(Array.isArray(fieldValue) === true) {
-                                                        fieldValue = fieldValue[0];
-                                                        mustBeListType = true; // If any value type along the path is a List, then the value type must also be a list. 
-                                                    }
-                                                    // If it is a built-in scalar, we must be at the end of the path or validation should fail
-                                                    if(builtInScalars.includes(fieldValue)) {
-                                                        if(i === (item.argumentValues.length - 1)) {
-                                                            valid = true;
-                                                            foundField = true;
-                                                            leafNodeScalarType = fieldValue;
-                                                            return;
-                                                        } else {
-                                                            valid = false;
-                                                            errorMessage = `Cannot traverse path with built-in scalars as non-leaf nodes. Check argument ${i+1} in your argument list.\n`;
-                                                            return;
-                                                        }
-                                                    } else { // If it is not a built-in scalar, check the reverse case
-                                                        if(i === (item.argumentValues.length - 1)) {
-                                                            valid = false;
-                                                            errorMessage = `Cannot end 'path' on an object or interface type ('${fieldValue}').\n`
-                                                            errorMessage += `The path must end on a field with a scalar value type.\n`;
-                                                            return;
-                                                        } else {
-                                                            foundField = true;
-                                                            nextType = fieldValue;
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        })
-                                        if(foundField === false) {
-                                            valid = false;
-                                            if(errorMessage === "") { // If we have not yet assigned the error message with a value, then add the "generic" error with location info.
-                                                errorMessage = `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
-                                                errorMessage += `Could not find field '${item.argumentValues[i].value}' in remote object type '${remoteType.name}'.\n`;
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            //---------------------------INTERFACE TYPES--------------------------------------//
-                            InterfaceTypeDefinition(node) {
-                                if(remoteType.objectType === false) {
-                                    if(node.name.value === remoteType.name) {
-                                        visit(node, {
-                                            FieldDefinition(field) {
-                                                if(field.name.value === item.argumentValues[i].value) {
-                                                    fieldValue = parseValue(field);
-                                                    if(Array.isArray(fieldValue) === true) {
-                                                        fieldValue = fieldValue[0];
-                                                        mustBeListType = true; // If any value type along the path is a List, then the value type must also be a list. 
-                                                    }
-                                                    // If it is a built-in scalar, we must be at the end of the path or validation should fail
-                                                    if(builtInScalars.includes(fieldValue)) {
-                                                        if(i === (item.argumentValues.length - 1)) {
-                                                            valid = true;
-                                                            foundField = true;
-                                                            leafNodeScalarType = fieldValue;
-                                                            return;
-                                                        } else {
-                                                            valid = false;
-                                                            errorMessage = `Cannot traverse path with built-in scalars as non-leaf nodes. Check argument ${i+1} in your argument list.\n`;
-                                                            return;
-                                                        }
-                                                    } else { // If it is not a built-in scalar, check the reverse case
-                                                        if(i === (item.argumentValues.length - 1)) {
-                                                            valid = false;
-                                                            if(item.interfaceTypeName !== undefined) {
-                                                                errorMessage = `Failed to validate 'path' on field definition '${item.fieldName}' in type '${item.interfaceTypeName}'.\n`
-                                                            } else if(item.objectTypeName !== undefined) {
-                                                                errorMessage = `Failed to validate 'path' on field definition '${item.fieldName}' in type '${item.objectTypeName}'.\n`
-                                                            }
-                                                            errorMessage += `The path must end on a field with a scalar value type, check argument ${i+1} in your argument list.\n`;
-                                                            return;
-                                                        } else {
-                                                            foundField = true;
-                                                            nextType = fieldValue;
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        })
-                                        if(foundField === false) {
-                                            valid = false;
-                                            if(errorMessage === "") { // If we have not yet assigned the error message with a value, then add the "generic" error with location info.
-                                                errorMessage = `Failed to validate field name '${item.argumentValues[i].value}' in wrapping path.\n`;
-                                                errorMessage += `Could not find field '${item.argumentValues[i].value}' in remote interface type '${remoteType.name}'.\n`;
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        })
-                    } else if(valid === false) { // If we found some errors when traversing the path, break the internal forEach loop.
-                        return;
-                    }
-                })
+        if(i === 0) { // First iteration we check the wrapped remote object/interface type
+            // Are we looking for an object type or interface type?
+            if(item.objectTypeName !== undefined) {
+                nextType = item.remoteObjectTypeName;
+            } else if(item.interfaceTypeName !== undefined) {
+                nextType = item.remoteInterfaceTypeName;
             }
-        } else if(valid === false)  {// If we found some errors when traversing the path, break the for loop.
+        } 
+        fieldNameToFind = item.argumentValues[i].value;
+
+        // Try to traverse the path and find information about next field.
+        traversedFieldInfo = findNextFieldInPath(nextType, fieldNameToFind, remoteSchema, i);
+        
+        // The next type to look in is the value type of the field in the remote schema
+        nextType = traversedFieldInfo.nextFieldInfo.fieldValue;
+
+        // If the value type of the remote field was a list, the value type of the field in the wrapper schema definitions must also be a list. 
+        // However, we must also remember if we have found any list types before. So we can use boolean OR to have a "persistent" memory of this. 
+        mustBeListType = (traversedFieldInfo.nextFieldInfo.isListType || mustBeListType);
+        // If we are on the last step of the path, we must ensure that the value type is a built-in scalar. This is done during fieldInfo sanity checks. 
+        isLastStepInPath = ((i + 1) === item.argumentValues.length);
+        fieldInfoSanityCheck = sanityCheckFieldInfo(traversedFieldInfo, fieldNameToFind, isLastStepInPath);
+
+        if(fieldInfoSanityCheck.valid === false) {
+            valid = false;
+            errorMessage = fieldInfoSanityCheck.errorMessage;
             break;
         }
     }
-
+    let leafNodeScalarType = traversedFieldInfo.nextFieldInfo.fieldValue;
     // If any lists were found in the path, ensure that the value type of the field is also a list
     if(mustBeListType === true) {
         if(Array.isArray(item.fieldValue) === false) {
             valid = false;
             errorMessage = `Failed to validate 'path' of field '${item.fieldName}'.\n`;
-            errorMessage += `Found List in one or more value types along the path. The value type of '${item.fieldName}' must therefore be a ListType.\n`;
+            errorMessage += `Found ListType in one or more value types along the path. The value type of '${item.fieldName}' must therefore be a ListType.\n`;
         } 
     }
     // If the value type is a list, ensure that the value type inside the list matches the value type of the leaf node in the remote schema
@@ -1014,6 +817,7 @@ const traverseAndValidatePath = function(item, remoteSchema, directivesUsed) {
             }
         }
     }
+
     return {
         "valid": valid,
         "errorMessage": errorMessage
@@ -1599,7 +1403,6 @@ const validateDirective = function(item, remoteSchema, directivesUsed) {
                 valid = false;
                 errorMessage = wrapValidation.errorMessage;
             }
-            //return validateWrap(item, remoteSchema, directivesUsed);
             break;
         case "concatenate":
             let concatenateValidation = validateConcatenate(item, remoteSchema);
@@ -1607,7 +1410,6 @@ const validateDirective = function(item, remoteSchema, directivesUsed) {
                 valid = false;
                 errorMessage = concatenateValidation.errorMessage;
             }
-            //return validateConcatenate(item, remoteSchema);
             break;
         default:
             valid = false;
