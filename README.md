@@ -8,8 +8,6 @@
 
 ### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. 
 
-### Fix includeAllFields validation so it meets new requirements. 
-
 ### Add additional checks for concatenation in resolver functions
 
 ### Fix path traversal so it aligns with Section 3.2
@@ -23,6 +21,8 @@
 ### Remove redundant parameters in concatenate resolver functions
 
 ## Done
+
+### Fix includeAllFields validation so it meets new requirements. 
 
 ### Add proper error messages to everything, both validation and generation errors - done
 
