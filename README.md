@@ -12,6 +12,8 @@
 
 ### Fix path traversal so it aligns with Section 3.2 (Pontus)
 
+### Document functions that are not self-explanatory (preferably using docstrings like some functions already have) (Markus + Pontus)
+
 ## Not as important
 
 ### Remove wrappedTypes (Markus)
