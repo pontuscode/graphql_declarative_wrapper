@@ -9,7 +9,7 @@ In order to use this tool, the following four things are needed:
 
 The first three points should be self-explanatory if you are familiar with GraphQL and the GraphQL Schema Definition Language. 
 
-The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found [here](directives.md).
+The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found [here](documentation/directives.md).
 
 When you have the four required things listed above, you can use the tool in this repo to generate a wrapper schema and corresponding resolver functions. 
 In order to do this, do the following:
@@ -35,7 +35,7 @@ If all went well you should be able to send queries to your wrapper server which
 
 ### Document functions that are not self-explanatory (preferably using docstrings like some functions already have) (Markus + Pontus)
 
-### Add information about concatenate directive [here](directives.md)
+### Add information about concatenate directive [here](documentation/directives.md)
 
 ## Not as important
 
