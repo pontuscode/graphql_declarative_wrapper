@@ -5,7 +5,7 @@ In order to use this tool, the following four things are needed:
 1. A schema file you want to wrap (or a _remote schema_ hereafter)
 2. Knowledge of how the remote schema is structured
 3. A server where the remote schema is hosted
-4. A wrapper schema definition file (wsDef file)
+4. A wrapper schema definition file (the _wsDef_ file hereafter)
 
 The first three points should be self-explanatory if you are familiar with GraphQL and the GraphQL Schema Definition Language. 
 
