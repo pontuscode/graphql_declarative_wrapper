@@ -14,14 +14,14 @@ The wsDef file is the input to the tool. The wsDef file supports five different 
 When you have the four required things listed above, you can use the tool in this repo to generate a wrapper schema and corresponding resolver functions. 
 In order to do this, do the following:
 
-1. Clone the repo: git clone https://github.com/pontuscode/graphql_declarative_wrapper.git
-2. Run 'npm install' to install the required node packages
-3. Run 'npm run generate \[OPTIONS\]' to generate the wrapper schema and resolver functions, where \[OPTIONS\] are the following: 
-  * --definitions <PATH_TO_WSDEF_FILE> (required)
-  * --remoteSchema <PATH_TO_REMOTE_SCHEMA_FILE> (required)
-  * --remoteServer <URL_TO_REMOTE_SERVER> (required)
-  * --wrapperName <NAME_OF_GENERATED_WRAPPER_SCHEMA> (optional)
-4. Run 'npm run delegate' to start the wrapper server. 
+1. Clone the repo: ```git clone https://github.com/pontuscode/graphql_declarative_wrapper.git```
+2. Run ```npm install``` to install the required node packages
+3. Run ```npm run generate \[OPTIONS\]``` to generate the wrapper schema and resolver functions, where \[OPTIONS\] are the following: 
+  * ```--definitions <PATH_TO_WSDEF_FILE>``` (required)
+  * ```--remoteSchema <PATH_TO_REMOTE_SCHEMA_FILE>``` (required)
+  * ```--remoteServer <URL_TO_REMOTE_SERVER>``` (required)
+  * ```--wrapperName <NAME_OF_GENERATED_WRAPPER_SCHEMA>``` (optional)
+4. Run ```npm run delegate``` to start the wrapper server. 
 
 If all went well you should be able to send queries to your wrapper server which will then delegate the queries to the remote server. Happy querying! 
 
