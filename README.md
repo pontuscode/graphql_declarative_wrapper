@@ -1,3 +1,16 @@
+# Prerequisites to use this tool
+
+In order to use this tool, the following four things are needed: 
+
+1. A remote schema file
+2. Knowledge of how the remote schema is structured
+3. A server where the remote schema is hosted
+4. A wrapper schema definition file (wsDef file)
+
+The first three points should be self-explanatory if you are familiar with GraphQL and the GraphQL Schema Definition Language. 
+
+The wsDef file is the input to the tool. The wsDef file supports five different GraphQL directives. Information about these directives can be found (here)[www.google.com].
+
 # Todo
 
 ## Important
