@@ -192,12 +192,7 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
                     typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.singleQuery, isList = false);
                 } 
                 if(parsedArgument.listQuery !== undefined) {
-                    let temp = writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
-                    // fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
-                    fileContent += temp[0]
-                    extractNestedFieldsTextOne += temp[1];
-                    extractNestedFieldsTextTwo += temp[2];
-
+                    fileContent += writeResolverWithoutArgs(objectTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema);
                     typeDefFileContent += addToQueryType(objectTypeName, parsedArgument.listQuery, isList = true);
                 }
             }
@@ -238,9 +233,7 @@ const generateResolvers = async function(wsDef, directivesUsed, remoteSchema, re
             } 
             if(parsedArgument.listQuery !== undefined) {
                 let temp = writeResolverWithoutArgs(interfaceTypeName, directivesUsed, parsedArgument.listQuery, remoteSchema, typesImplementingInterface);
-                fileContent += temp[0]
-                extractNestedFieldsTextOne += temp[1]
-                extractNestedFieldsTextTwo += temp[2]
+                fileContent += temp
                 typeDefFileContent += addToQueryType(interfaceTypeName, parsedArgument.listQuery, isList = true);
             }
         }
@@ -445,18 +438,10 @@ const parseConcArgs = function(directive, rsDef) {
 const generateConcatenateField = function(directive, rsDef, remoteResolver) {
     const concValues = parseConcArgs(directive,rsDef);
     let text = "";
-    let extractNestedFieldsTextOne = ""
-    let extractNestedFieldsTextTwo = ""
     if(builtInScalars.includes(directive.fieldValue)) {
         text += `
         ${generateIndentation(6)}if(selection.name.value === "${directive.fieldName}") {
         `;
-        extractNestedFieldsTextOne += `
-        ${generateIndentation(1)}if(remoteResolver.name.value === "${directive.remoteObjectTypeName}"){
-        ${generateIndentation(2)}if(nestedSelection.name.value === "${directive.fieldName}"){`;
-        extractNestedFieldsTextTwo += `
-        ${generateIndentation(1)}if(remoteResolver.ofType.name === "${directive.remoteObjectTypeName}"){
-        ${generateIndentation(2)}if(nestedSelection.name.value === "${directive.fieldName}"){`;
         concValues.forEach(field => {
             if(field[1]){
                 text += `
@@ -469,37 +454,13 @@ const generateConcatenateField = function(directive, rsDef, remoteResolver) {
                     ${generateIndentation(5)}}
                     ${generateIndentation(4)})
                 `;
-                extractNestedFieldsTextOne += `
-                    ${generateIndentation(0)}result.selections.push( {
-                    ${generateIndentation(1)}kind: Kind.FIELD,
-                    ${generateIndentation(1)}name: {
-                    ${generateIndentation(2)}kind: Kind.NAME,
-                    ${generateIndentation(2)}value: "${field[0]}"
-                    ${generateIndentation(1)}}
-                    ${generateIndentation(0)}})`;
-                extractNestedFieldsTextTwo += `
-                    ${generateIndentation(0)}result.selections.push( {
-                    ${generateIndentation(1)}kind: Kind.FIELD,
-                    ${generateIndentation(1)}name: {
-                    ${generateIndentation(2)}kind: Kind.NAME,
-                    ${generateIndentation(2)}value: "${field[0]}"
-                    ${generateIndentation(1)}}
-                    ${generateIndentation(0)}})`;
             }
         })
         text += `
         ${generateIndentation(6)}}
         `;
-        extractNestedFieldsTextOne += `
-        ${generateIndentation(2)}}
-        ${generateIndentation(1)}}
-        `;
-        extractNestedFieldsTextTwo += `
-        ${generateIndentation(2)}}
-        ${generateIndentation(1)}}
-        `;
     }
-    return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo]
+    return text
 }
 
 //-----------------------------------------------------------------------------------//
@@ -700,7 +661,6 @@ const writeNestedExtractFunctions = function(directivesUsed, rsDef) {
  * @returns 
  */
 const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteResolver, wsDef, remoteSchema, typesImplementingInterface) {
-    let concValues = [];
     let text = `    
         ${camelCase(objectTypeName)}: async(_, args, context, info) => {
         ${generateIndentation(1)}const data = await delegateToSchema({
@@ -762,8 +722,7 @@ const writeResolverWithArgs = function(objectTypeName, directivesUsed, remoteRes
             }
             if(directivesUsed[i].directive === "concatenate") {
                 textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions);
-                text += textAndConcValues[0];
-                concValues.push(textAndConcValues[1]);
+                text += textAndConcValues;
             }
         }
     }
@@ -927,8 +886,6 @@ const generateIncludeAllTypeSpecificResolver = function(currentDirective) {
  */
 const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remoteResolver, remoteSchema, typesImplementingInterface){
     let upperCaseResolver = upperCase(remoteResolver.resolver);
-    let extractNestedFieldsTextOne = "";
-    let extractNestedFieldsTextTwo = "";
     let resolverName = objectTypeName;
     // "Pluralize" the name of the resolver function
     if(resolverName.charAt(resolverName.length - 1) === "s") {
@@ -992,9 +949,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
                 }
                 if(directivesUsed[i].directive === "concatenate") {            
                     textAndConcValues = generateConcatenateField(directivesUsed[i], remoteSchema.document.definitions, upperCaseResolver);
-                    text += textAndConcValues[0];
-                    extractNestedFieldsTextOne += textAndConcValues[1];
-                    extractNestedFieldsTextTwo += textAndConcValues[2];
+                    text += textAndConcValues;
                 }
             }
         }
@@ -1038,7 +993,7 @@ const writeResolverWithoutArgs = function(objectTypeName, directivesUsed, remote
         ${generateIndentation(1)}return data;
         },
     `;
-    return [text, extractNestedFieldsTextOne, extractNestedFieldsTextTwo];
+    return text
 }
 
 //-----------------------------------------------------------------------------------//
