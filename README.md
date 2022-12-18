@@ -29,9 +29,7 @@ If all went well you should be able to send queries to your wrapper server which
 
 ## Important
 
-### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. (Markus)
 
-### Add additional checks for concatenation in resolver functions (Markus)
 
 ### Document functions that are not self-explanatory (preferably using docstrings like some functions already have) (Markus + Pontus)
 
@@ -46,6 +44,10 @@ If all went well you should be able to send queries to your wrapper server which
 ### Remove redundant parameters in concatenate resolver functions (Markus) (done?)
 
 ## Done
+
+### Add additional checks for concatenation in resolver functions (Markus) (Should be done)
+
+### Remove the extractNested stuff from listQuery when generating. Also remove the array thing from writeResolverWithoutArgs. (Markus)
 
 ### Remove all unnecessary files and clean up the repository (Pontus)
 
